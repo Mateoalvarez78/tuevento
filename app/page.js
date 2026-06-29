@@ -50,7 +50,7 @@ export default function HomePage() {
           <div className="max-w-2xl mb-10">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-medium px-4 py-2 rounded-full mb-6">
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              +500 proveedores disponibles en Argentina
+              +500 proveedores disponibles en Uruguay
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
               Tu evento perfecto{' '}
@@ -193,9 +193,9 @@ export default function HomePage() {
               Cómo funciona
             </Link>
           </div>
-          <div className="flex justify-center gap-8 mt-8">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-8 mt-8">
             {[['✓', 'Gratis para empezar'], ['✓', 'Panel de gestión incluido'], ['✓', 'Soporte en español']].map(([check, text]) => (
-              <div key={text} className="flex items-center gap-1.5 text-sm text-gray-400">
+              <div key={text} className="flex items-center justify-center gap-1.5 text-sm text-gray-400">
                 <span className="text-green-400 font-bold">{check}</span> {text}
               </div>
             ))}

@@ -143,7 +143,7 @@ export default function BookingWizard({ provider }) {
       {step === 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Datos del evento</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha *</label>
               <input type="date" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" value={eventData.date} onChange={(e) => setEventData({ ...eventData, date: e.target.value })} min={new Date().toISOString().split('T')[0]} />
@@ -157,10 +157,10 @@ export default function BookingWizard({ provider }) {
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Ubicación del evento *</label>
             <div className="relative">
               <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Ej: Salón Crystal, Av. Santa Fe 1234, CABA" value={eventData.location} onChange={(e) => setEventData({ ...eventData, location: e.target.value })} />
+              <input className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Ej: Salón Crystal, Av. 18 de Julio, Montevideo" value={eventData.location} onChange={(e) => setEventData({ ...eventData, location: e.target.value })} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipo de evento *</label>
               <select className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white" value={eventData.eventType} onChange={(e) => setEventData({ ...eventData, eventType: e.target.value })}>
@@ -195,7 +195,7 @@ export default function BookingWizard({ provider }) {
                       <input type="checkbox" checked={packageData.extras.includes(ex.id)} onChange={() => toggleExtra(ex.id)} className="w-4 h-4 accent-primary" />
                       <span className="text-sm font-medium text-gray-800">{ex.name}</span>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900">+${ex.price.toLocaleString('es-AR')}{ex.priceUnit ? ` ${ex.priceUnit}` : ''}</span>
+                    <span className="text-sm font-semibold text-gray-900">+${ex.price.toLocaleString('es-UY')}{ex.priceUnit ? ` ${ex.priceUnit}` : ''}</span>
                   </label>
                 ))}
               </div>
@@ -212,10 +212,10 @@ export default function BookingWizard({ provider }) {
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre completo *</label>
             <input className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Tu nombre completo" value={contactData.name} onChange={(e) => setContactData({ ...contactData, name: e.target.value })} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Teléfono *</label>
-              <input type="tel" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="+54 9 11..." value={contactData.phone} onChange={(e) => setContactData({ ...contactData, phone: e.target.value })} />
+              <input type="tel" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="+598 9..." value={contactData.phone} onChange={(e) => setContactData({ ...contactData, phone: e.target.value })} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Email *</label>
@@ -240,18 +240,18 @@ export default function BookingWizard({ provider }) {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Paquete</span>
-              <span className="font-medium text-gray-900">{selectedPkg?.name} — ${selectedPkg?.price.toLocaleString('es-AR')}</span>
+              <span className="font-medium text-gray-900">{selectedPkg?.name} — ${selectedPkg?.price.toLocaleString('es-UY')}</span>
             </div>
             {packageData.extras.length > 0 && (
               <div className="flex justify-between">
                 <span className="text-gray-500">Extras</span>
-                <span className="font-medium text-gray-900">+${extrasTotal.toLocaleString('es-AR')}</span>
+                <span className="font-medium text-gray-900">+${extrasTotal.toLocaleString('es-UY')}</span>
               </div>
             )}
             <div className="h-px bg-gray-200" />
             <div className="flex justify-between">
               <span className="text-gray-500">Fecha</span>
-              <span className="font-medium text-gray-900">{new Date(eventData.date + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })} – {eventData.time}hs</span>
+              <span className="font-medium text-gray-900">{new Date(eventData.date + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'long', year: 'numeric' })} – {eventData.time}hs</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Tipo de evento</span>
@@ -268,11 +268,11 @@ export default function BookingWizard({ provider }) {
             <div className="h-px bg-gray-200" />
             <div className="flex justify-between text-base">
               <span className="font-semibold text-gray-800">Total estimado</span>
-              <span className="font-bold text-primary">${totalEstimated.toLocaleString('es-AR')}</span>
+              <span className="font-bold text-primary">${totalEstimated.toLocaleString('es-UY')}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Seña sugerida (30%)</span>
-              <span className="font-semibold text-gray-800">${Math.round(totalEstimated * 0.3).toLocaleString('es-AR')}</span>
+              <span className="font-semibold text-gray-800">${Math.round(totalEstimated * 0.3).toLocaleString('es-UY')}</span>
             </div>
           </div>
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">

@@ -157,7 +157,7 @@ function RegistroContent() {
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Teléfono</label>
                   <div className="relative">
                     <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input type="tel" className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="+54 9 11..." value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                    <input type="tel" className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="+598 9..." value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                   </div>
                 </div>
                 <div>

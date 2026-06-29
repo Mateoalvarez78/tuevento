@@ -1,8 +1,7 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/lib/AppContext";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import ConditionalNav from "@/components/ConditionalNav";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,9 +21,9 @@ export default function RootLayout({ children }) {
     <html lang="es" className={inter.variable}>
       <body className="min-h-screen flex flex-col bg-white antialiased">
         <AppProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <ConditionalNav>
+            <main className="flex-1">{children}</main>
+          </ConditionalNav>
         </AppProvider>
       </body>
     </html>

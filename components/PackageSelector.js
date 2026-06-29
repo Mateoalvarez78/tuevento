@@ -38,7 +38,7 @@ export default function PackageSelector({ packages, selectedId, onSelect }) {
 
             <div className="mb-2">
               <span className={`text-2xl font-bold ${selected ? 'text-primary' : 'text-gray-900'}`}>
-                ${pkg.price.toLocaleString('es-AR')}
+                ${pkg.price.toLocaleString('es-UY')}
               </span>
               {pkg.priceUnit && (
                 <span className="text-xs text-gray-500 ml-1">{pkg.priceUnit}</span>

@@ -23,17 +23,23 @@ export default function LoginPage() {
     setLoading(false);
     if (result.success) {
       showToast(`¡Bienvenido/a, ${result.user.name.split(' ')[0]}!`, 'success');
-      router.push(result.user.role === 'provider' ? '/dashboard/proveedor' : '/dashboard/cliente');
+      const dest =
+        result.user.role === 'admin'    ? '/admin' :
+        result.user.role === 'provider' ? '/dashboard/proveedor' :
+                                          '/dashboard/cliente';
+      router.push(dest);
     } else {
       setError(result.error);
     }
   };
 
   const loginDemo = (role) => {
-    const credentials = role === 'client'
-      ? { email: 'valentina@example.com', password: '123456' }
-      : { email: 'mateo@example.com', password: '123456' };
-    setForm(credentials);
+    const map = {
+      client:   { email: 'valentina@example.com',   password: '123456'  },
+      provider: { email: 'mateo@example.com',        password: '123456'  },
+      admin:    { email: 'admin@tuevento.com.uy',    password: 'admin123' },
+    };
+    setForm(map[role] || map.client);
   };
 
   return (
@@ -92,6 +98,9 @@ export default function LoginPage() {
               </button>
               <button onClick={() => loginDemo('provider')} className="flex-1 text-xs font-medium text-primary border border-primary/30 py-2 rounded-xl hover:bg-primary hover:text-white transition-colors">
                 Ingresar como proveedor
+              </button>
+              <button onClick={() => loginDemo('admin')} className="flex-1 text-xs font-medium text-primary border border-primary/30 py-2 rounded-xl hover:bg-primary hover:text-white transition-colors">
+                Ingresar como admin
               </button>
             </div>
           </div>

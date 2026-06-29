@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { X, SlidersHorizontal } from 'lucide-react';
 import { CATEGORIES } from '@/lib/mockData';
 
-const ZONES = ['CABA', 'GBA Norte', 'GBA Sur', 'GBA Oeste', 'Interior del país'];
+const ZONES = ['Montevideo', 'Canelones', 'Maldonado', 'Interior del país'];
 const EVENT_TYPES = ['Cumpleaños', 'Casamiento', 'Empresarial', 'Infantil', 'Fiesta privada'];
 const RATINGS = [5, 4, 3];
 
@@ -53,7 +53,7 @@ export default function FilterSidebar({ filters, onChange, mobileOpen, onMobileC
         />
         <div className="flex justify-between text-xs text-gray-500">
           <span>$10.000</span>
-          <span className="font-semibold text-primary">${(filters.maxPrice || 200000).toLocaleString('es-AR')}</span>
+          <span className="font-semibold text-primary">${(filters.maxPrice || 200000).toLocaleString('es-UY')}</span>
           <span>$200.000+</span>
         </div>
       </div>

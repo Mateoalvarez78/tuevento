@@ -178,7 +178,7 @@ export default function ProviderDetailPage({ params }) {
                   {provider.extras.map((ex) => (
                     <div key={ex.id} className="flex justify-between items-center p-3 rounded-xl border border-gray-100 bg-gray-50">
                       <span className="text-sm text-gray-700">{ex.name}</span>
-                      <span className="text-sm font-semibold text-gray-900">+${ex.price.toLocaleString('es-AR')}{ex.priceUnit ? ` ${ex.priceUnit}` : ''}</span>
+                      <span className="text-sm font-semibold text-gray-900">+${ex.price.toLocaleString('es-UY')}{ex.priceUnit ? ` ${ex.priceUnit}` : ''}</span>
                     </div>
                   ))}
                 </div>
@@ -259,7 +259,7 @@ export default function ProviderDetailPage({ params }) {
               <div className="mb-4">
                 <div className="text-xs text-gray-400 mb-0.5">Precio desde</div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-gray-900">${selectedPkg.price.toLocaleString('es-AR')}</span>
+                  <span className="text-3xl font-extrabold text-gray-900">${selectedPkg.price.toLocaleString('es-UY')}</span>
                   {selectedPkg.priceUnit && <span className="text-sm text-gray-500">{selectedPkg.priceUnit}</span>}
                 </div>
                 <div className="text-xs text-green-600 font-medium mt-1">Paquete {selectedPkg.name} seleccionado</div>
@@ -325,7 +325,7 @@ export default function ProviderDetailPage({ params }) {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 flex items-center justify-between gap-3 shadow-sticky z-30">
         <div>
           <div className="text-xs text-gray-400">desde</div>
-          <div className="font-extrabold text-gray-900">${selectedPkg.price.toLocaleString('es-AR')}</div>
+          <div className="font-extrabold text-gray-900">${selectedPkg.price.toLocaleString('es-UY')}</div>
         </div>
         <button
           onClick={() => router.push(`/reservar?providerId=${provider.id}&packageId=${selectedPackageId}`)}

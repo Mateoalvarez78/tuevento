@@ -8,7 +8,7 @@ import ServiceCard from '@/components/ServiceCard';
 import SkeletonCard from '@/components/SkeletonCard';
 import EmptyState from '@/components/EmptyState';
 import SearchBar from '@/components/SearchBar';
-import { PROVIDERS, filterProviders } from '@/lib/mockData';
+import { providerService } from '@/services/providerService';
 
 const SORT_OPTIONS = [
   { value: 'recommended', label: 'Recomendados' },
@@ -59,7 +59,7 @@ function CatalogoContent() {
   }, [searchParams]);
 
   const filtered = useMemo(() => {
-    let result = filterProviders(filters);
+    let result = providerService.getAll(filters);
     if (sort === 'rating') result = [...result].sort((a, b) => b.rating - a.rating);
     else if (sort === 'price_asc') result = [...result].sort((a, b) => a.priceFrom - b.priceFrom);
     else if (sort === 'most_booked') result = [...result].sort((a, b) => b.totalBookings - a.totalBookings);

@@ -65,7 +65,7 @@ export default function SearchBar({ className = '', variant = 'hero' }) {
           <label className="block text-xs font-semibold text-gray-500 mb-0.5">Zona / Ubicación</label>
           <input
             className="w-full text-sm text-gray-800 bg-transparent outline-none placeholder:text-gray-400"
-            placeholder="CABA, GBA Norte..."
+            placeholder="Montevideo, Canelones..."
             value={form.zone}
             onChange={(e) => setForm({ ...form, zone: e.target.value })}
           />

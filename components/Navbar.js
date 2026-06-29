@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
-import { Menu, X, Heart, Calendar, ChevronDown, LogOut, User, LayoutDashboard } from 'lucide-react';
+import { Menu, X, Heart, Calendar, ChevronDown, LogOut, User, LayoutDashboard, ShieldCheck } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -83,14 +83,25 @@ export default function Navbar() {
                         <p className="text-sm font-semibold text-gray-900">{user.name}</p>
                         <p className="text-xs text-gray-500">{user.email}</p>
                       </div>
-                      <Link
-                        href={user.role === 'provider' ? '/dashboard/proveedor' : '/dashboard/cliente'}
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        <LayoutDashboard size={16} />
-                        Mi panel
-                      </Link>
+                      {user.role === 'admin' ? (
+                        <Link
+                          href="/admin"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <ShieldCheck size={16} />
+                          Panel Admin
+                        </Link>
+                      ) : (
+                        <Link
+                          href={user.role === 'provider' ? '/dashboard/proveedor' : '/dashboard/cliente'}
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <LayoutDashboard size={16} />
+                          Mi panel
+                        </Link>
+                      )}
                       <Link
                         href="/dashboard/cliente"
                         onClick={() => setUserMenuOpen(false)}
@@ -176,7 +187,13 @@ export default function Navbar() {
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                 </div>
-                <Link href={user.role === 'provider' ? '/dashboard/proveedor' : '/dashboard/cliente'} onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">Mi panel</Link>
+                <Link
+                  href={user.role === 'admin' ? '/admin' : user.role === 'provider' ? '/dashboard/proveedor' : '/dashboard/cliente'}
+                  onClick={() => setMobileOpen(false)}
+                  className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl"
+                >
+                  {user.role === 'admin' ? 'Panel Admin' : 'Mi panel'}
+                </Link>
                 <button onClick={() => { logout(); setMobileOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl">Cerrar sesión</button>
               </>
             ) : (

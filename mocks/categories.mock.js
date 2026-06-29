@@ -1,0 +1,17 @@
+export const CATEGORIES = [
+  { id: 'catering',      label: 'Catering',          icon: '🍽️',  count: 48 },
+  { id: 'dj',            label: 'DJ & Música',        icon: '🎧',  count: 32 },
+  { id: 'fotografia',    label: 'Fotografía',         icon: '📷',  count: 56 },
+  { id: 'video',         label: 'Video & Cine',       icon: '🎬',  count: 21 },
+  { id: 'decoracion',    label: 'Decoración',         icon: '🎀',  count: 39 },
+  { id: 'animacion',     label: 'Animación',          icon: '🎪',  count: 24 },
+  { id: 'barra',         label: 'Barra de Tragos',    icon: '🍹',  count: 19 },
+  { id: 'sonido',        label: 'Sonido & Luces',     icon: '💡',  count: 28 },
+  { id: 'parrilla',      label: 'Parrilla',           icon: '🥩',  count: 22 },
+  { id: 'pizza',         label: 'Pizzas',             icon: '🍕',  count: 17 },
+  { id: 'castillo',      label: 'Castillos',          icon: '🏰',  count: 14 },
+  { id: 'mozos',         label: 'Mozos',              icon: '🤵',  count: 31 },
+  { id: 'musica_vivo',   label: 'Música en Vivo',     icon: '🎸',  count: 15 },
+  { id: 'cabina_fotos',  label: 'Cabina de Fotos',    icon: '📸',  count: 12 },
+  { id: 'seguridad',     label: 'Seguridad',          icon: '🛡️',  count: 8  },
+];

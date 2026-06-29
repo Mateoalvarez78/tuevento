@@ -62,7 +62,7 @@ export default function ServiceCard({ provider, layout = 'grid' }) {
                 </div>
                 <div className="text-right shrink-0">
                   <div className="text-xs text-gray-500">desde</div>
-                  <div className="font-bold text-gray-900">${provider.priceFrom.toLocaleString('es-AR')}</div>
+                  <div className="font-bold text-gray-900">${provider.priceFrom.toLocaleString('es-UY')}</div>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 mb-2">
@@ -162,7 +162,7 @@ export default function ServiceCard({ provider, layout = 'grid' }) {
           <div className="mt-auto flex items-center justify-between">
             <div>
               <span className="text-xs text-gray-400">desde</span>
-              <div className="font-bold text-gray-900">${provider.priceFrom.toLocaleString('es-AR')}</div>
+              <div className="font-bold text-gray-900">${provider.priceFrom.toLocaleString('es-UY')}</div>
             </div>
             <span className="text-xs font-semibold text-primary border border-primary/30 bg-primary-light px-3 py-1.5 rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
               Ver detalle
