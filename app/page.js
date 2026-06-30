@@ -1,69 +1,119 @@
 import Link from 'next/link';
-import { ArrowRight, Shield, Star, Zap, Users, CalendarCheck, HeartHandshake, Award, Search } from 'lucide-react';
+import { ArrowRight, Star, Search, Users, CalendarCheck } from 'lucide-react';
 import SearchBar from '@/components/SearchBar';
 import CategoryCard from '@/components/CategoryCard';
 import ServiceCard from '@/components/ServiceCard';
 import { CATEGORIES, PROVIDERS } from '@/lib/mockData';
 
 export const metadata = {
-  title: 'TuEvento – Encontrá los mejores servicios para tu evento',
+  title: 'TuEvento – Encontrá los mejores servicios para tu evento en Uruguay',
+  description: 'El marketplace líder de Uruguay para contratar proveedores de eventos. Catering, DJ, fotografía, decoración y más.',
 };
 
 const STATS = [
-  { value: '500+', label: 'Proveedores verificados' },
-  { value: '15K+', label: 'Eventos realizados' },
-  { value: '4.9★', label: 'Rating promedio' },
-  { value: '48 hs', label: 'Tiempo de respuesta' },
+  { value: '500+', label: 'Proveedores' },
+  { value: '15K+', label: 'Eventos' },
+  { value: '4.9★', label: 'Rating' },
+  { value: '2 hs', label: 'Respuesta' },
 ];
 
 const HOW_IT_WORKS = [
-  { icon: Search, step: '01', title: 'Buscá el servicio', desc: 'Filtrá por categoría, zona, fecha y cantidad de invitados para encontrar lo que necesitás.' },
-  { icon: Users, step: '02', title: 'Compará proveedores', desc: 'Revisá portfolios, paquetes, precios, reseñas y elegí el mejor para tu evento.' },
-  { icon: CalendarCheck, step: '03', title: 'Consultá disponibilidad', desc: 'Completá el formulario con los datos de tu evento y enviá la solicitud.' },
-  { icon: HeartHandshake, step: '04', title: 'Confirmá tu reserva', desc: 'El proveedor acepta, coordinan el pago y tu evento queda asegurado.' },
+  {
+    Icon: Search,
+    title: 'Buscá y descubrí',
+    desc: 'Filtrá por categoría, zona y fecha para encontrar el proveedor ideal para tu evento.',
+  },
+  {
+    Icon: Users,
+    title: 'Compará y consultá',
+    desc: 'Revisá portfolios, paquetes y reseñas reales. Enviá tu solicitud en segundos.',
+  },
+  {
+    Icon: CalendarCheck,
+    title: 'Reservá y disfrutá',
+    desc: 'El proveedor confirma, coordinan el pago y tu evento queda asegurado.',
+  },
 ];
 
-const TRUST = [
-  { icon: Shield, title: 'Proveedores verificados', desc: 'Revisamos identidad, trayectoria y documentación de cada proveedor.' },
-  { icon: Star, title: 'Reseñas reales', desc: 'Solo clientes que contrataron el servicio pueden dejar una reseña.' },
-  { icon: Award, title: 'Garantía de calidad', desc: 'Si algo no sale como acordado, te ayudamos a resolverlo.' },
-  { icon: Zap, title: 'Respuesta rápida', desc: 'La mayoría de los proveedores responden en menos de 2 horas.' },
+const TESTIMONIALS = [
+  {
+    stars: 5,
+    text: 'Encontré el DJ perfecto para mi casamiento en menos de una hora. El proceso fue increíblemente sencillo y el proveedor respondió enseguida.',
+    name: 'María Pérez',
+    role: 'Boda · Montevideo',
+    avatar: 'https://i.pravatar.cc/40?img=47',
+  },
+  {
+    stars: 5,
+    text: 'Organizamos un evento corporativo para 200 personas. TuEvento nos conectó con un catering espectacular. Todo salió perfecto.',
+    name: 'Ariel Ruiz',
+    role: 'Evento Corporativo · Canelones',
+    avatar: 'https://i.pravatar.cc/40?img=51',
+  },
+  {
+    stars: 5,
+    text: 'Los proveedores están muy bien filtrados y verificados. Quedé muy conforme con la fotógrafa que contraté para el cumple de mi hija.',
+    name: 'Flavia Soto',
+    role: 'Cumpleaños · Maldonado',
+    avatar: 'https://i.pravatar.cc/40?img=43',
+  },
 ];
+
+const QUICK_TAGS = ['Catering', 'DJ', 'Fotografía', 'Decoración', 'Animación', 'Parrilla'];
 
 export default function HomePage() {
-  const featured = PROVIDERS.filter((p) => p.badges.includes('top') || p.badges.includes('popular')).slice(0, 4);
+  const featured = PROVIDERS.filter(
+    (p) => p.badges.includes('top') || p.badges.includes('popular'),
+  ).slice(0, 4);
 
   return (
     <>
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="relative min-h-[620px] flex items-center overflow-hidden">
+      {/* ── HERO ───────────────────────────────────────────────────────── */}
+      <section className="relative min-h-[620px] sm:min-h-[700px] flex items-center overflow-hidden">
+        {/* Background */}
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=1600&q=80"
+            src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1600&q=80"
             alt="Evento"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-950/95 via-gray-900/75 to-gray-800/30" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20">
-          <div className="max-w-2xl mb-10">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-medium px-4 py-2 rounded-full mb-6">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              +500 proveedores disponibles en Uruguay
+        {/* Decorative glow */}
+        <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
+          {/* Headline block — ancho restringido para legibilidad */}
+          <div className="max-w-3xl mb-10">
+            {/* Trust badge */}
+            <div className="inline-flex items-center gap-2.5 bg-white/10 backdrop-blur-md border border-white/20 text-white/90 text-xs sm:text-sm font-medium px-4 py-2 rounded-full mb-7">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
+              +500 proveedores verificados en Uruguay
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
-              Tu evento perfecto{' '}
-              <span className="gradient-text">comienza aquí</span>
+
+            {/* Headline */}
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.75rem] font-extrabold text-white leading-[1.1] tracking-tight mb-5">
+              Crea eventos{' '}
+              <span className="gradient-text">inolvidables</span>,<br className="hidden sm:block" />
+              sin complicaciones.
             </h1>
-            <p className="text-lg text-gray-300 leading-relaxed">
-              Encontrá y reservá los mejores proveedores de servicios para eventos: catering, DJ, fotografía, decoración y mucho más.
+            <p className="text-base sm:text-lg text-gray-300 max-w-xl leading-relaxed">
+              Conectá con los mejores proveedores de Uruguay: catering, DJ, fotografía, decoración y mucho más.
             </p>
           </div>
-          <SearchBar className="w-full max-w-4xl" />
-          <div className="flex flex-wrap gap-2 mt-5">
-            {['Catering', 'DJ', 'Fotografía', 'Decoración', 'Parrilla'].map((t) => (
-              <Link key={t} href={`/catalogo?q=${t}`} className="text-sm text-white/80 border border-white/30 hover:border-white hover:bg-white/10 px-3 py-1.5 rounded-full transition-all">
+
+          {/* Search — ancho completo hasta max-w-5xl */}
+          <SearchBar className="w-full max-w-5xl" />
+
+          {/* Quick tags */}
+          <div className="flex flex-wrap gap-2 mt-5 max-w-5xl">
+            {QUICK_TAGS.map((t) => (
+              <Link
+                key={t}
+                href={`/catalogo?q=${t}`}
+                className="text-xs sm:text-sm text-white/70 border border-white/20 hover:border-white/60 hover:bg-white/10 hover:text-white px-3.5 py-1.5 rounded-full transition-all"
+              >
                 {t}
               </Link>
             ))}
@@ -71,132 +121,217 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Stats ─────────────────────────────────────────────────────────── */}
+      {/* ── STATS BAR ──────────────────────────────────────────────────── */}
       <section className="bg-primary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 divide-x divide-white/20">
             {STATS.map((s) => (
-              <div key={s.label} className="text-center">
-                <div className="text-2xl font-extrabold text-white">{s.value}</div>
-                <div className="text-sm text-white/75">{s.label}</div>
+              <div key={s.label} className="text-center py-1 sm:py-2">
+                <div className="text-2xl sm:text-3xl font-extrabold text-white">{s.value}</div>
+                <div className="text-xs sm:text-sm text-white/70 mt-0.5">{s.label}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Categories ────────────────────────────────────────────────────── */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="flex items-end justify-between mb-8">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Explorá por categoría</h2>
-            <p className="text-gray-500 mt-1">Más de 12 tipos de servicios para tu evento</p>
-          </div>
-          <Link href="/catalogo" className="text-sm font-semibold text-primary hover:underline hidden sm:flex items-center gap-1">
-            Ver todos <ArrowRight size={14} />
-          </Link>
-        </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-          {CATEGORIES.map((cat) => (
-            <CategoryCard key={cat.id} category={cat} />
-          ))}
-        </div>
-      </section>
-
-      {/* ── Featured providers ────────────────────────────────────────────── */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="flex items-end justify-between mb-8">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Proveedores destacados</h2>
-            <p className="text-gray-500 mt-1">Los más reservados y mejor puntuados</p>
-          </div>
-          <Link href="/catalogo" className="text-sm font-semibold text-primary hover:underline hidden sm:flex items-center gap-1">
-            Ver todos <ArrowRight size={14} />
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {featured.map((p) => (
-            <ServiceCard key={p.id} provider={p} />
-          ))}
-        </div>
-        <div className="text-center mt-8">
-          <Link href="/catalogo" className="inline-flex items-center gap-2 border-2 border-primary text-primary font-semibold px-6 py-3 rounded-xl hover:bg-primary hover:text-white transition-colors">
-            Ver todos los proveedores <ArrowRight size={16} />
-          </Link>
-        </div>
-      </section>
-
-      {/* ── How it works ──────────────────────────────────────────────────── */}
-      <section id="como-funciona" className="py-20 bg-surface px-4 sm:px-6 lg:px-8">
+      {/* ── CATEGORIES ─────────────────────────────────────────────────── */}
+      <section className="py-14 sm:py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">¿Cómo funciona TuEvento?</h2>
-            <p className="text-gray-500 max-w-xl mx-auto">En 4 simples pasos, tu evento queda organizado con los mejores proveedores.</p>
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1.5">Categorías</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Explorá por tipo de servicio</h2>
+            </div>
+            <Link
+              href="/catalogo"
+              className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-dark transition-colors"
+            >
+              Ver todos <ArrowRight size={14} />
+            </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {HOW_IT_WORKS.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.step} className="relative bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                  <div className="absolute -top-3 left-6">
-                    <span className="bg-primary text-white text-xs font-bold px-2.5 py-1 rounded-full">{item.step}</span>
-                  </div>
-                  <div className="w-12 h-12 rounded-2xl bg-primary-light flex items-center justify-center mb-4 mt-2">
-                    <Icon size={22} className="text-primary" />
-                  </div>
-                  <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 gap-2.5 sm:gap-3">
+            {CATEGORIES.slice(0, 8).map((cat) => (
+              <CategoryCard key={cat.id} category={cat} />
+            ))}
+          </div>
+          <div className="flex justify-center mt-6 sm:hidden">
+            <Link
+              href="/catalogo"
+              className="text-sm font-semibold text-primary border border-primary/30 px-5 py-2.5 rounded-xl hover:bg-primary-light transition-colors"
+            >
+              Ver todas las categorías
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* ── Trust ─────────────────────────────────────────────────────────── */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">Por qué elegir TuEvento</h2>
-          <p className="text-gray-500 max-w-xl mx-auto">Tu tranquilidad es nuestra prioridad en cada evento.</p>
+      {/* ── FEATURED PROVIDERS ─────────────────────────────────────────── */}
+      <section className="py-14 sm:py-16 bg-surface">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1.5">Destacados</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Proveedores top del mes</h2>
+              <p className="text-gray-500 mt-1.5 text-sm">Los más reservados y mejor puntuados de Uruguay</p>
+            </div>
+            <Link
+              href="/catalogo"
+              className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-dark transition-colors"
+            >
+              Ver todos <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {featured.map((p) => (
+              <ServiceCard key={p.id} provider={p} />
+            ))}
+          </div>
+
+          <div className="flex justify-center mt-10">
+            <Link
+              href="/catalogo"
+              className="inline-flex items-center gap-2 border-2 border-primary text-primary font-semibold px-7 py-3 rounded-xl hover:bg-primary hover:text-white transition-colors text-sm"
+            >
+              Ver todos los proveedores <ArrowRight size={15} />
+            </Link>
+          </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {TRUST.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div key={item.title} className="flex flex-col items-start gap-3 p-5 rounded-2xl border border-gray-100 hover:border-primary/30 hover:bg-primary-light/30 transition-all">
-                <div className="w-11 h-11 rounded-xl bg-primary-light flex items-center justify-center">
-                  <Icon size={20} className="text-primary" />
+      </section>
+
+      {/* ── HOW IT WORKS ───────────────────────────────────────────────── */}
+      <section id="como-funciona" className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14 sm:mb-16">
+            <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1.5">Proceso</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">¿Cómo funciona TuEvento?</h2>
+            <p className="text-gray-500 max-w-sm mx-auto text-sm">
+              Tres simples pasos para que tu evento sea perfecto.
+            </p>
+          </div>
+
+          {/* Steps — desktop: row with connector lines; mobile: vertical */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-4">
+            {HOW_IT_WORKS.map(({ Icon, title, desc }, i) => (
+              <div key={title} className="relative flex flex-col items-center text-center">
+                {/* Left connector (desktop) */}
+                {i > 0 && (
+                  <div className="hidden sm:block absolute top-10 right-[calc(50%+44px)] w-[calc(100%-88px)] h-0.5 bg-gradient-to-l from-primary/40 via-primary/20 to-transparent" />
+                )}
+                {/* Right connector (desktop) */}
+                {i < HOW_IT_WORKS.length - 1 && (
+                  <div className="hidden sm:block absolute top-10 left-[calc(50%+44px)] w-[calc(100%-88px)] h-0.5 bg-gradient-to-r from-primary/40 via-primary/20 to-transparent" />
+                )}
+
+                {/* Circle + step number */}
+                <div className="relative mb-5">
+                  <div className="w-20 h-20 rounded-full bg-primary shadow-lg shadow-primary/30 flex items-center justify-center">
+                    <Icon size={28} className="text-white" strokeWidth={2} />
+                  </div>
+                  <div className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-white border-2 border-primary rounded-full flex items-center justify-center shadow-sm">
+                    <span className="text-[10px] font-extrabold text-primary leading-none">{i + 1}</span>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 mb-1">{item.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
+
+                <h3 className="font-bold text-gray-900 text-base mb-2">{title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed max-w-[240px] sm:max-w-none">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ───────────────────────────────────────────────── */}
+      <section className="py-16 sm:py-20 bg-primary">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+              La confianza de miles de organizadores
+            </h2>
+            <p className="text-white/70 text-sm">Experiencias reales de quienes confiaron en TuEvento</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-12">
+            {TESTIMONIALS.map((t, i) => (
+              <div
+                key={i}
+                className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 flex flex-col"
+              >
+                {/* Stars */}
+                <div className="flex gap-0.5 mb-4">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star key={s} size={14} className="text-yellow-400 fill-current" />
+                  ))}
+                </div>
+                {/* Quote */}
+                <p className="text-white/90 text-sm leading-relaxed flex-1 mb-5 italic">
+                  "{t.text}"
+                </p>
+                {/* Author */}
+                <div className="flex items-center gap-3">
+                  <img
+                    src={t.avatar}
+                    alt={t.name}
+                    className="w-9 h-9 rounded-full object-cover ring-2 ring-white/30"
+                  />
+                  <div>
+                    <div className="text-white font-semibold text-sm leading-tight">{t.name}</div>
+                    <div className="text-white/60 text-xs">{t.role}</div>
+                  </div>
                 </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
+
+          {/* Payment logos */}
+          <div className="border-t border-white/20 pt-8 flex flex-wrap items-center justify-center gap-4 sm:gap-10">
+            <span className="text-white/50 text-xs font-semibold uppercase tracking-wider w-full sm:w-auto text-center">
+              Pagos seguros con
+            </span>
+            {['VISA', 'Mastercard', 'Stripe', 'Norton Secured'].map((logo) => (
+              <span key={logo} className="text-white/80 font-bold text-sm sm:text-base tracking-wide">
+                {logo}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* ── Provider CTA ──────────────────────────────────────────────────── */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-900">
-        <div className="max-w-4xl mx-auto text-center">
+      {/* ── PROVIDER CTA ───────────────────────────────────────────────── */}
+      <section className="py-16 sm:py-20 bg-gray-950">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="text-5xl mb-5">🎉</div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">¿Ofrecés servicios para eventos?</h2>
-          <p className="text-gray-400 mb-8 max-w-2xl mx-auto text-base leading-relaxed">
-            Unite a más de 500 proveedores verificados y conectá con miles de clientes que buscan tus servicios. Sin suscripción mensual para empezar.
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+            ¿Ofrecés servicios para eventos?
+          </h2>
+          <p className="text-gray-400 mb-8 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
+            Unite a más de 500 proveedores verificados y conectá con miles de clientes que buscan
+            tus servicios. Sin suscripción mensual para empezar.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/registro?tipo=proveedor" className="inline-flex items-center justify-center gap-2 bg-primary text-white font-bold px-8 py-4 rounded-xl hover:bg-primary-dark transition-colors text-base">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
+            <Link
+              href="/proveedor/registro"
+              className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold px-8 py-4 rounded-xl transition-colors text-sm sm:text-base shadow-lg shadow-primary/30"
+            >
               Publicar mi servicio gratis <ArrowRight size={18} />
             </Link>
-            <Link href="/#como-funciona" className="inline-flex items-center justify-center gap-2 border border-gray-600 text-gray-300 hover:text-white hover:border-gray-400 font-semibold px-8 py-4 rounded-xl transition-colors text-base">
+            <Link
+              href="/#como-funciona"
+              className="inline-flex items-center justify-center gap-2 border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 font-semibold px-8 py-4 rounded-xl transition-colors text-sm sm:text-base"
+            >
               Cómo funciona
             </Link>
           </div>
-          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-8 mt-8">
-            {[['✓', 'Gratis para empezar'], ['✓', 'Panel de gestión incluido'], ['✓', 'Soporte en español']].map(([check, text]) => (
-              <div key={text} className="flex items-center justify-center gap-1.5 text-sm text-gray-400">
-                <span className="text-green-400 font-bold">{check}</span> {text}
+          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-8">
+            {[
+              ['✓', 'Gratis para empezar'],
+              ['✓', 'Panel de gestión incluido'],
+              ['✓', 'Soporte en español'],
+            ].map(([check, text]) => (
+              <div key={text} className="flex items-center justify-center gap-1.5 text-sm text-gray-500">
+                <span className="text-green-500 font-bold">{check}</span>
+                {text}
               </div>
             ))}
           </div>

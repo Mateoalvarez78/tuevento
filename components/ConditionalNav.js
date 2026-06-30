@@ -11,12 +11,15 @@ import Footer from './Footer';
 export default function ConditionalNav({ children }) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith('/admin');
+  const isProviderDashboard = pathname?.startsWith('/dashboard/proveedor');
+
+  const hideChrome = isAdmin || isProviderDashboard;
 
   return (
     <>
-      {!isAdmin && <Navbar />}
+      {!hideChrome && <Navbar />}
       {children}
-      {!isAdmin && <Footer />}
+      {!hideChrome && <Footer />}
     </>
   );
 }

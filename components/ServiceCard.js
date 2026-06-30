@@ -41,11 +41,12 @@ export default function ServiceCard({ provider, layout = 'grid' }) {
     return (
       <Link href={`/proveedor/${provider.id}`} className="group block">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-card hover:shadow-card-hover transition-all duration-200 overflow-hidden flex gap-0">
-          <div className="relative w-48 shrink-0">
+          <div className="relative w-48 shrink-0 bg-gray-100">
             <img
               src={provider.images[0]}
               alt={provider.name}
               className="w-full h-full object-cover"
+              onError={(e) => { e.currentTarget.style.opacity = '0'; }}
             />
             <button onClick={handleFav} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
               <Heart size={16} className={fav ? 'fill-primary text-primary' : 'text-gray-500'} />
@@ -100,11 +101,12 @@ export default function ServiceCard({ provider, layout = 'grid' }) {
     <Link href={`/proveedor/${provider.id}`} className="group block">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-card hover:shadow-card-hover transition-all duration-200 overflow-hidden h-full flex flex-col">
         {/* Image */}
-        <div className="relative overflow-hidden h-52">
+        <div className="relative overflow-hidden h-52 bg-gray-100">
           <img
             src={provider.images[0]}
             alt={provider.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => { e.currentTarget.style.opacity = '0'; }}
           />
           {/* Favorite */}
           <button

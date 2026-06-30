@@ -46,7 +46,7 @@ function RegistroContent() {
       {/* Left */}
       <div className="hidden lg:flex lg:w-1/2 bg-gray-900 relative overflow-hidden flex-col justify-between p-12">
         <img
-          src="https://images.unsplash.com/photo-1414235077428-338989a1e434?w=900&q=80"
+          src="https://picsum.photos/seed/registro-bg/900/600"
           alt="Evento"
           className="absolute inset-0 w-full h-full object-cover opacity-40"
         />
