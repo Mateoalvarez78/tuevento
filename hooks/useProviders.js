@@ -3,64 +3,84 @@
 import { useState, useEffect, useCallback } from 'react';
 import { providerService } from '@/services/providerService';
 
-/**
- * Hook for listing public providers with optional filters.
- * Usage: const { providers, loading } = useProviders({ category, zone, search })
- */
 export function useProviders(filters = {}) {
   const [providers, setProviders] = useState([]);
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const filtersKey = JSON.stringify(filters);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
-    // Future: replace with async fetch
-    const result = providerService.getAll(filters);
-    setProviders(result);
-    setLoading(false);
+    setError(null);
+    providerService.getAll(filters)
+      .then((res) => {
+        if (!cancelled) {
+          setProviders(res.data || []);
+          setPagination(res.pagination || { total: 0, totalPages: 1 });
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err);
+          setLoading(false);
+        }
+      });
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtersKey]);
 
-  return { providers, loading };
+  return { providers, pagination, loading, error };
 }
 
-/**
- * Hook for a single provider profile page.
- * Usage: const { provider, loading } = useProvider(id)
- */
 export function useProvider(id) {
   const [provider, setProvider] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) { setLoading(false); return; }
+    let cancelled = false;
     setLoading(true);
-    setProvider(providerService.getById(id));
-    setLoading(false);
+    setError(null);
+    providerService.getById(id)
+      .then((p) => {
+        if (!cancelled) { setProvider(p); setLoading(false); }
+      })
+      .catch((err) => {
+        if (!cancelled) { setError(err); setLoading(false); }
+      });
+    return () => { cancelled = true; };
   }, [id]);
 
-  return { provider, loading };
+  return { provider, loading, error };
 }
 
-/**
- * Hook for the provider dashboard (own data + services).
- * Usage: const { provider, loading } = useMyProvider(userId)
- */
 export function useMyProvider(userId) {
   const [provider, setProvider] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const reload = useCallback(() => {
-    if (!userId) return;
-    setProvider(providerService.getByUserId(userId));
-    setLoading(false);
+  const reload = useCallback(async () => {
+    if (!userId) { setLoading(false); return; }
+    setLoading(true);
+    setError(null);
+    try {
+      const p = await providerService.getByUserId(userId);
+      setProvider(p);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
 
   useEffect(() => {
-    setLoading(true);
     reload();
   }, [reload]);
 
-  return { provider, loading, reload };
+  return { provider, loading, error, reload };
 }

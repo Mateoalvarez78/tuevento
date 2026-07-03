@@ -1,0 +1,101 @@
+// ─── API CLIENT ───────────────────────────────────────────────────────────────
+// Centralized HTTP client for all backend communication.
+// Handles auth tokens, error normalization, and automatic logout on 401.
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+
+// ── Token management ──────────────────────────────────────────────────────────
+export const tokenStorage = {
+  get: () => (typeof window !== 'undefined' ? localStorage.getItem('te_token') : null),
+  set: (token) => typeof window !== 'undefined' && localStorage.setItem('te_token', token),
+  remove: () => typeof window !== 'undefined' && localStorage.removeItem('te_token'),
+};
+
+// ── Core fetch wrapper ────────────────────────────────────────────────────────
+let _onUnauthorized = null;
+
+export function setUnauthorizedHandler(fn) {
+  _onUnauthorized = fn;
+}
+
+async function request(path, options = {}) {
+  const token = tokenStorage.get();
+  const isFormData = options.body instanceof FormData;
+
+  const headers = {
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...(!isFormData && { 'Content-Type': 'application/json' }),
+    ...options.headers,
+  };
+
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+
+  if (res.status === 401) {
+    tokenStorage.remove();
+    if (typeof window !== 'undefined') localStorage.removeItem('te_user');
+    if (_onUnauthorized) _onUnauthorized();
+    throw new ApiError('Sesión expirada. Por favor iniciá sesión nuevamente.', 401, 'UNAUTHORIZED');
+  }
+
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new ApiError(`Error inesperado del servidor (${res.status})`, res.status);
+  }
+
+  if (!res.ok) {
+    throw new ApiError(data.message || 'Error del servidor', res.status, data.code);
+  }
+
+  return data;
+}
+
+export class ApiError extends Error {
+  constructor(message, status, code) {
+    super(message);
+    this.status = status;
+    this.code = code;
+    this.name = 'ApiError';
+  }
+}
+
+// ── HTTP helpers ──────────────────────────────────────────────────────────────
+export const api = {
+  get: (path) => request(path),
+
+  post: (path, body) =>
+    request(path, {
+      method: 'POST',
+      body: body instanceof FormData ? body : JSON.stringify(body),
+    }),
+
+  put: (path, body) =>
+    request(path, {
+      method: 'PUT',
+      body: body instanceof FormData ? body : JSON.stringify(body),
+    }),
+
+  patch: (path, body) =>
+    request(path, {
+      method: 'PATCH',
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+
+  delete: (path) => request(path, { method: 'DELETE' }),
+
+  upload: (path, formData) =>
+    request(path, { method: 'POST', body: formData }),
+};
+
+// ── Query string builder ──────────────────────────────────────────────────────
+export function buildQuery(params = {}) {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '' && v !== false) {
+      q.set(k, String(v));
+    }
+  });
+  const str = q.toString();
+  return str ? `?${str}` : '';
+}

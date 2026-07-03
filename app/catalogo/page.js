@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect, useMemo } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -38,6 +38,9 @@ function CatalogoContent() {
   const [page, setPage] = useState(1);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [pageItems, setPageItems] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [filters, setFilters] = useState({
     category:  searchParams.get('categoria') || '',
@@ -48,12 +51,6 @@ function CatalogoContent() {
     verified:  false,
     search:    searchParams.get('q') || '',
   });
-
-  useEffect(() => {
-    setLoading(true);
-    const t = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(t);
-  }, [filters]);
 
   useEffect(() => { setPage(1); }, [filters, sort]);
 
@@ -68,16 +65,27 @@ function CatalogoContent() {
 
   const handleFilterChange = (f) => { setFilters(f); setPage(1); };
 
-  const allResults = useMemo(() => {
-    let r = providerService.getAll(filters);
-    if (sort === 'rating')      r = [...r].sort((a, b) => b.rating - a.rating);
-    if (sort === 'price_asc')   r = [...r].sort((a, b) => a.priceFrom - b.priceFrom);
-    if (sort === 'most_booked') r = [...r].sort((a, b) => b.totalBookings - a.totalBookings);
-    return r;
-  }, [filters, sort]);
+  const filtersKey = JSON.stringify({ ...filters, sort, page });
 
-  const totalPages = Math.max(1, Math.ceil(allResults.length / PER_PAGE));
-  const pageItems  = allResults.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    providerService.getAll({ ...filters, sort, page, limit: PER_PAGE })
+      .then((res) => {
+        if (!cancelled) {
+          setPageItems(res.data || []);
+          const p = res.pagination || {};
+          setTotalCount(p.total || 0);
+          setTotalPages(Math.max(1, p.totalPages || 1));
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtersKey]);
 
   const activeCategory = CATEGORIES.find((c) => c.id === filters.category);
   const pageTitle = activeCategory
@@ -161,8 +169,8 @@ function CatalogoContent() {
                     </span>
                   ) : (
                     <>
-                      <span className="font-semibold text-gray-800">{allResults.length}</span>
-                      {' '}resultado{allResults.length !== 1 ? 's' : ''} encontrado{allResults.length !== 1 ? 's' : ''}
+                      <span className="font-semibold text-gray-800">{totalCount}</span>
+                      {' '}resultado{totalCount !== 1 ? 's' : ''} encontrado{totalCount !== 1 ? 's' : ''}
                     </>
                   )}
                 </p>
@@ -281,7 +289,7 @@ function CatalogoContent() {
               >
                 {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
               </div>
-            ) : allResults.length === 0 ? (
+            ) : pageItems.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
                 <EmptyState
                   icon="🔍"

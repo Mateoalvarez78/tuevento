@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
-import { PROVIDERS } from '@/lib/mockData';
+import { bookingService } from '@/services/bookingService';
+import { providerService } from '@/services/providerService';
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import ServiceCard from '@/components/ServiceCard';
 import EmptyState from '@/components/EmptyState';
-import { Calendar, Heart, Clock, User, MessageSquare, LogOut, ChevronRight, MapPin, Star } from 'lucide-react';
+import { Calendar, Heart, Clock, User, MessageSquare, LogOut, MapPin, Star } from 'lucide-react';
 
 const TABS = [
   { id: 'reservas',  label: 'Mis reservas', icon: Calendar      },
@@ -19,9 +20,32 @@ const TABS = [
 
 export default function ClienteDashboard() {
   const router = useRouter();
-  const { user, getUserReservations, favorites, logout, showToast } = useApp();
+  const { user, favorites, logout, showToast } = useApp();
   const [activeTab, setActiveTab] = useState('reservas');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  const [reservations, setReservations] = useState([]);
+  const [loadingRes, setLoadingRes] = useState(true);
+
+  const [favoriteProviders, setFavoriteProviders] = useState([]);
+  const [loadingFavs, setLoadingFavs] = useState(false);
+
+  // Load bookings
+  useEffect(() => {
+    if (!user) return;
+    setLoadingRes(true);
+    bookingService.getByClient(user.id)
+      .then((res) => { setReservations(res.data || []); setLoadingRes(false); })
+      .catch(() => setLoadingRes(false));
+  }, [user]);
+
+  // Load full provider data for favorites
+  useEffect(() => {
+    if (!favorites.length) { setFavoriteProviders([]); return; }
+    setLoadingFavs(true);
+    Promise.all(favorites.map((id) => providerService.getById(id).catch(() => null)))
+      .then((results) => { setFavoriteProviders(results.filter(Boolean)); setLoadingFavs(false); });
+  }, [JSON.stringify(favorites)]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!user) {
     return (
@@ -38,9 +62,7 @@ export default function ClienteDashboard() {
     );
   }
 
-  const reservations = getUserReservations();
   const filteredReservations = statusFilter === 'all' ? reservations : reservations.filter((r) => r.status === statusFilter);
-  const favoriteProviders = PROVIDERS.filter((p) => favorites.includes(p.id));
 
   return (
     <div className="bg-surface min-h-screen">
@@ -168,7 +190,11 @@ export default function ClienteDashboard() {
                   ))}
                 </div>
 
-                {filteredReservations.length === 0 ? (
+                {loadingRes ? (
+                  <div className="space-y-4">
+                    {[1,2,3].map((i) => <div key={i} className="skeleton h-28 w-full rounded-2xl" />)}
+                  </div>
+                ) : filteredReservations.length === 0 ? (
                   <EmptyState icon="📋" title="Sin reservas" description="No tenés reservas en este estado." cta="Explorar servicios" ctaHref="/catalogo" />
                 ) : (
                   <div className="space-y-4">
@@ -187,14 +213,14 @@ export default function ClienteDashboard() {
                             <div className="flex flex-wrap gap-2 sm:gap-3 text-xs text-gray-500 mt-2">
                               <span className="flex items-center gap-1">
                                 <Calendar size={11} />
-                                {new Date(res.date + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                {res.date && new Date(res.date + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'short', year: 'numeric' })}
                                 {res.time && ` – ${res.time}hs`}
                               </span>
-                              <span className="flex items-center gap-1"><MapPin size={11} /> {res.location}</span>
+                              {res.location && <span className="flex items-center gap-1"><MapPin size={11} /> {res.location}</span>}
                             </div>
                             <div className="flex items-center justify-between mt-2 flex-wrap gap-1">
                               <div className="text-sm font-semibold text-gray-800">
-                                Paquete {res.package} · ${res.totalEstimated?.toLocaleString('es-UY')}
+                                {res.packageName && `Paquete ${res.packageName} · `}${res.totalEstimated?.toLocaleString('es-UY')}
                               </div>
                               <span className="text-xs text-gray-400">#{res.requestNumber}</span>
                             </div>
@@ -222,7 +248,11 @@ export default function ClienteDashboard() {
             {activeTab === 'favoritos' && (
               <div>
                 <h2 className="text-lg lg:text-xl font-bold text-gray-900 mb-5">Mis favoritos</h2>
-                {favoriteProviders.length === 0 ? (
+                {loadingFavs ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    {[1,2].map((i) => <div key={i} className="skeleton h-48 w-full rounded-2xl" />)}
+                  </div>
+                ) : favoriteProviders.length === 0 ? (
                   <EmptyState icon="❤️" title="Sin favoritos" description="Guardá proveedores para encontrarlos rápidamente." cta="Explorar servicios" ctaHref="/catalogo" />
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -266,7 +296,9 @@ export default function ClienteDashboard() {
                     <div>
                       <div className="text-lg sm:text-xl font-bold text-gray-900">{user.name}</div>
                       <div className="text-sm text-gray-500">{user.email}</div>
-                      <div className="text-xs text-gray-400 mt-1">Miembro desde {new Date(user.createdAt).toLocaleDateString('es-UY', { month: 'long', year: 'numeric' })}</div>
+                      {user.createdAt && (
+                        <div className="text-xs text-gray-400 mt-1">Miembro desde {new Date(user.createdAt).toLocaleDateString('es-UY', { month: 'long', year: 'numeric' })}</div>
+                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

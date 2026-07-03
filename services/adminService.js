@@ -1,48 +1,57 @@
 // ─── ADMIN SERVICE ────────────────────────────────────────────────────────────
-// Aggregates admin-facing data from providerService and serviceService.
-// This is a thin façade — all mutations delegate to the source services.
+// Admin-facing operations backed by real API.
 
+import { api, buildQuery } from './api';
 import { providerService } from './providerService';
 import { serviceService } from './serviceService';
-import { bookingService } from './bookingService';
 
 export const adminService = {
-  /**
-   * Returns aggregated platform stats for the admin overview page.
-   * Future: GET /api/admin/stats
-   */
-  getOverviewStats() {
-    const providerCounts = providerService.admin.countByStatus();
-    const serviceCounts = serviceService.admin.countByStatus();
+  /** Aggregated platform stats for the admin overview page. */
+  async getOverviewStats() {
+    const res = await api.get('/admin/dashboard');
+    const d = res.data || {};
     return {
-      providers: providerCounts,
-      services: serviceCounts,
-      totalProviders:
-        (providerCounts.pending || 0) +
-        (providerCounts.approved || 0) +
-        (providerCounts.rejected || 0) +
-        (providerCounts.suspended || 0),
-      totalServices: Object.values(serviceCounts).reduce((a, b) => a + b, 0),
+      providers: {
+        pending:   d.providers?.pending   || 0,
+        approved:  d.providers?.approved  || 0,
+        rejected:  d.providers?.rejected  || 0,
+        suspended: d.providers?.suspended || 0,
+      },
+      services: {
+        draft:          d.services?.draft          || 0,
+        pending_review: d.services?.pendingReview  || 0,
+        active:         d.services?.active         || 0,
+        paused:         0,
+        rejected:       0,
+      },
+      totalProviders: d.providers?.total || 0,
+      totalServices:  d.services?.total  || 0,
+      totalBookings:  d.bookings?.total  || 0,
+      gmv:            d.revenue?.gmv     || 0,
+      totalCommission:d.revenue?.totalCommission || 0,
+      newUsersLast30: d.users?.newLast30 || 0,
+      totalUsers:     d.users?.total     || 0,
+      _raw: d,
     };
   },
 
-  // ─── PROVIDERS ─────────────────────────────────────────────────────────────
+  // ── Providers ──────────────────────────────────────────────────────────────
   providers: {
-    getAll: (filters) => providerService.admin.getAll(filters),
-    getById: (id) => providerService.admin.getById(id),
-    approve: (id) => providerService.admin.approve(id),
-    reject: (id, reason) => providerService.admin.reject(id, reason),
-    suspend: (id, reason) => providerService.admin.suspend(id, reason),
-    reactivate: (id) => providerService.admin.reactivate(id),
-    countByStatus: () => providerService.admin.countByStatus(),
+    getAll:       (filters) => providerService.admin.getAll(filters),
+    getById:      (id)      => providerService.admin.getById(id),
+    approve:      (id)      => providerService.admin.approve(id),
+    reject:       (id, r)   => providerService.admin.reject(id, r),
+    suspend:      (id, r)   => providerService.admin.suspend(id, r),
+    reactivate:   (id)      => providerService.admin.reactivate(id),
+    countByStatus:()        => providerService.admin.countByStatus(),
   },
 
-  // ─── SERVICES ──────────────────────────────────────────────────────────────
+  // ── Services ───────────────────────────────────────────────────────────────
   services: {
-    getAll: (filters) => serviceService.admin.getAll(filters),
-    getById: (id) => serviceService.admin.getById(id),
-    approve: (id) => serviceService.admin.approve(id),
-    reject: (id, reason) => serviceService.admin.reject(id, reason),
-    countByStatus: () => serviceService.admin.countByStatus(),
+    getAll:       (filters) => serviceService.admin.getAll(filters),
+    getById:      (id)      => serviceService.admin.getById(id),
+    approve:      (id)      => serviceService.admin.approve(id),
+    reject:       (id, r)   => serviceService.admin.reject(id, r),
+    countByStatus:()        => serviceService.admin.countByStatus(),
   },
 };

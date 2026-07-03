@@ -1,146 +1,154 @@
 // ─── SERVICE (LISTING) SERVICE ────────────────────────────────────────────────
-// Manages service listings created by providers.
-// Swap for fetch('/api/services/...') when backend is ready.
+// Provider self-service for managing their own listings.
 
-import { MOCK_SERVICES } from '@/mocks/services.mock';
+import { api, buildQuery } from './api';
 
-// Module-level mutable state — simulates DB persistence within the session.
-let _services = [...MOCK_SERVICES];
+// Status mapper: some legacy UI uses 'confirmed', backend uses 'accepted'
+const STATUS_TO_BACKEND = { confirmed: 'accepted' };
+const STATUS_FROM_BACKEND = { accepted: 'confirmed' };
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-let _nextId = MOCK_SERVICES.length + 1;
-const nextId = () => `s${_nextId++}`;
+export function normalizeStatus(status) {
+  return STATUS_FROM_BACKEND[status] || status;
+}
 
-// ─── PUBLIC API ───────────────────────────────────────────────────────────────
+function mapService(s) {
+  if (!s) return null;
+  return {
+    id:            s.id,
+    providerId:    s.provider_id,
+    providerName:  s.provider_name || '',
+    providerLogo:  s.provider_logo || '',
+    title:         s.title,
+    category:      s.category_slug  || '',
+    categoryLabel: s.category_name  || '',
+    categoryEmoji: s.category_emoji || '',
+    description:   s.description || '',
+    priceType:     s.price_type || 'per_event',
+    priceFrom:     parseFloat(s.price_from) || 0,
+    priceUnit:     s.price_type === 'per_person' ? 'por persona' : 'por evento',
+    zones:         Array.isArray(s.zones) ? s.zones : [],
+    eventTypes:    Array.isArray(s.event_types) ? s.event_types : [],
+    minGuests:     s.min_guests || null,
+    maxGuests:     s.max_guests || null,
+    durationHours: s.duration_hours || null,
+    status:        s.status || 'draft',
+    statusReason:  s.status_reason || null,
+    views:         s.views || 0,
+    bookings:      s.total_bookings || 0,
+    createdAt:     s.created_at ? s.created_at.split('T')[0] : '',
+    publishedAt:   s.published_at ? s.published_at.split('T')[0] : null,
+    primaryImage:  s.primary_image || (Array.isArray(s.images) && s.images[0]?.url) || null,
+    _raw: s,
+  };
+}
+
 export const serviceService = {
-  /** Returns active service listings for a given provider (public-facing). */
-  getActiveByProvider(providerId) {
-    return _services.filter((s) => s.providerId === providerId && s.status === 'active');
+  /** Active listings for a provider (public). */
+  async getActiveByProvider(providerId) {
+    const res = await api.get(`/services${buildQuery({ limit: 50 })}`);
+    return (res.data || []).map(mapService);
   },
 
-  /** Returns a single active service by ID. */
-  getById(id) {
-    return _services.find((s) => s.id === id) || null;
+  /** Single active service by ID. */
+  async getById(id) {
+    const res = await api.get(`/services/${id}`);
+    return mapService(res.data);
   },
 
-  // ─── PROVIDER SELF-SERVICE API ────────────────────────────────────────────
-  /** Returns all service listings for a provider (all statuses). */
-  getByProvider(providerId) {
-    return _services.filter((s) => s.providerId === providerId);
+  /** All listings for the authenticated provider (all statuses). */
+  async getByProvider(_providerId, params = {}) {
+    const res = await api.get(`/services/mine${buildQuery(params)}`);
+    return (res.data || []).map(mapService);
   },
 
-  /**
-   * Creates a new service listing.
-   * Starts with status: 'draft'. Provider must explicitly publish it.
-   * Future: POST /api/services
-   */
-  create(data) {
-    const newService = {
-      id: nextId(),
-      status: 'draft',
-      statusReason: null,
-      views: 0,
-      bookings: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      publishedAt: null,
-      ...data,
-    };
-    _services = [newService, ..._services];
-    return newService;
-  },
-
-  /**
-   * Updates an existing service listing.
-   * Future: PATCH /api/services/:id
-   */
-  update(id, data) {
-    _services = _services.map((s) => (s.id === id ? { ...s, ...data } : s));
-    return _services.find((s) => s.id === id);
-  },
-
-  /**
-   * Submits a draft service for admin review.
-   * Changes status: draft → pending_review.
-   * Future: POST /api/services/:id/publish
-   */
-  submit(id) {
-    return serviceService.update(id, { status: 'pending_review' });
-  },
-
-  /**
-   * Pauses an active service (hides it from catalog without deleting).
-   * Future: POST /api/services/:id/pause
-   */
-  pause(id) {
-    return serviceService.update(id, { status: 'paused' });
-  },
-
-  /**
-   * Resumes a paused service (re-activates it without another review cycle).
-   * Future: POST /api/services/:id/resume
-   */
-  resume(id) {
-    return serviceService.update(id, {
-      status: 'active',
-      publishedAt: new Date().toISOString().split('T')[0],
+  /** Creates a new service listing (starts as draft). */
+  async create(data) {
+    const res = await api.post('/services', {
+      category_id:    data.category_id || data.categoryId,
+      title:          data.title,
+      description:    data.description || '',
+      price_type:     data.priceType || data.price_type || 'per_event',
+      price_from:     data.priceFrom || data.price_from || 0,
+      zones:          data.zones || [],
+      event_types:    data.eventTypes || data.event_types || [],
+      min_guests:     data.minGuests || null,
+      max_guests:     data.maxGuests || null,
+      duration_hours: data.durationHours || null,
     });
+    return mapService(res.data);
   },
 
-  /**
-   * Soft-deletes a service listing.
-   * Future: DELETE /api/services/:id
-   */
-  remove(id) {
-    _services = _services.filter((s) => s.id !== id);
+  /** Updates an existing listing. */
+  async update(id, data) {
+    const body = {};
+    if (data.title !== undefined)        body.title = data.title;
+    if (data.description !== undefined)  body.description = data.description;
+    if (data.priceType !== undefined)    body.price_type = data.priceType;
+    if (data.price_type !== undefined)   body.price_type = data.price_type;
+    if (data.priceFrom !== undefined)    body.price_from = data.priceFrom;
+    if (data.price_from !== undefined)   body.price_from = data.price_from;
+    if (data.zones !== undefined)        body.zones = data.zones;
+    if (data.eventTypes !== undefined)   body.event_types = data.eventTypes;
+    if (data.event_types !== undefined)  body.event_types = data.event_types;
+    if (data.category_id !== undefined)  body.category_id = data.category_id;
+    const res = await api.put(`/services/${id}`, body);
+    return mapService(res.data);
+  },
+
+  /** Submits a draft for admin review. */
+  async submit(id) {
+    const res = await api.patch(`/services/${id}/status`, { status: 'pending_review' });
+    return mapService(res.data);
+  },
+
+  /** Pauses an active listing. */
+  async pause(id) {
+    const res = await api.patch(`/services/${id}/status`, { status: 'paused' });
+    return mapService(res.data);
+  },
+
+  /** Resumes a paused listing. */
+  async resume(id) {
+    const res = await api.patch(`/services/${id}/status`, { status: 'active' });
+    return mapService(res.data);
+  },
+
+  /** Soft-deletes a service. */
+  async remove(id) {
+    await api.delete(`/services/${id}`);
     return true;
   },
 
-  // ─── ADMIN API ────────────────────────────────────────────────────────────
+  // ── Admin API ─────────────────────────────────────────────────────────────
   admin: {
-    getAll({ status, providerId, category, search } = {}) {
-      let list = [..._services];
-      if (status) list = list.filter((s) => s.status === status);
-      if (providerId) list = list.filter((s) => s.providerId === providerId);
-      if (category) list = list.filter((s) => s.category === category);
-      if (search) {
-        const q = search.toLowerCase();
-        list = list.filter(
-          (s) =>
-            s.title.toLowerCase().includes(q) ||
-            s.providerName.toLowerCase().includes(q) ||
-            s.category.toLowerCase().includes(q)
-        );
-      }
-      return list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    async getAll(filters = {}) {
+      const params = {
+        status:   filters.status   || undefined,
+        category: filters.category || undefined,
+        search:   filters.search   || undefined,
+      };
+      const res = await api.get(`/admin/services${buildQuery(params)}`);
+      return (res.data || []).map(mapService);
     },
 
-    getById(id) {
-      return _services.find((s) => s.id === id) || null;
+    async getById(id) {
+      const res = await api.get(`/services/${id}`);
+      return mapService(res.data);
     },
 
-    /** Approves a pending_review service → makes it active. */
-    approve(id) {
-      _services = _services.map((s) =>
-        s.id === id
-          ? { ...s, status: 'active', statusReason: null, publishedAt: new Date().toISOString().split('T')[0] }
-          : s
-      );
-      return _services.find((s) => s.id === id);
+    async approve(id) {
+      const res = await api.patch(`/admin/services/${id}/approve`);
+      return mapService(res.data);
     },
 
-    /** Rejects a pending_review service with a reason. */
-    reject(id, reason) {
-      _services = _services.map((s) =>
-        s.id === id ? { ...s, status: 'rejected', statusReason: reason } : s
-      );
-      return _services.find((s) => s.id === id);
+    async reject(id, reason) {
+      const res = await api.patch(`/admin/services/${id}/reject`, { reason });
+      return mapService(res.data);
     },
 
-    countByStatus() {
-      return _services.reduce((acc, s) => {
-        acc[s.status] = (acc[s.status] || 0) + 1;
-        return acc;
-      }, {});
+    async countByStatus() {
+      const res = await api.get('/admin/dashboard');
+      return res.data?.services || {};
     },
   },
 };

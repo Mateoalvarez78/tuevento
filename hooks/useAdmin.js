@@ -3,119 +3,109 @@
 import { useState, useEffect, useCallback } from 'react';
 import { adminService } from '@/services/adminService';
 
-/**
- * Hook for the admin overview stats card.
- */
 export function useAdminStats() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const reload = useCallback(() => {
-    setStats(adminService.getOverviewStats());
-    setLoading(false);
+  const reload = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const s = await adminService.getOverviewStats();
+      setStats(s);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  useEffect(() => {
-    setLoading(true);
-    reload();
-  }, [reload]);
+  useEffect(() => { reload(); }, [reload]);
 
-  return { stats, loading, reload };
+  return { stats, loading, error, reload };
 }
 
-/**
- * Hook for the admin providers list with search/status filters.
- * Usage: const { providers, filters, setFilters } = useAdminProviders()
- */
 export function useAdminProviders(initialFilters = {}) {
   const [filters, setFilters] = useState(initialFilters);
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const filtersKey = JSON.stringify(filters);
 
-  const reload = useCallback(() => {
+  const reload = useCallback(async () => {
     setLoading(true);
-    setProviders(adminService.providers.getAll(filters));
-    setLoading(false);
+    setError(null);
+    try {
+      const list = await adminService.providers.getAll(filters);
+      setProviders(list);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtersKey]);
 
-  useEffect(() => {
+  useEffect(() => { reload(); }, [reload]);
+
+  const approve = useCallback(async (id) => {
+    await adminService.providers.approve(id);
     reload();
   }, [reload]);
 
-  const approve = useCallback(
-    (id) => {
-      adminService.providers.approve(id);
-      reload();
-    },
-    [reload]
-  );
+  const reject = useCallback(async (id, reason) => {
+    await adminService.providers.reject(id, reason);
+    reload();
+  }, [reload]);
 
-  const reject = useCallback(
-    (id, reason) => {
-      adminService.providers.reject(id, reason);
-      reload();
-    },
-    [reload]
-  );
+  const suspend = useCallback(async (id, reason) => {
+    await adminService.providers.suspend(id, reason);
+    reload();
+  }, [reload]);
 
-  const suspend = useCallback(
-    (id, reason) => {
-      adminService.providers.suspend(id, reason);
-      reload();
-    },
-    [reload]
-  );
+  const reactivate = useCallback(async (id) => {
+    await adminService.providers.reactivate(id);
+    reload();
+  }, [reload]);
 
-  const reactivate = useCallback(
-    (id) => {
-      adminService.providers.reactivate(id);
-      reload();
-    },
-    [reload]
-  );
-
-  return { providers, loading, filters, setFilters, approve, reject, suspend, reactivate, reload };
+  return { providers, loading, error, filters, setFilters, approve, reject, suspend, reactivate, reload };
 }
 
-/**
- * Hook for the admin services list.
- */
 export function useAdminServices(initialFilters = {}) {
   const [filters, setFilters] = useState(initialFilters);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const filtersKey = JSON.stringify(filters);
 
-  const reload = useCallback(() => {
+  const reload = useCallback(async () => {
     setLoading(true);
-    setServices(adminService.services.getAll(filters));
-    setLoading(false);
+    setError(null);
+    try {
+      const list = await adminService.services.getAll(filters);
+      setServices(list);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtersKey]);
 
-  useEffect(() => {
+  useEffect(() => { reload(); }, [reload]);
+
+  const approve = useCallback(async (id) => {
+    await adminService.services.approve(id);
     reload();
   }, [reload]);
 
-  const approve = useCallback(
-    (id) => {
-      adminService.services.approve(id);
-      reload();
-    },
-    [reload]
-  );
+  const reject = useCallback(async (id, reason) => {
+    await adminService.services.reject(id, reason);
+    reload();
+  }, [reload]);
 
-  const reject = useCallback(
-    (id, reason) => {
-      adminService.services.reject(id, reason);
-      reload();
-    },
-    [reload]
-  );
-
-  return { services, loading, filters, setFilters, approve, reject, reload };
+  return { services, loading, error, filters, setFilters, approve, reject, reload };
 }

@@ -1,175 +1,227 @@
 // ─── PROVIDER SERVICE ─────────────────────────────────────────────────────────
-// Single interface for all provider operations.
-// Swap these implementations for fetch('/api/providers/...') when backend is ready.
-//
-// Public methods  → only approved providers
-// admin.* methods → all providers regardless of status
+// All provider operations backed by the real API.
+// Keeps the same method signatures for backward compatibility.
 
-import { PROVIDERS as BASE_PROVIDERS } from '@/lib/mockData';
-import { PROVIDER_OVERRIDES, NEW_PROVIDERS } from '@/mocks/providers.mock';
+import { api, buildQuery } from './api';
 
-// Merge base providers (full data) with status/contact overrides
-const buildAllProviders = () => [
-  ...BASE_PROVIDERS.map((p) => ({
-    ...p,
-    status: 'approved',
-    statusReason: null,
-    ...(PROVIDER_OVERRIDES[p.id] || {}),
-  })),
-  ...NEW_PROVIDERS,
-];
+// ── Mappers ───────────────────────────────────────────────────────────────────
+// Maps backend service object → frontend "provider card" shape used by catalog/ServiceCard
+export function mapServiceToProvider(s) {
+  if (!s) return null;
+  const images = Array.isArray(s.images)
+    ? s.images.map((img) => img.url || img)
+    : s.primary_image
+    ? [s.primary_image]
+    : [];
 
-// Module-level mutable state — simulates DB persistence within the session.
-// Future: replace with real API calls; this entire file gets swapped out.
-let _providers = buildAllProviders();
-
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-function applyFilters(list, { category, zone, minRating, maxPrice, eventType, verified, search } = {}) {
-  return list.filter((p) => {
-    if (category && p.category !== category) return false;
-    if (zone && !p.zones?.some((z) => z.toLowerCase().includes(zone.toLowerCase()))) return false;
-    if (minRating && (p.rating || 0) < minRating) return false;
-    if (maxPrice && p.priceFrom > maxPrice) return false;
-    if (eventType && !p.eventTypes?.includes(eventType)) return false;
-    if (verified && !p.verified) return false;
-    if (search) {
-      const s = search.toLowerCase();
-      if (
-        !p.name.toLowerCase().includes(s) &&
-        !p.categoryLabel?.toLowerCase().includes(s) &&
-        !p.description?.toLowerCase().includes(s)
-      ) return false;
-    }
-    return true;
-  });
+  return {
+    id:              s.id,
+    // The "name" shown on cards is the service title; provider name is shown as subtitle
+    name:            s.provider_name || s.title,
+    businessName:    s.provider_name,
+    serviceTitle:    s.title,
+    category:        s.category_slug  || '',
+    categoryLabel:   s.category_name  || '',
+    categoryEmoji:   s.category_emoji || '',
+    rating:          parseFloat(s.rating_avg)     || 0,
+    reviewCount:     parseInt(s.total_reviews)    || 0,
+    priceFrom:       parseFloat(s.price_from)     || 0,
+    priceType:       s.price_type || 'per_event',
+    zone:            s.city || (Array.isArray(s.zones) ? s.zones[0] : '') || '',
+    zones:           Array.isArray(s.zones) ? s.zones : [],
+    images,
+    description:     s.description ? s.description.slice(0, 220) : '',
+    longDescription: s.description || '',
+    badges:          buildBadges(s),
+    verified:        Boolean(s.is_verified),
+    totalBookings:   parseInt(s.total_bookings) || 0,
+    responseTime:    s.response_time || 'Responde en menos de 24hs',
+    cancellationPolicy: s.cancellation_policy || 'Consultar con el proveedor.',
+    eventTypes:      Array.isArray(s.event_types) ? s.event_types : [],
+    packages:        mapPackages(s.packages),
+    extras:          mapExtras(s.extras),
+    reviews:         mapReviews(s.reviews),
+    faq:             [],
+    // Provider info
+    providerId:      s.provider_id,
+    providerName:    s.provider_name,
+    providerLogo:    s.provider_logo,
+    providerCity:    s.city,
+    providerRating:  parseFloat(s.provider_rating) || parseFloat(s.rating_avg) || 0,
+    // Raw backend data kept for any direct use
+    _raw: s,
+  };
 }
 
-// ─── PUBLIC API ───────────────────────────────────────────────────────────────
-// These are the methods used by public-facing pages (catalog, home, detail).
+function buildBadges(s) {
+  const badges = [];
+  if (s.is_verified) badges.push('verified');
+  if (s.total_bookings >= 50) badges.push('popular');
+  if (s.rating_avg >= 4.8 && s.total_reviews >= 20) badges.push('top');
+  return badges;
+}
 
+function mapPackages(packages) {
+  if (!Array.isArray(packages)) return [];
+  return packages.map((p) => ({
+    id:          p.id,
+    name:        p.name,
+    price:       parseFloat(p.price) || 0,
+    priceUnit:   p.price_unit || '',
+    description: p.description || '',
+    includes:    Array.isArray(p.includes) ? p.includes : [],
+  }));
+}
+
+function mapExtras(extras) {
+  if (!Array.isArray(extras)) return [];
+  return extras.map((e) => ({
+    id:        e.id,
+    name:      e.name,
+    price:     parseFloat(e.price) || 0,
+    priceUnit: '',
+  }));
+}
+
+function mapReviews(reviews) {
+  if (!Array.isArray(reviews)) return [];
+  return reviews.map((r) => ({
+    id:        r.id,
+    author:    r.client_name || 'Cliente',
+    avatar:    r.client_avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+    rating:    r.rating,
+    text:      r.comment || '',
+    date:      r.created_at ? r.created_at.split('T')[0] : '',
+    reply:     r.provider_reply || null,
+  }));
+}
+
+// Maps backend provider admin object → frontend admin provider shape
+export function mapAdminProvider(p) {
+  if (!p) return null;
+  return {
+    id:           p.id,
+    name:         p.business_name,
+    businessName: p.business_name,
+    ownerName:    p.owner_name,
+    email:        p.email,
+    phone:        p.phone || p.owner_phone || '',
+    category:     p.category_slug || '',
+    categoryLabel:p.category_name || '',
+    city:         p.city || '',
+    zones:        p.zones || [],
+    status:       p.status,
+    statusReason: p.status_reason || null,
+    rating:       parseFloat(p.rating_avg) || 0,
+    reviewCount:  parseInt(p.total_reviews) || 0,
+    totalBookings:parseInt(p.total_bookings) || 0,
+    verified:     p.is_verified || false,
+    createdAt:    p.created_at ? p.created_at.split('T')[0] : '',
+    approvedAt:   p.approved_at ? p.approved_at.split('T')[0] : null,
+    instagram:    p.instagram || '',
+    whatsapp:     p.whatsapp || '',
+    website:      p.website || '',
+    logo_url:     p.logo_url || '',
+    _raw: p,
+  };
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
 export const providerService = {
-  /** Returns only approved providers, with optional filtering. */
-  getAll(filters = {}) {
-    const approved = _providers.filter((p) => p.status === 'approved');
-    return applyFilters(approved, filters);
-  },
-
-  /** Returns a single approved provider by ID. */
-  getById(id) {
-    return _providers.find((p) => p.id === id && p.status === 'approved') || null;
-  },
-
-  /** Returns featured providers (top or popular badges). */
-  getFeatured(limit = 4) {
-    return _providers
-      .filter((p) => p.status === 'approved' && (p.badges?.includes('top') || p.badges?.includes('popular')))
-      .slice(0, limit);
-  },
-
-  /** Returns the provider linked to a given userId. */
-  getByUserId(userId) {
-    return _providers.find((p) => p.userId === userId) || null;
-  },
-
-  /** Returns the provider by providerId (used from user.providerId). */
-  getByProviderId(providerId) {
-    return _providers.find((p) => p.id === providerId) || null;
-  },
-
-  /**
-   * Registers a new provider.
-   * Creates with status: 'pending' — must be approved by admin to be public.
-   * Future: POST /api/providers
-   */
-  register(data) {
-    const newProvider = {
-      id: `p${Date.now()}`,
-      status: 'pending',
-      statusReason: null,
-      rating: 0,
-      reviewCount: 0,
-      totalBookings: 0,
-      responseTime: null,
-      badges: [],
-      verified: false,
-      packages: [],
-      extras: [],
-      reviews: [],
-      faq: [],
-      images: data.logo ? [data.logo] : [],
-      createdAt: new Date().toISOString().split('T')[0],
-      approvedAt: null,
-      ...data,
+  /** Returns active services (catalog) as provider-shaped objects. */
+  async getAll(filters = {}) {
+    const sortMap = {
+      recommended: undefined,
+      rating:      'rating',
+      price_asc:   'price_asc',
+      most_booked: 'popular',
     };
-    _providers = [newProvider, ..._providers];
-    return newProvider;
+    const params = {
+      category:  filters.category  || undefined,
+      zone:      filters.zone      || undefined,
+      minRating: filters.minRating > 0 ? filters.minRating : undefined,
+      maxPrice:  filters.maxPrice < 200000 ? filters.maxPrice : undefined,
+      eventType: filters.eventType || undefined,
+      search:    filters.search    || undefined,
+      sort:      sortMap[filters.sort] || undefined,
+      page:      filters.page      || 1,
+      limit:     filters.limit     || 9,
+    };
+    const res = await api.get(`/services${buildQuery(params)}`);
+    return {
+      data: (res.data || []).map(mapServiceToProvider),
+      pagination: res.pagination || { total: 0, page: 1, limit: 9, totalPages: 1 },
+    };
   },
 
-  // ─── ADMIN API ──────────────────────────────────────────────────────────────
+  /** Returns full detail of one service (mapped to provider shape). */
+  async getById(id) {
+    if (!id) return null;
+    const res = await api.get(`/services/${id}`);
+    return mapServiceToProvider(res.data);
+  },
+
+  /** Returns featured services mapped to provider shape. */
+  async getFeatured(limit = 4) {
+    const res = await api.get(`/services${buildQuery({ sort: 'popular', limit })}`);
+    return (res.data || []).map(mapServiceToProvider);
+  },
+
+  /** Returns the provider profile linked to the logged-in user. */
+  async getByUserId(_userId) {
+    // userId param kept for compat; backend uses the JWT to identify the provider
+    const res = await api.get('/providers/me');
+    return mapAdminProvider(res.data);
+  },
+
+  /** Returns provider profile by provider record ID. */
+  async getByProviderId(providerId) {
+    const res = await api.get(`/providers/${providerId}`);
+    return mapAdminProvider(res.data);
+  },
+
+  /** Applies to become a provider. */
+  async register(data) {
+    const res = await api.post('/providers/apply', data);
+    return res.data;
+  },
+
+  // ── Admin API ─────────────────────────────────────────────────────────────
   admin: {
-    /** Returns ALL providers (any status), with optional filtering. */
-    getAll({ status, search, category } = {}) {
-      let list = [..._providers];
-      if (status) list = list.filter((p) => p.status === status);
-      if (category) list = list.filter((p) => p.category === category);
-      if (search) {
-        const s = search.toLowerCase();
-        list = list.filter(
-          (p) =>
-            p.name.toLowerCase().includes(s) ||
-            p.ownerName?.toLowerCase().includes(s) ||
-            p.email?.toLowerCase().includes(s)
-        );
-      }
-      return list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    async getAll(filters = {}) {
+      const res = await api.get(`/admin/providers${buildQuery(filters)}`);
+      return (res.data || []).map(mapAdminProvider);
     },
 
-    getById(id) {
-      return _providers.find((p) => p.id === id) || null;
+    async getById(id) {
+      const res = await api.get(`/admin/providers${buildQuery({ search: id })}`);
+      return (res.data || []).map(mapAdminProvider)[0] || null;
     },
 
-    /** Approves a provider — makes them visible on the platform. */
-    approve(id) {
-      _providers = _providers.map((p) =>
-        p.id === id
-          ? { ...p, status: 'approved', statusReason: null, approvedAt: new Date().toISOString().split('T')[0] }
-          : p
-      );
-      return _providers.find((p) => p.id === id);
+    async approve(id) {
+      const res = await api.patch(`/admin/providers/${id}/approve`);
+      return mapAdminProvider(res.data);
     },
 
-    /** Rejects a provider with a mandatory reason. */
-    reject(id, reason) {
-      _providers = _providers.map((p) =>
-        p.id === id ? { ...p, status: 'rejected', statusReason: reason } : p
-      );
-      return _providers.find((p) => p.id === id);
+    async reject(id, reason) {
+      const res = await api.patch(`/admin/providers/${id}/reject`, { reason });
+      return mapAdminProvider(res.data);
     },
 
-    /** Suspends an approved provider. */
-    suspend(id, reason) {
-      _providers = _providers.map((p) =>
-        p.id === id ? { ...p, status: 'suspended', statusReason: reason } : p
-      );
-      return _providers.find((p) => p.id === id);
+    async suspend(id, reason) {
+      // Backend: suspend = reject with reason (or we use a custom endpoint if added)
+      const res = await api.patch(`/admin/providers/${id}/reject`, { reason });
+      return mapAdminProvider(res.data);
     },
 
-    /** Reactivates a rejected or suspended provider. */
-    reactivate(id) {
-      _providers = _providers.map((p) =>
-        p.id === id
-          ? { ...p, status: 'approved', statusReason: null, approvedAt: new Date().toISOString().split('T')[0] }
-          : p
-      );
-      return _providers.find((p) => p.id === id);
+    async reactivate(id) {
+      const res = await api.patch(`/admin/providers/${id}/approve`);
+      return mapAdminProvider(res.data);
     },
 
-    /** Counts by status — used for admin dashboard stats. */
-    countByStatus() {
-      return _providers.reduce((acc, p) => {
-        acc[p.status] = (acc[p.status] || 0) + 1;
-        return acc;
-      }, {});
+    async countByStatus() {
+      const res = await api.get('/admin/dashboard');
+      return res.data?.providers || {};
     },
   },
 };

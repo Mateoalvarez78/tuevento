@@ -1,8 +1,8 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { getProviderById } from '@/lib/mockData';
+import { providerService } from '@/services/providerService';
 import BookingWizard from '@/components/BookingWizard';
 import EmptyState from '@/components/EmptyState';
 import { Star, MapPin } from 'lucide-react';
@@ -17,8 +17,31 @@ export default function ReservarPage() {
 
 function ReservarContent() {
   const searchParams = useSearchParams();
-  const providerId = searchParams.get('providerId');
-  const provider = getProviderById(providerId);
+  const serviceId = searchParams.get('providerId') || searchParams.get('serviceId');
+
+  const [provider, setProvider] = useState(null);
+  const [loading, setLoading] = useState(!!serviceId);
+
+  useEffect(() => {
+    if (!serviceId) { setLoading(false); return; }
+    let cancelled = false;
+    setLoading(true);
+    providerService.getById(serviceId)
+      .then((p) => { if (!cancelled) { setProvider(p); setLoading(false); } })
+      .catch(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [serviceId]);
+
+  if (loading) {
+    return (
+      <div className="bg-surface min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto space-y-4">
+          <div className="skeleton h-24 w-full rounded-2xl" />
+          <div className="skeleton h-64 w-full rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
 
   if (!provider) {
     return (
@@ -38,7 +61,7 @@ function ReservarContent() {
         {/* Provider mini card */}
         <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex items-center gap-4 mb-8">
           <img
-            src={provider.images[0]}
+            src={provider.images?.[0]}
             alt={provider.name}
             className="w-16 h-16 rounded-xl object-cover shrink-0"
           />
@@ -46,8 +69,8 @@ function ReservarContent() {
             <div className="text-xs font-medium text-primary mb-0.5">{provider.categoryLabel}</div>
             <div className="font-bold text-gray-900 truncate">{provider.name}</div>
             <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-              <span className="flex items-center gap-1"><Star size={11} className="star-filled fill-current" /> {provider.rating.toFixed(1)}</span>
-              <span className="flex items-center gap-1"><MapPin size={11} /> {provider.zone}</span>
+              <span className="flex items-center gap-1"><Star size={11} className="star-filled fill-current" /> {(provider.rating || 0).toFixed(1)}</span>
+              {provider.zone && <span className="flex items-center gap-1"><MapPin size={11} /> {provider.zone}</span>}
             </div>
           </div>
           <a href={`/proveedor/${provider.id}`} className="text-xs text-primary hover:underline shrink-0">Ver perfil</a>

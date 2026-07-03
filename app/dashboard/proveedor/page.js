@@ -55,17 +55,25 @@ export default function ProveedorDashboard() {
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  const reload = () => {
+  const reload = async () => {
     if (!user) return;
-    const p = providerService.getByUserId(user.id);
-    setProviderData(p);
-    if (p) {
-      setRequests(bookingService.getByProvider(p.id));
-      setMyServices(serviceService.getByProvider(p.id));
+    try {
+      const p = await providerService.getByUserId(user.id);
+      setProviderData(p);
+      if (p) {
+        const [bRes, sRes] = await Promise.all([
+          bookingService.getByProvider(p.id),
+          serviceService.getByProvider(p.id),
+        ]);
+        setRequests(bRes.data || []);
+        setMyServices(sRes || []);
+      }
+    } catch (_) {
+      // ignore — user sees empty state
     }
   };
 
-  useEffect(() => { reload(); }, [user]);
+  useEffect(() => { reload(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!user) {
     return (
@@ -86,26 +94,26 @@ export default function ProveedorDashboard() {
   const accountStatus = providerData?.status || 'pending';
   const isApproved = accountStatus === 'approved';
 
-  const handleAccept = (id) => {
-    bookingService.updateStatus(id, 'confirmed');
+  const handleAccept = async (id) => {
+    await bookingService.updateStatus(id, 'accepted');
     reload();
     showToast('Solicitud aceptada', 'success');
   };
 
-  const handleReject = (id) => {
-    bookingService.updateStatus(id, 'rejected', rejectReason);
+  const handleReject = async (id) => {
+    await bookingService.updateStatus(id, 'rejected', rejectReason);
     setRejectModal(null);
     setRejectReason('');
     reload();
     showToast('Solicitud rechazada', 'info');
   };
 
-  const handleServiceAction = (serviceId, action) => {
-    if (action === 'submit')  serviceService.submit(serviceId);
-    if (action === 'pause')   serviceService.pause(serviceId);
-    if (action === 'resume')  serviceService.resume(serviceId);
+  const handleServiceAction = async (serviceId, action) => {
+    if (action === 'submit')  await serviceService.submit(serviceId);
+    if (action === 'pause')   await serviceService.pause(serviceId);
+    if (action === 'resume')  await serviceService.resume(serviceId);
     if (action === 'remove') {
-      serviceService.remove(serviceId);
+      await serviceService.remove(serviceId);
       showToast('Listado eliminado', 'info');
     }
     reload();
@@ -375,13 +383,10 @@ export default function ProveedorDashboard() {
                 <p className="text-sm text-gray-500">{myServices.length} servicio{myServices.length !== 1 ? 's' : ''}</p>
                 {isApproved && (
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (!providerData) return;
-                      serviceService.create({
-                        providerId: providerData.id,
-                        providerName: providerData.name,
+                      await serviceService.create({
                         title: 'Nuevo servicio (borrador)',
-                        category: providerData.category,
                         priceType: 'per_event',
                         priceFrom: 0,
                       });
