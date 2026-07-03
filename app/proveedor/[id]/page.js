@@ -208,7 +208,7 @@ export default function ProviderDetailPage({ params }) {
             {/* Packages */}
             {provider.packages?.length > 0 && (
               <div className="mb-8">
-                <h2 className="text-lg font-bold text-gray-900 mb-4">Paquetes disponibles</h2>
+                <h2 className="text-lg font-bold text-gray-900 mb-4">Menús disponibles</h2>
                 <PackageSelector
                   packages={provider.packages}
                   selectedId={selectedPackageId}
@@ -320,7 +320,7 @@ export default function ProviderDetailPage({ params }) {
                     <span className="text-3xl font-extrabold text-gray-900">${selectedPkg.price.toLocaleString('es-UY')}</span>
                     {selectedPkg.priceUnit && <span className="text-sm text-gray-500">{selectedPkg.priceUnit}</span>}
                   </div>
-                  <div className="text-xs text-green-600 font-medium mt-1">Paquete {selectedPkg.name} seleccionado</div>
+                  <div className="text-xs text-green-600 font-medium mt-1">Menú {selectedPkg.name} seleccionado</div>
                 </div>
               ) : (
                 <div className="mb-4">

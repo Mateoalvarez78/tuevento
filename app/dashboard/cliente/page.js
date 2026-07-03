@@ -220,7 +220,7 @@ export default function ClienteDashboard() {
                             </div>
                             <div className="flex items-center justify-between mt-2 flex-wrap gap-1">
                               <div className="text-sm font-semibold text-gray-800">
-                                {res.packageName && `Paquete ${res.packageName} · `}${res.totalEstimated?.toLocaleString('es-UY')}
+                                {res.packageName && `Menú ${res.packageName} · `}${res.totalEstimated?.toLocaleString('es-UY')}
                               </div>
                               <span className="text-xs text-gray-400">#{res.requestNumber}</span>
                             </div>

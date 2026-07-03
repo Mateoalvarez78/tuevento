@@ -18,8 +18,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    const result = login(form.email, form.password);
+    const result = await login(form.email, form.password);
     setLoading(false);
     if (result.success) {
       showToast(`¡Bienvenido/a, ${result.user.name.split(' ')[0]}!`, 'success');
@@ -35,9 +34,9 @@ export default function LoginPage() {
 
   const loginDemo = (role) => {
     const map = {
-      client:   { email: 'valentina@example.com',   password: '123456'  },
-      provider: { email: 'mateo@example.com',        password: '123456'  },
-      admin:    { email: 'admin@tuevento.com.uy',    password: 'admin123' },
+      client:   { email: 'valentina@example.com', password: '123456'   },
+      provider: { email: 'mateo@example.com',      password: '123456'   },
+      admin:    { email: 'admin@eventonow.com',    password: 'Admin123!' },
     };
     setForm(map[role] || map.client);
   };

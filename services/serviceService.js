@@ -42,6 +42,40 @@ function mapService(s) {
   };
 }
 
+// Maps a backend service_packages row → frontend "menu" shape
+function mapMenu(p) {
+  if (!p) return null;
+  return {
+    id:            p.id,
+    serviceId:     p.service_id,
+    name:          p.name,
+    description:   p.description || '',
+    adultPrice:    parseFloat(p.adult_price != null ? p.adult_price : p.price) || 0,
+    childPrice:    p.child_price != null ? parseFloat(p.child_price) : null,
+    childAgeLimit: p.child_age_limit != null ? parseInt(p.child_age_limit) : 14,
+    minGuests:     p.min_guests != null ? parseInt(p.min_guests) : null,
+    maxGuests:     p.max_guests != null ? parseInt(p.max_guests) : null,
+    isActive:      p.is_active !== false,
+    sortOrder:     p.sort_order || 0,
+    _raw: p,
+  };
+}
+
+// Maps frontend menu shape → backend body (snake_case). null clears child price.
+function toMenuBody(d) {
+  const body = {};
+  if (d.name          !== undefined) body.name = d.name;
+  if (d.description   !== undefined) body.description = d.description;
+  if (d.adultPrice    !== undefined) body.adult_price = d.adultPrice;
+  if (d.childPrice    !== undefined) body.child_price = d.childPrice;
+  if (d.childAgeLimit !== undefined) body.child_age_limit = d.childAgeLimit;
+  if (d.minGuests     !== undefined) body.min_guests = d.minGuests;
+  if (d.maxGuests     !== undefined) body.max_guests = d.maxGuests;
+  if (d.sortOrder     !== undefined) body.sort_order = d.sortOrder;
+  if (d.isActive      !== undefined) body.is_active = d.isActive;
+  return body;
+}
+
 export const serviceService = {
   /** Active listings for a provider (public). */
   async getActiveByProvider(providerId) {
@@ -116,6 +150,37 @@ export const serviceService = {
   /** Soft-deletes a service. */
   async remove(id) {
     await api.delete(`/services/${id}`);
+    return true;
+  },
+
+  // ── Menu options (service_packages) ─────────────────────────────────────
+  /** Lists the provider's menus for a service (all statuses, non-deleted). */
+  async getPackages(serviceId) {
+    const res = await api.get(`/services/${serviceId}/packages`);
+    return (res.data || []).map(mapMenu);
+  },
+
+  /** Creates a new menu option. */
+  async createPackage(serviceId, data) {
+    const res = await api.post(`/services/${serviceId}/packages`, toMenuBody(data));
+    return mapMenu(res.data);
+  },
+
+  /** Updates a menu option. Pass childPrice: null to remove child pricing. */
+  async updatePackage(serviceId, packageId, data) {
+    const res = await api.put(`/services/${serviceId}/packages/${packageId}`, toMenuBody(data));
+    return mapMenu(res.data);
+  },
+
+  /** Activates/deactivates a menu option. */
+  async setPackageStatus(serviceId, packageId, isActive) {
+    const res = await api.patch(`/services/${serviceId}/packages/${packageId}/status`, { is_active: isActive });
+    return mapMenu(res.data);
+  },
+
+  /** Soft-deletes a menu option (historical bookings keep their price snapshot). */
+  async deletePackage(serviceId, packageId) {
+    await api.delete(`/services/${serviceId}/packages/${packageId}`);
     return true;
   },
 

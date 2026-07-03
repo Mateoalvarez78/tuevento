@@ -32,12 +32,13 @@ function RegistroContent() {
     e.preventDefault();
     if (form.password.length < 6) { showToast('La contraseña debe tener al menos 6 caracteres', 'error'); return; }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    const result = register({ ...form, role });
+    const result = await register({ ...form, role });
     setLoading(false);
     if (result.success) {
       showToast(`¡Cuenta creada! Bienvenido/a, ${result.user.name.split(' ')[0]}!`, 'success');
       router.push(role === 'provider' ? '/dashboard/proveedor' : '/dashboard/cliente');
+    } else {
+      showToast(result.error || 'No se pudo crear la cuenta', 'error');
     }
   };
 

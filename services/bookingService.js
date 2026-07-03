@@ -1,7 +1,7 @@
 // ─── BOOKING SERVICE ──────────────────────────────────────────────────────────
 // Real API-backed booking operations.
 
-import { api, buildQuery } from './api';
+import { api, buildQuery, ApiError } from './api';
 
 // Status mapping: backend uses 'accepted', frontend legacy uses 'confirmed'
 const STATUS_MAP = { accepted: 'confirmed', confirmed: 'accepted' };
@@ -33,6 +33,14 @@ function mapBooking(b) {
     location:          b.event_location || '',
     eventType:         b.event_type || '',
     guests:            b.guest_count || 0,
+    // Per-person breakdown (menu model)
+    adults:            b.adults_count != null ? parseInt(b.adults_count) : null,
+    children:          b.children_count != null ? parseInt(b.children_count) : 0,
+    adultUnitPrice:    parseFloat(b.adult_unit_price) || 0,
+    childUnitPrice:    parseFloat(b.child_unit_price) || 0,
+    subtotalAdults:    parseFloat(b.subtotal_adults) || 0,
+    subtotalChildren:  parseFloat(b.subtotal_children) || 0,
+    extrasTotal:       parseFloat(b.extras_total) || 0,
     message:           b.message || '',
     extras:            Array.isArray(b.extras_selected) ? b.extras_selected : [],
     // Financial
@@ -99,33 +107,46 @@ export const bookingService = {
     };
   },
 
-  /** Creates a new booking request. */
+  /**
+   * Creates a new booking request.
+   * The backend recomputes all amounts from stored prices — the client only
+   * sends quantities and the selected menu; totals are never trusted from here.
+   */
   async create(data) {
+    const adults   = data.adults   != null ? Number(data.adults)   : (data.guests != null ? Number(data.guests) : undefined);
+    const children = data.children != null ? Number(data.children) : undefined;
     const body = {
-      service_id:     data.serviceId || data.service_id,
-      package_id:     data.packageId || data.package_id || undefined,
-      event_date:     data.date     || data.event_date,
-      event_time:     data.time     || data.event_time || undefined,
-      event_location: data.location || data.event_location,
-      event_type:     data.eventType|| data.event_type || undefined,
-      guest_count:    data.guests   || data.guest_count || undefined,
-      message:        data.message  || undefined,
-      extras_selected:data.extras   || data.extras_selected || [],
+      service_id:      data.serviceId || data.service_id,
+      package_id:      data.packageId || data.package_id || undefined,
+      adults_count:    adults,
+      children_count:  children,
+      event_date:      data.date     || data.event_date,
+      event_time:      data.time     || data.event_time || undefined,
+      event_location:  data.location || data.event_location,
+      event_type:      data.eventType || data.event_type || undefined,
+      message:         data.message  || undefined,
+      extras_selected: data.extras   || data.extras_selected || [],
     };
     const res = await api.post('/bookings', body);
     return mapBooking(res.data);
   },
 
-  /** Updates booking status. Maps legacy 'confirmed' → 'accepted'. */
+  /**
+   * Updates booking status.
+   * Accepts backend statuses (accepted/rejected/cancelled/completed) and also
+   * the legacy UI term 'confirmed' (→ accepted). Maps to the REST action path.
+   */
   async updateStatus(id, status, reason) {
-    const backendStatus = STATUS_MAP[status] || status;
+    // One-way normalization only: 'confirmed' (legacy) → 'accepted'.
+    const backendStatus = status === 'confirmed' ? 'accepted' : status;
     const endpointMap = {
       accepted:  'accept',
       rejected:  'reject',
       cancelled: 'cancel',
       completed: 'complete',
     };
-    const endpoint = endpointMap[backendStatus] || backendStatus;
+    const endpoint = endpointMap[backendStatus];
+    if (!endpoint) throw new ApiError(`Acción de reserva no soportada: ${status}`, 400, 'UNSUPPORTED_STATUS');
     const body = reason ? { reason } : {};
     const res = await api.patch(`/bookings/${id}/${endpoint}`, body);
     return mapBooking(res.data);

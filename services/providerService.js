@@ -63,14 +63,28 @@ function buildBadges(s) {
 
 function mapPackages(packages) {
   if (!Array.isArray(packages)) return [];
-  return packages.map((p) => ({
-    id:          p.id,
-    name:        p.name,
-    price:       parseFloat(p.price) || 0,
-    priceUnit:   p.price_unit || '',
-    description: p.description || '',
-    includes:    Array.isArray(p.includes) ? p.includes : [],
-  }));
+  return packages.map((p) => {
+    const adultPrice = parseFloat(p.adult_price != null ? p.adult_price : p.price) || 0;
+    const childPrice = p.child_price != null ? parseFloat(p.child_price) : null;
+    const priceUnit = p.price_unit || '';
+    return {
+      id:            p.id,
+      name:          p.name,
+      // `price` kept as the headline (adult) price for existing UI references
+      price:         adultPrice,
+      adultPrice,
+      childPrice,
+      childAgeLimit: p.child_age_limit != null ? parseInt(p.child_age_limit) : 14,
+      hasChildPrice: childPrice != null,
+      // Per-person menus multiply by headcount; per-event menus are a flat rate.
+      perPerson:     /persona|person/i.test(priceUnit) || childPrice != null,
+      minGuests:     p.min_guests != null ? parseInt(p.min_guests) : null,
+      maxGuests:     p.max_guests != null ? parseInt(p.max_guests) : null,
+      priceUnit,
+      description:   p.description || '',
+      includes:      Array.isArray(p.includes) ? p.includes : [],
+    };
+  });
 }
 
 function mapExtras(extras) {

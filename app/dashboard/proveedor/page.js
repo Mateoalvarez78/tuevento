@@ -12,6 +12,7 @@ import { useApp } from '@/lib/AppContext';
 import { providerService } from '@/services/providerService';
 import { serviceService } from '@/services/serviceService';
 import { bookingService } from '@/services/bookingService';
+import { categoryService } from '@/services/categoryService';
 import ProviderStatusBadge from '@/components/ProviderStatusBadge';
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import ServiceStatusBadge from '@/components/ServiceStatusBadge';
@@ -24,6 +25,7 @@ import { UpcomingList, LatestBookings } from '@/components/dashboard/proveedor/D
 import { AlertsBar, ReviewsSection, GoalsPanel, PerformancePanel, PaymentsCard, ActivityTimeline, QuickActionsGrid } from '@/components/dashboard/proveedor/DashWidgets';
 import { DASH_PROVIDER } from '@/lib/proveedorDashboardData';
 import DashCommissions from '@/components/dashboard/proveedor/DashCommissions';
+import MenuManager from '@/components/dashboard/proveedor/MenuManager';
 
 const TABS = [
   { id: 'dashboard',   label: 'Dashboard',   icon: LayoutDashboard },
@@ -54,6 +56,21 @@ export default function ProveedorDashboard() {
   const [myServices, setMyServices] = useState([]);
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+
+  // "Nuevo servicio" modal
+  const [newServiceOpen, setNewServiceOpen] = useState(false);
+  const [savingService, setSavingService] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [newService, setNewService] = useState({
+    title: '', category_id: '', description: '', price_type: 'per_person', price_from: '',
+  });
+
+  // Gestión de menús de un servicio
+  const [menuService, setMenuService] = useState(null);
+
+  useEffect(() => {
+    categoryService.getAll().then(setCategories).catch(() => setCategories([]));
+  }, []);
 
   const reload = async () => {
     if (!user) return;
@@ -94,29 +111,82 @@ export default function ProveedorDashboard() {
   const accountStatus = providerData?.status || 'pending';
   const isApproved = accountStatus === 'approved';
 
+  const logDev = (label, err) => {
+    if (process.env.NODE_ENV !== 'production') console.error(`[dashboard proveedor] ${label}:`, err);
+  };
+
   const handleAccept = async (id) => {
-    await bookingService.updateStatus(id, 'accepted');
-    reload();
-    showToast('Solicitud aceptada', 'success');
+    try {
+      await bookingService.updateStatus(id, 'accepted');
+      await reload();
+      showToast('Solicitud aceptada', 'success');
+    } catch (err) {
+      logDev('aceptar reserva', err);
+      showToast(err?.message || 'No se pudo aceptar la solicitud', 'error');
+    }
   };
 
   const handleReject = async (id) => {
-    await bookingService.updateStatus(id, 'rejected', rejectReason);
-    setRejectModal(null);
-    setRejectReason('');
-    reload();
-    showToast('Solicitud rechazada', 'info');
+    try {
+      await bookingService.updateStatus(id, 'rejected', rejectReason);
+      setRejectModal(null);
+      setRejectReason('');
+      await reload();
+      showToast('Solicitud rechazada', 'info');
+    } catch (err) {
+      logDev('rechazar reserva', err);
+      showToast(err?.message || 'No se pudo rechazar la solicitud', 'error');
+    }
   };
 
   const handleServiceAction = async (serviceId, action) => {
-    if (action === 'submit')  await serviceService.submit(serviceId);
-    if (action === 'pause')   await serviceService.pause(serviceId);
-    if (action === 'resume')  await serviceService.resume(serviceId);
-    if (action === 'remove') {
-      await serviceService.remove(serviceId);
-      showToast('Listado eliminado', 'info');
+    try {
+      if (action === 'submit')  await serviceService.submit(serviceId);
+      if (action === 'pause')   await serviceService.pause(serviceId);
+      if (action === 'resume')  await serviceService.resume(serviceId);
+      if (action === 'remove') {
+        await serviceService.remove(serviceId);
+        showToast('Listado eliminado', 'info');
+      }
+      await reload();
+    } catch (err) {
+      logDev(`servicio:${action}`, err);
+      showToast(err?.message || 'No se pudo completar la acción', 'error');
     }
-    reload();
+  };
+
+  const openNewService = () => {
+    const match = categories.find((c) => c.id === providerData?.category);
+    setNewService({
+      title: '', category_id: match?.categoryId || '', description: '',
+      price_type: 'per_person', price_from: '',
+    });
+    setNewServiceOpen(true);
+  };
+
+  const handleCreateService = async () => {
+    if (!newService.title.trim())   { showToast('Ingresá un título', 'error'); return; }
+    if (!newService.category_id)    { showToast('Elegí una categoría', 'error'); return; }
+    const price = Number(newService.price_from);
+    if (!Number.isFinite(price) || price < 0) { showToast('Ingresá un precio base válido', 'error'); return; }
+    setSavingService(true);
+    try {
+      await serviceService.create({
+        category_id: newService.category_id,
+        title:       newService.title.trim(),
+        description: newService.description.trim(),
+        price_type:  newService.price_type,
+        price_from:  price,
+      });
+      setNewServiceOpen(false);
+      await reload();
+      showToast('Servicio creado como borrador', 'success');
+    } catch (err) {
+      logDev('crear servicio', err);
+      showToast(err?.message || 'No se pudo crear el servicio', 'error');
+    } finally {
+      setSavingService(false);
+    }
   };
 
   return (
@@ -344,10 +414,10 @@ export default function ProveedorDashboard() {
                           <ReservationStatusBadge status={req.status} />
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-xs text-gray-600 mb-3">
-                          <div><span className="text-gray-400 block">Paquete</span><span className="font-medium text-gray-800">{req.package}</span></div>
+                          <div><span className="text-gray-400 block">Menú</span><span className="font-medium text-gray-800">{req.packageName || '—'}</span></div>
                           <div><span className="text-gray-400 block">Tipo</span><span className="font-medium text-gray-800">{req.eventType}</span></div>
                           <div><span className="text-gray-400 block">Fecha</span><span className="font-medium text-gray-800">{new Date(req.date + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'short' })} {req.time}</span></div>
-                          <div><span className="text-gray-400 block">Invitados</span><span className="font-medium text-gray-800">{req.guests} pers.</span></div>
+                          <div><span className="text-gray-400 block">Personas</span><span className="font-medium text-gray-800">{req.adults != null ? `${req.adults} ad.${req.children ? ` + ${req.children} niños` : ''}` : `${req.guests} pers.`}</span></div>
                         </div>
                         <div className="text-xs text-gray-500 flex items-center gap-1 mb-3">
                           <MapPin size={11} /> {req.location}
@@ -355,8 +425,13 @@ export default function ProveedorDashboard() {
                         {req.message && (
                           <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-600 italic mb-3">"{req.message}"</div>
                         )}
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <span className="text-sm font-bold text-gray-900">${req.estimatedTotal?.toLocaleString('es-UY')}</span>
+                        {/* Financial breakdown: total, Eventonow commission (8%), provider net */}
+                        <div className="grid grid-cols-3 gap-2 mb-3 bg-gray-50 rounded-xl p-3">
+                          <div><span className="text-[10px] text-gray-400 block uppercase tracking-wide">Total</span><span className="text-sm font-bold text-gray-900">${req.totalEstimated?.toLocaleString('es-UY')}</span></div>
+                          <div><span className="text-[10px] text-gray-400 block uppercase tracking-wide">Comisión (8%)</span><span className="text-sm font-semibold text-amber-600">-${req.commissionAmount?.toLocaleString('es-UY')}</span></div>
+                          <div><span className="text-[10px] text-gray-400 block uppercase tracking-wide">Tu neto</span><span className="text-sm font-bold text-emerald-600">${req.providerNet?.toLocaleString('es-UY')}</span></div>
+                        </div>
+                        <div className="flex items-center justify-end gap-2 flex-wrap">
                           {req.status === 'pending' && (
                             <div className="flex gap-2">
                               <button onClick={() => setRejectModal(req.id)} className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-colors">
@@ -383,19 +458,10 @@ export default function ProveedorDashboard() {
                 <p className="text-sm text-gray-500">{myServices.length} servicio{myServices.length !== 1 ? 's' : ''}</p>
                 {isApproved && (
                   <button
-                    onClick={async () => {
-                      if (!providerData) return;
-                      await serviceService.create({
-                        title: 'Nuevo servicio (borrador)',
-                        priceType: 'per_event',
-                        priceFrom: 0,
-                      });
-                      reload();
-                      showToast('Borrador creado', 'success');
-                    }}
+                    onClick={openNewService}
                     className="text-sm font-semibold text-white bg-primary px-3 py-2 rounded-xl hover:bg-primary-dark transition-colors"
                   >
-                    + Nuevo listado
+                    + Nuevo servicio
                   </button>
                 )}
               </div>
@@ -421,6 +487,9 @@ export default function ProveedorDashboard() {
                           )}
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => setMenuService(svc)} className="px-2.5 py-1.5 text-xs font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary-light transition-colors" title="Administrar menús">
+                            Menús
+                          </button>
                           {svc.status === 'active' && (
                             <Link href={`/proveedor/${providerData?.id}`} target="_blank" className="p-2 text-gray-400 hover:text-primary rounded-lg hover:bg-gray-50 transition-colors" title="Ver público">
                               <Eye size={15} />
@@ -559,6 +628,103 @@ export default function ProveedorDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Nuevo servicio modal */}
+      {newServiceOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !savingService && setNewServiceOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-md z-10 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Nuevo servicio</h3>
+            <p className="text-sm text-gray-500 mb-4">Se crea como <span className="font-medium">borrador</span>. Después podrás publicarlo desde tu lista de servicios.</p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Título *</label>
+                <input
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  placeholder="Ej: Catering para casamientos"
+                  value={newService.title}
+                  onChange={(e) => setNewService({ ...newService, title: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Categoría *</label>
+                <select
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  value={newService.category_id}
+                  onChange={(e) => setNewService({ ...newService, category_id: e.target.value })}
+                >
+                  <option value="">Seleccioná...</option>
+                  {categories.map((c) => (
+                    <option key={c.categoryId || c.id} value={c.categoryId || ''}>{c.icon} {c.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Descripción</label>
+                <textarea
+                  rows={3}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  placeholder="Contá brevemente qué ofrecés"
+                  value={newService.description}
+                  onChange={(e) => setNewService({ ...newService, description: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Tipo de precio</label>
+                  <select
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    value={newService.price_type}
+                    onChange={(e) => setNewService({ ...newService, price_type: e.target.value })}
+                  >
+                    <option value="per_person">Por persona</option>
+                    <option value="per_event">Por evento</option>
+                    <option value="per_hour">Por hora</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Precio base *</label>
+                  <input
+                    type="number" min="0"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    placeholder="0"
+                    value={newService.price_from}
+                    onChange={(e) => setNewService({ ...newService, price_from: e.target.value })}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-400">Podrás cargar menús (adulto/niño), extras e imágenes más adelante.</p>
+            </div>
+
+            <div className="flex gap-2 mt-5">
+              <button
+                onClick={() => setNewServiceOpen(false)}
+                disabled={savingService}
+                className="flex-1 py-2.5 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 text-sm transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateService}
+                disabled={savingService}
+                className="flex-1 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark text-sm transition-colors disabled:opacity-50"
+              >
+                {savingService ? 'Creando...' : 'Crear servicio'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Administrar menús de un servicio */}
+      {menuService && (
+        <MenuManager
+          service={menuService}
+          onClose={() => setMenuService(null)}
+          onChanged={reload}
+        />
       )}
     </div>
   );

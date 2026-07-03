@@ -3,26 +3,29 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
+import { bookingService } from '@/services/bookingService';
 import { Check, CalendarDays, MapPin, Users, Package, User, MessageSquare, ClipboardList, CheckCircle } from 'lucide-react';
 import PackageSelector from './PackageSelector';
 
 const EVENT_TYPES = ['Cumpleaños', 'Casamiento', 'Empresarial', 'Infantil', 'Fiesta privada', 'Otro'];
 const STEPS = [
   { label: 'Evento',    icon: CalendarDays },
-  { label: 'Paquete',  icon: Package },
+  { label: 'Menú',     icon: Package },
   { label: 'Contacto', icon: User },
   { label: 'Resumen',  icon: ClipboardList },
 ];
 
 export default function BookingWizard({ provider }) {
   const router = useRouter();
-  const { user, addReservation, showToast } = useApp();
+  const { user, showToast } = useApp();
   const [step, setStep] = useState(0);
   const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const [requestNumber, setRequestNumber] = useState('');
 
   const [eventData, setEventData] = useState({
-    date: '', time: '', location: '', eventType: '', guests: '',
+    date: '', time: '', location: '', eventType: '', adults: '', children: '',
   });
   const [packageData, setPackageData] = useState({
     packageId: provider.packages[1]?.id || provider.packages[0]?.id,
@@ -48,39 +51,56 @@ export default function BookingWizard({ provider }) {
     .filter((e) => packageData.extras.includes(e.id))
     .reduce((sum, e) => sum + e.price, 0);
 
-  const totalEstimated = (selectedPkg?.price || 0) + extrasTotal;
+  // Per-person calculation (mirrors the backend; backend remains authoritative).
+  const adultsN = Number(eventData.adults) || 0;
+  const childrenN = Number(eventData.children) || 0;
+  const adultPrice = selectedPkg?.adultPrice ?? selectedPkg?.price ?? provider.priceFrom ?? 0;
+  const childPrice = selectedPkg?.childPrice ?? 0;
+  const hasChildPrice = !!selectedPkg?.hasChildPrice;
+  const childAgeLimit = selectedPkg?.childAgeLimit ?? 14;
+  // Per-person menus multiply by headcount; per-event menus (foto/DJ) are flat.
+  const perPerson = selectedPkg ? selectedPkg.perPerson !== false : (provider.priceType === 'per_person');
+  const subtotalAdults = perPerson ? adultsN * adultPrice : adultPrice;
+  const subtotalChildren = perPerson ? childrenN * childPrice : 0;
+  const totalEstimated = subtotalAdults + subtotalChildren + extrasTotal;
 
   const stepValid = () => {
-    if (step === 0) return eventData.date && eventData.time && eventData.location && eventData.eventType && eventData.guests;
-    if (step === 1) return !!packageData.packageId;
+    if (step === 0) return eventData.date && eventData.time && eventData.location && eventData.eventType && adultsN >= 1;
+    if (step === 1) return provider.packages.length === 0 || !!packageData.packageId;
     if (step === 2) return contactData.name && contactData.phone && contactData.email;
     return true;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!user) { showToast('Necesitás iniciar sesión para reservar', 'error'); router.push('/login'); return; }
-    const reservation = addReservation({
-      providerId: provider.id,
-      providerName: provider.name,
-      providerCategory: provider.categoryLabel,
-      providerImage: provider.images[0],
-      package: selectedPkg?.name,
-      extras: provider.extras.filter((e) => packageData.extras.includes(e.id)).map((e) => e.name),
-      date: eventData.date,
-      time: eventData.time,
-      location: eventData.location,
-      eventType: eventData.eventType,
-      guests: Number(eventData.guests),
-      totalEstimated,
-      depositAmount: Math.round(totalEstimated * 0.3),
-      depositPaid: false,
-      message: contactData.message,
-      clientName: contactData.name,
-      clientPhone: contactData.phone,
-      clientEmail: contactData.email,
-    });
-    setRequestNumber(reservation.requestNumber);
-    setDone(true);
+    if (submitting) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      // Send only the fields the backend needs; it derives subtotal, commission,
+      // total, deposit and request_number server-side. Mapping to snake_case
+      // happens in bookingService.create().
+      const booking = await bookingService.create({
+        serviceId:  provider.id,
+        packageId:  packageData.packageId || undefined,
+        adults:     adultsN,
+        children:   childrenN,
+        date:       eventData.date,
+        time:       eventData.time,
+        location:   eventData.location,
+        eventType:  eventData.eventType,
+        message:    contactData.message,
+        extras:     packageData.extras.map((id) => ({ id, quantity: 1 })),
+      });
+      setRequestNumber(booking.requestNumber || '');
+      setDone(true);
+    } catch (err) {
+      const msg = err?.message || 'No se pudo enviar la solicitud. Intentá de nuevo.';
+      setError(msg);
+      showToast(msg, 'error');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (done) {
@@ -160,19 +180,26 @@ export default function BookingWizard({ provider }) {
               <input className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Ej: Salón Crystal, Av. 18 de Julio, Montevideo" value={eventData.location} onChange={(e) => setEventData({ ...eventData, location: e.target.value })} />
             </div>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipo de evento *</label>
+            <select className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white" value={eventData.eventType} onChange={(e) => setEventData({ ...eventData, eventType: e.target.value })}>
+              <option value="">Seleccioná...</option>
+              {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipo de evento *</label>
-              <select className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white" value={eventData.eventType} onChange={(e) => setEventData({ ...eventData, eventType: e.target.value })}>
-                <option value="">Seleccioná...</option>
-                {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Invitados *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Adultos *</label>
               <div className="relative">
                 <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="number" min="1" className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="¿Cuántos?" value={eventData.guests} onChange={(e) => setEventData({ ...eventData, guests: e.target.value })} />
+                <input type="number" min="1" className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Cantidad de adultos" value={eventData.adults} onChange={(e) => setEventData({ ...eventData, adults: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Niños <span className="text-gray-400 font-normal">(opcional)</span></label>
+              <div className="relative">
+                <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input type="number" min="0" className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Cantidad de niños" value={eventData.children} onChange={(e) => setEventData({ ...eventData, children: e.target.value })} />
               </div>
             </div>
           </div>
@@ -182,7 +209,7 @@ export default function BookingWizard({ provider }) {
       {/* Step 1: Package */}
       {step === 1 && (
         <div>
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Seleccioná un paquete</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Seleccioná un menú</h3>
           <PackageSelector packages={provider.packages} selectedId={packageData.packageId} onSelect={(id) => setPackageData({ ...packageData, packageId: id })} />
 
           {provider.extras.length > 0 && (
@@ -238,10 +265,41 @@ export default function BookingWizard({ provider }) {
               <span className="text-gray-500">Proveedor</span>
               <span className="font-medium text-gray-900">{provider.name}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Paquete</span>
-              <span className="font-medium text-gray-900">{selectedPkg?.name} — ${selectedPkg?.price.toLocaleString('es-UY')}</span>
-            </div>
+            {selectedPkg && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Menú</span>
+                <span className="font-medium text-gray-900">{selectedPkg.name}</span>
+              </div>
+            )}
+            {perPerson ? (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Adultos</span>
+                  <span className="font-medium text-gray-900">{adultsN} × ${adultPrice.toLocaleString('es-UY')} = ${subtotalAdults.toLocaleString('es-UY')}</span>
+                </div>
+                {childrenN > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Niños (hasta {childAgeLimit} años)</span>
+                    <span className="font-medium text-gray-900">
+                      {hasChildPrice
+                        ? `${childrenN} × $${childPrice.toLocaleString('es-UY')} = $${subtotalChildren.toLocaleString('es-UY')}`
+                        : `${childrenN} (sin cargo en este menú)`}
+                    </span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Precio del servicio</span>
+                  <span className="font-medium text-gray-900">${subtotalAdults.toLocaleString('es-UY')} <span className="text-xs text-gray-400">por evento</span></span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Personas</span>
+                  <span className="font-medium text-gray-900">{adultsN}{childrenN > 0 ? ` adultos + ${childrenN} niños` : ' personas'}</span>
+                </div>
+              </>
+            )}
             {packageData.extras.length > 0 && (
               <div className="flex justify-between">
                 <span className="text-gray-500">Extras</span>
@@ -256,10 +314,6 @@ export default function BookingWizard({ provider }) {
             <div className="flex justify-between">
               <span className="text-gray-500">Tipo de evento</span>
               <span className="font-medium text-gray-900">{eventData.eventType}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Invitados</span>
-              <span className="font-medium text-gray-900">{eventData.guests}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Ubicación</span>
@@ -278,6 +332,11 @@ export default function BookingWizard({ provider }) {
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
             <strong>¿Cómo funciona?</strong> Tu solicitud llega al proveedor. Si acepta, te contactará para coordinar el pago de la seña y confirmar la reserva.
           </div>
+          {error && (
+            <div className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+              {error}
+            </div>
+          )}
         </div>
       )}
 
@@ -301,9 +360,10 @@ export default function BookingWizard({ provider }) {
         ) : (
           <button
             onClick={handleSubmit}
-            className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors shadow-sm"
+            disabled={submitting}
+            className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
           >
-            Enviar solicitud
+            {submitting ? 'Enviando...' : 'Enviar solicitud'}
           </button>
         )}
       </div>

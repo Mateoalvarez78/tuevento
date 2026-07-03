@@ -9,7 +9,8 @@ let _cache = null;
 
 function mapCategory(c) {
   return {
-    id:    c.slug || c.id,
+    id:    c.slug || c.id,   // slug — usado por filtros del catálogo
+    categoryId: c.id,        // UUID real — necesario para crear servicios
     label: c.name,
     icon:  c.emoji || '',
     count: 0,

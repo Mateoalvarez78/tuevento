@@ -38,10 +38,17 @@ export default function PackageSelector({ packages, selectedId, onSelect }) {
 
             <div className="mb-2">
               <span className={`text-2xl font-bold ${selected ? 'text-primary' : 'text-gray-900'}`}>
-                ${pkg.price.toLocaleString('es-UY')}
+                ${(pkg.adultPrice ?? pkg.price).toLocaleString('es-UY')}
               </span>
               {pkg.priceUnit && (
                 <span className="text-xs text-gray-500 ml-1">{pkg.priceUnit}</span>
+              )}
+              {pkg.hasChildPrice && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Niños (hasta {pkg.childAgeLimit} años):{' '}
+                  <span className="font-semibold text-gray-700">${pkg.childPrice.toLocaleString('es-UY')}</span>
+                  {pkg.priceUnit ? ` ${pkg.priceUnit}` : ''}
+                </div>
               )}
             </div>
 
