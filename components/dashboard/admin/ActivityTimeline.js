@@ -1,0 +1,34 @@
+'use client';
+
+function relative(dateStr) {
+  if (!dateStr) return '';
+  const then = new Date(dateStr).getTime();
+  const days = Math.floor((Date.now() - then) / 86400000);
+  if (Number.isNaN(days)) return '';
+  if (days <= 0) return 'hoy';
+  if (days === 1) return 'ayer';
+  if (days < 30) return `hace ${days} días`;
+  const months = Math.floor(days / 30);
+  return `hace ${months} mes${months !== 1 ? 'es' : ''}`;
+}
+
+export default function ActivityTimeline({ activity = [] }) {
+  return (
+    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+      <h3 className="text-sm font-semibold text-gray-300 mb-4">Actividad reciente</h3>
+      {activity.length === 0 ? (
+        <div className="py-8 text-center text-sm text-gray-500">Sin actividad reciente.</div>
+      ) : (
+        <ol className="relative border-l border-gray-800 ml-2 space-y-4">
+          {activity.map((a, i) => (
+            <li key={i} className="ml-4">
+              <span className="absolute -left-[9px] w-4 h-4 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-[9px]">{a.icon}</span>
+              <p className="text-sm text-gray-200 leading-tight">{a.text}</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">{relative(a.date)}</p>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}

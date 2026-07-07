@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
+import { homePathForRole } from '@/lib/roles';
 import { User, Briefcase, Eye, EyeOff, Mail, Lock, Phone, UserCircle } from 'lucide-react';
 
 export default function RegistroPage() {
@@ -36,7 +37,7 @@ function RegistroContent() {
     setLoading(false);
     if (result.success) {
       showToast(`¡Cuenta creada! Bienvenido/a, ${result.user.name.split(' ')[0]}!`, 'success');
-      router.push(role === 'provider' ? '/dashboard/proveedor' : '/dashboard/cliente');
+      router.push(homePathForRole(result.user.role));
     } else {
       showToast(result.error || 'No se pudo crear la cuenta', 'error');
     }

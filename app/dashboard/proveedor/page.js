@@ -9,6 +9,7 @@ import {
   AlertCircle, ChevronRight, Home, BadgeCheck, BarChart3,
 } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
+import { useRequireRole } from '@/hooks/useRequireRole';
 import { providerService } from '@/services/providerService';
 import { serviceService } from '@/services/serviceService';
 import { bookingService } from '@/services/bookingService';
@@ -18,11 +19,9 @@ import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import ServiceStatusBadge from '@/components/ServiceStatusBadge';
 import EmptyState from '@/components/EmptyState';
 
-import DashStats from '@/components/dashboard/proveedor/DashStats';
-import { RevenueChart, BookingsChart, TopServicesChart, StatusPieChart, BookingHeatmap } from '@/components/dashboard/proveedor/DashCharts';
-import { ProviderCalendar, FullCalendarView } from '@/components/dashboard/proveedor/DashCalendar';
-import { UpcomingList, LatestBookings } from '@/components/dashboard/proveedor/DashBookings';
-import { AlertsBar, ReviewsSection, GoalsPanel, PerformancePanel, PaymentsCard, ActivityTimeline, QuickActionsGrid } from '@/components/dashboard/proveedor/DashWidgets';
+import ProviderOverview from '@/components/dashboard/proveedor/ProviderOverview';
+import { FullCalendarView } from '@/components/dashboard/proveedor/DashCalendar';
+import { ReviewsSection } from '@/components/dashboard/proveedor/DashWidgets';
 import { DASH_PROVIDER } from '@/lib/proveedorDashboardData';
 import DashCommissions from '@/components/dashboard/proveedor/DashCommissions';
 import MenuManager from '@/components/dashboard/proveedor/MenuManager';
@@ -50,6 +49,7 @@ const TAB_TITLE = {
 export default function ProveedorDashboard() {
   const router = useRouter();
   const { user, logout, showToast } = useApp();
+  const access = useRequireRole(['provider']); // solo proveedores (admin incluido)
   const [activeTab, setActiveTab] = useState('dashboard');
   const [providerData, setProviderData] = useState(null);
   const [requests, setRequests] = useState([]);
@@ -92,14 +92,23 @@ export default function ProveedorDashboard() {
 
   useEffect(() => { reload(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!user) {
+  // Rol equivocado (ej. cliente) → useRequireRole ya lo está redirigiendo a su home.
+  if (access === 'loading' || access === 'denied') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-400 text-sm">Verificando acceso…</div>
+      </div>
+    );
+  }
+
+  if (access === 'unauth') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
           <div className="text-5xl mb-4">🔒</div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Necesitás iniciar sesión</h2>
           <p className="text-gray-500 text-sm mb-6">Ingresá a tu cuenta de proveedor para gestionar tu negocio.</p>
-          <Link href="/login" className="inline-block bg-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors">
+          <Link href="/provider/login" className="inline-block bg-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors">
             Ingresar
           </Link>
         </div>
@@ -199,7 +208,7 @@ export default function ProveedorDashboard() {
         <div className="px-6 py-5 border-b border-gray-100 flex items-center gap-2.5">
           <Link href="/" className="flex items-center gap-2 flex-1 min-w-0">
             <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center text-white font-black text-sm shrink-0">T</div>
-            <span className="font-bold text-gray-900 text-lg">tuevento</span>
+            <span className="font-bold text-gray-900 text-lg">Eventonow</span>
           </Link>
           <span className="text-[10px] font-bold text-primary bg-primary-light px-1.5 py-0.5 rounded-md shrink-0">PRO</span>
         </div>
@@ -342,54 +351,12 @@ export default function ProveedorDashboard() {
 
           {/* ── DASHBOARD ── */}
           {activeTab === 'dashboard' && (
-            <div className="space-y-5">
-              <AlertsBar />
-
-              <DashStats />
-
-              {/* Revenue + Goals */}
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-                <div className="xl:col-span-2"><RevenueChart /></div>
-                <GoalsPanel />
-              </div>
-
-              {/* Bookings Bar + Status Pie */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <BookingsChart />
-                <StatusPieChart />
-              </div>
-
-              {/* Top Services + Heatmap */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <TopServicesChart />
-                <BookingHeatmap />
-              </div>
-
-              {/* Calendar + Upcoming */}
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-                <div className="xl:col-span-2">
-                  <ProviderCalendar onTabChange={setActiveTab} />
-                </div>
-                <UpcomingList />
-              </div>
-
-              {/* Bookings table */}
-              <LatestBookings />
-
-              {/* Reviews + Payments */}
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-                <div className="xl:col-span-2"><ReviewsSection /></div>
-                <PaymentsCard />
-              </div>
-
-              {/* Activity + Performance */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <ActivityTimeline />
-                <PerformancePanel />
-              </div>
-
-              <QuickActionsGrid onTabChange={setActiveTab} />
-            </div>
+            <ProviderOverview
+              provider={providerData}
+              services={myServices}
+              onCreateService={openNewService}
+              onGoToTab={setActiveTab}
+            />
           )}
 
           {/* ── SOLICITUDES ── */}
@@ -732,7 +699,7 @@ export default function ProveedorDashboard() {
 
 function StatusBanner({ status, reason }) {
   const configs = {
-    pending:   { bg: 'bg-amber-50 border-amber-200',  icon: '⏳', text: 'text-amber-800', msg: 'Tu cuenta está en revisión. El equipo de TuEvento la revisará en las próximas 24–48 hs.' },
+    pending:   { bg: 'bg-amber-50 border-amber-200',  icon: '⏳', text: 'text-amber-800', msg: 'Tu cuenta está en revisión. El equipo de Eventonow la revisará en las próximas 24–48 hs.' },
     rejected:  { bg: 'bg-red-50 border-red-200',      icon: '✕',  text: 'text-red-800',   msg: 'Tu cuenta fue rechazada.' },
     suspended: { bg: 'bg-gray-100 border-gray-300',   icon: '⊘',  text: 'text-gray-700',  msg: 'Tu cuenta está suspendida.' },
   };

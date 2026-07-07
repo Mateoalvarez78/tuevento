@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
+import { isAdminRole, homePathForRole } from '@/lib/roles';
 import {
   LayoutDashboard,
   Users,
@@ -22,15 +23,19 @@ const NAV_ITEMS = [
 ];
 
 export default function AdminLayout({ children }) {
-  const { user, logout } = useApp();
+  const { user, authLoading, logout } = useApp();
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
+  // El login del admin vive bajo /admin pero NO debe pasar por el guard/shell.
+  const isLoginRoute = pathname === '/admin/login';
+
   useEffect(() => {
-    if (user === null) return;
-    if (user && user.role !== 'admin') router.replace('/');
-  }, [user, router]);
+    if (isLoginRoute || authLoading) return;
+    if (!user) { router.replace('/admin/login'); return; }
+    if (!isAdminRole(user.role)) router.replace(homePathForRole(user.role));
+  }, [isLoginRoute, authLoading, user, router]);
 
   // Close drawer on route change
   useEffect(() => { setOpen(false); }, [pathname]);
@@ -41,7 +46,11 @@ export default function AdminLayout({ children }) {
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
-  if (!user || user.role !== 'admin') {
+  // Login del admin: se renderiza sin sidebar ni guard (chicken-and-egg).
+  // (Va después de todos los hooks para no romper las reglas de hooks.)
+  if (isLoginRoute) return children;
+
+  if (authLoading || !user || !isAdminRole(user.role)) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-gray-400 text-sm">Verificando acceso…</div>
@@ -60,7 +69,7 @@ export default function AdminLayout({ children }) {
           <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
             <span className="text-white font-bold text-xs">TE</span>
           </div>
-          <span className="text-white font-semibold text-sm">TuEvento</span>
+          <span className="text-white font-semibold text-sm">Eventonow</span>
         </Link>
         <div className="mt-3 flex items-center gap-2">
           <ShieldCheck size={13} className="text-primary" />
@@ -149,7 +158,7 @@ export default function AdminLayout({ children }) {
               <span className="text-white font-bold text-xs">TE</span>
             </div>
             <div>
-              <span className="text-white font-semibold text-sm">TuEvento</span>
+              <span className="text-white font-semibold text-sm">Eventonow</span>
               <span className="text-primary text-xs font-medium ml-1.5">Admin</span>
             </div>
           </div>

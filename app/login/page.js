@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
+import { homePathForRole } from '@/lib/roles';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 
 export default function LoginPage() {
@@ -22,24 +23,13 @@ export default function LoginPage() {
     setLoading(false);
     if (result.success) {
       showToast(`¡Bienvenido/a, ${result.user.name.split(' ')[0]}!`, 'success');
-      const dest =
-        result.user.role === 'admin'    ? '/admin' :
-        result.user.role === 'provider' ? '/dashboard/proveedor' :
-                                          '/dashboard/cliente';
-      router.push(dest);
+      router.push(homePathForRole(result.user.role));
     } else {
       setError(result.error);
     }
   };
 
-  const loginDemo = (role) => {
-    const map = {
-      client:   { email: 'valentina@example.com', password: '123456'   },
-      provider: { email: 'mateo@example.com',      password: '123456'   },
-      admin:    { email: 'admin@eventonow.com',    password: 'Admin123!' },
-    };
-    setForm(map[role] || map.client);
-  };
+  const fillDemo = () => setForm({ email: 'valentina@example.com', password: '123456' });
 
   return (
     <div className="min-h-screen bg-surface flex">
@@ -85,23 +75,15 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <h1 className="text-2xl font-extrabold text-gray-900 mb-2">Bienvenido/a de nuevo</h1>
-          <p className="text-gray-500 mb-6 text-sm">Ingresá con tu cuenta para continuar.</p>
+          <h1 className="text-2xl font-extrabold text-gray-900 mb-2">Entrá a Eventonow y organizá tu evento ideal</h1>
+          <p className="text-gray-500 mb-6 text-sm">Ingresá con tu cuenta para buscar y contratar servicios.</p>
 
-          {/* Demo buttons */}
+          {/* Demo (solo cliente) */}
           <div className="bg-primary-light border border-primary/20 rounded-2xl p-4 mb-6">
             <p className="text-xs font-semibold text-primary mb-2">Demo rápida:</p>
-            <div className="flex gap-2">
-              <button onClick={() => loginDemo('client')} className="flex-1 text-xs font-medium text-primary border border-primary/30 py-2 rounded-xl hover:bg-primary hover:text-white transition-colors">
-                Ingresar como cliente
-              </button>
-              <button onClick={() => loginDemo('provider')} className="flex-1 text-xs font-medium text-primary border border-primary/30 py-2 rounded-xl hover:bg-primary hover:text-white transition-colors">
-                Ingresar como proveedor
-              </button>
-              <button onClick={() => loginDemo('admin')} className="flex-1 text-xs font-medium text-primary border border-primary/30 py-2 rounded-xl hover:bg-primary hover:text-white transition-colors">
-                Ingresar como admin
-              </button>
-            </div>
+            <button onClick={fillDemo} className="w-full text-xs font-medium text-primary border border-primary/30 py-2 rounded-xl hover:bg-primary hover:text-white transition-colors">
+              Completar cuenta de cliente demo
+            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -163,6 +145,10 @@ export default function LoginPage() {
           <p className="text-center text-sm text-gray-500 mt-6">
             ¿No tenés cuenta?{' '}
             <Link href="/registro" className="text-primary font-semibold hover:underline">Registrate gratis</Link>
+          </p>
+          <p className="text-center text-xs text-gray-400 mt-2">
+            ¿Sos proveedor?{' '}
+            <Link href="/provider/login" className="text-gray-600 hover:underline">Ingresá a tu panel</Link>
           </p>
         </div>
       </div>

@@ -1,0 +1,37 @@
+'use client';
+
+import Link from 'next/link';
+import { ExternalLink } from 'lucide-react';
+import ServiceStatusBadge from '@/components/ServiceStatusBadge';
+
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('es-UY', { day: '2-digit', month: 'short' }) : '—';
+
+export default function RecentServices({ services = [] }) {
+  return (
+    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-gray-300">Servicios recientes</h3>
+        <Link href="/admin/servicios" className="text-xs font-semibold text-primary hover:underline">Ver todos</Link>
+      </div>
+      {services.length === 0 ? (
+        <div className="py-8 text-center text-sm text-gray-500">Todavía no hay servicios.</div>
+      ) : (
+        <div className="space-y-2.5">
+          {services.map((s) => (
+            <div key={s.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-950 border border-gray-800">
+              <span className="text-xl shrink-0">{s.categoryEmoji || '📦'}</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-100 truncate">{s.title}</p>
+                <p className="text-xs text-gray-500 truncate">{s.providerName} · {s.category} · {fmtDate(s.createdAt)}</p>
+              </div>
+              <ServiceStatusBadge status={s.status} />
+              <Link href={`/proveedor/${s.id}`} target="_blank" className="p-1.5 text-gray-500 hover:text-primary transition-colors shrink-0" title="Ver">
+                <ExternalLink size={15} />
+              </Link>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
