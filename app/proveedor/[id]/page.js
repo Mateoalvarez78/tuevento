@@ -133,7 +133,7 @@ export default function ProviderDetailPage({ params }) {
         </nav>
 
         {/* Gallery */}
-        <ProviderGallery images={provider.images} name={provider.name} />
+        <ProviderGallery images={provider.images} name={provider.name} emoji={provider.categoryEmoji} />
 
         <div className="mt-8 flex flex-col lg:flex-row gap-8">
           {/* Left: Details */}

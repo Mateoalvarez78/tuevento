@@ -96,8 +96,10 @@ export default function ProviderOverview({ provider, services = [], onCreateServ
   const thisMonth = monthlyStats.find((m) => m.monthKey === currentMonthKey());
 
   // ── Alertas ──
+  const withoutPhotos = services.filter((s) => !s.primaryImage).length;
   const alerts = [];
   if (bookings.pending > 0) alerts.push({ tone: 'amber', text: `Tenés ${bookings.pending} reserva${bookings.pending !== 1 ? 's' : ''} pendiente${bookings.pending !== 1 ? 's' : ''} de respuesta.`, cta: 'Ver solicitudes', action: () => onGoToTab?.('solicitudes') });
+  if (withoutPhotos > 0) alerts.push({ tone: 'amber', text: `Tenés ${withoutPhotos} servicio${withoutPhotos !== 1 ? 's' : ''} sin fotos. Agregar imágenes mejora tus reservas.`, cta: 'Ver servicios', action: () => onGoToTab?.('servicios') });
   if (pendingReview > 0) alerts.push({ tone: 'blue', text: `${pendingReview} servicio${pendingReview !== 1 ? 's' : ''} pendiente${pendingReview !== 1 ? 's' : ''} de aprobación.`, cta: 'Ver servicios', action: () => onGoToTab?.('servicios') });
   if (drafts > 0) alerts.push({ tone: 'gray', text: `Tenés ${drafts} servicio${drafts !== 1 ? 's' : ''} en borrador sin publicar.`, cta: 'Ver servicios', action: () => onGoToTab?.('servicios') });
   if (provider && !provider.description) alerts.push({ tone: 'gray', text: 'Completá la descripción de tu perfil para mejorar tu visibilidad.', cta: 'Ir al perfil', action: () => onGoToTab?.('perfil') });

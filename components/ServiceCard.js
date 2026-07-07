@@ -3,6 +3,21 @@
 import Link from 'next/link';
 import { Heart, Star, MapPin, CheckCircle, Zap, TrendingUp, Award } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
+import { assetUrl } from '@/services/api';
+
+// Portada del servicio: resuelve /uploads/... contra el backend; fallback por categoría.
+function Cover({ provider, className }) {
+  const raw = provider.images?.[0];
+  const src = raw ? assetUrl(raw) : null;
+  if (src) {
+    return <img src={src} alt={provider.name} className={className} onError={(e) => { e.currentTarget.style.display = 'none'; }} />;
+  }
+  return (
+    <div className={`${className} flex items-center justify-center bg-gradient-to-br from-primary-light to-gray-100`}>
+      <span className="text-5xl opacity-70 select-none">{provider.categoryEmoji || '🎉'}</span>
+    </div>
+  );
+}
 
 const BADGE_CONFIG = {
   verified: { label: 'Verificado', className: 'badge-verified', icon: CheckCircle },
@@ -42,12 +57,7 @@ export default function ServiceCard({ provider, layout = 'grid' }) {
       <Link href={`/proveedor/${provider.id}`} className="group block">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-card hover:shadow-card-hover transition-all duration-200 overflow-hidden flex gap-0">
           <div className="relative w-48 shrink-0 bg-gray-100">
-            <img
-              src={provider.images[0]}
-              alt={provider.name}
-              className="w-full h-full object-cover"
-              onError={(e) => { e.currentTarget.style.opacity = '0'; }}
-            />
+            <Cover provider={provider} className="w-full h-full object-cover" />
             <button onClick={handleFav} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
               <Heart size={16} className={fav ? 'fill-primary text-primary' : 'text-gray-500'} />
             </button>
@@ -102,12 +112,7 @@ export default function ServiceCard({ provider, layout = 'grid' }) {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-card hover:shadow-card-hover transition-all duration-200 overflow-hidden h-full flex flex-col">
         {/* Image */}
         <div className="relative overflow-hidden h-52 bg-gray-100">
-          <img
-            src={provider.images[0]}
-            alt={provider.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => { e.currentTarget.style.opacity = '0'; }}
-          />
+          <Cover provider={provider} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
           {/* Favorite */}
           <button
             onClick={handleFav}

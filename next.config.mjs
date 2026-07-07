@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  allowedDevOrigins: [
+    "eventonow.local",
+    "proveedores.eventonow.local",
+    "admin.eventonow.local",
+  ],
 };
-
 export default nextConfig;

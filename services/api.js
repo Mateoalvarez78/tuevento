@@ -4,6 +4,19 @@
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
+// Origen del backend (sin el sufijo /api) para servir estáticos como /uploads/...
+const ASSET_ORIGIN = BASE_URL.replace(/\/api\/?$/, '');
+
+/**
+ * Resuelve una ruta de asset del backend (ej. "/uploads/services/x.jpg") a URL
+ * absoluta contra el origen del backend. Deja pasar URLs absolutas (http/https).
+ */
+export function assetUrl(path) {
+  if (!path) return '';
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${ASSET_ORIGIN}${path.startsWith('/') ? '' : '/'}${path}`;
+}
+
 // ── Token management ──────────────────────────────────────────────────────────
 export const tokenStorage = {
   get: () => (typeof window !== 'undefined' ? localStorage.getItem('te_token') : null),

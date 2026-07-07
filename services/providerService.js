@@ -140,8 +140,48 @@ export function mapAdminProvider(p) {
   };
 }
 
+// Maps backend featured-provider row → ServiceCard-compatible shape.
+// Navegación: al servicio principal del proveedor (el detalle "/proveedor/:id"
+// es la ficha de un servicio en la arquitectura actual).
+function buildFeaturedBadges(p) {
+  const badges = [];
+  if (p.is_verified) badges.push('verified');
+  if (parseInt(p.total_bookings) >= 50) badges.push('popular');
+  if (parseFloat(p.rating_avg) >= 4.8 && parseInt(p.total_reviews) >= 20) badges.push('top');
+  return badges;
+}
+
+export function mapFeaturedProvider(p) {
+  if (!p) return null;
+  const cover = p.logo_url || p.primary_image || null; // logo primero; si no, foto de un servicio
+  return {
+    id:            p.main_service_id || p.id, // link → detalle del servicio principal
+    providerId:    p.id,
+    name:          p.business_name,
+    categoryLabel: p.category_name || '',
+    categoryEmoji: p.category_emoji || '',
+    category:      p.category_slug || '',
+    rating:        parseFloat(p.rating_avg) || 0,
+    reviewCount:   parseInt(p.total_reviews) || 0,
+    totalBookings: parseInt(p.total_bookings) || 0,
+    priceFrom:     parseFloat(p.price_from) || 0,
+    servicesCount: parseInt(p.services_count) || 0,
+    zone:          p.city || (Array.isArray(p.zones) ? p.zones[0] : '') || '',
+    images:        cover ? [cover] : [],
+    description:   p.description ? p.description.slice(0, 140) : '',
+    verified:      !!p.is_verified,
+    badges:        buildFeaturedBadges(p),
+  };
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 export const providerService = {
+  /** Proveedores destacados para la home pública (datos reales, orden por reservas/rating). */
+  async getFeaturedProviders(limit = 8) {
+    const res = await api.get(`/providers/featured${buildQuery({ limit })}`);
+    return (res.data || []).map(mapFeaturedProvider);
+  },
+
   /** Returns active services (catalog) as provider-shaped objects. */
   async getAll(filters = {}) {
     const sortMap = {

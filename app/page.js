@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { ArrowRight, Star, Search, Users, CalendarCheck } from 'lucide-react';
 import SearchBar from '@/components/SearchBar';
 import CategoryCard from '@/components/CategoryCard';
-import ServiceCard from '@/components/ServiceCard';
-import { CATEGORIES, PROVIDERS } from '@/lib/mockData';
+import FeaturedProviders from '@/components/home/FeaturedProviders';
+import { CATEGORIES } from '@/lib/mockData';
 
 export const metadata = {
   title: 'TuEvento – Encontrá los mejores servicios para tu evento en Uruguay',
@@ -62,10 +62,6 @@ const TESTIMONIALS = [
 const QUICK_TAGS = ['Catering', 'DJ', 'Fotografía', 'Decoración', 'Animación', 'Parrilla'];
 
 export default function HomePage() {
-  const featured = PROVIDERS.filter(
-    (p) => p.badges.includes('top') || p.badges.includes('popular'),
-  ).slice(0, 4);
-
   return (
     <>
       {/* ── HERO ───────────────────────────────────────────────────────── */}
@@ -183,11 +179,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {featured.map((p) => (
-              <ServiceCard key={p.id} provider={p} />
-            ))}
-          </div>
+          <FeaturedProviders />
 
           <div className="flex justify-center mt-10">
             <Link
