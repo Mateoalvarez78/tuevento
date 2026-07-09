@@ -2,7 +2,7 @@
 // Datos agregados del panel del proveedor. Consume el endpoint real
 // GET /dashboard/provider (solo provider/admin) y mapea a camelCase.
 
-import { api } from './api';
+import { api, buildQuery } from './api';
 
 const MONTHS_ES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -63,6 +63,31 @@ function mapTopService(r) {
   };
 }
 
+function mapEarningsMonth(r) {
+  return {
+    monthKey: r.month_key,
+    label: r.month,
+    count: parseInt(r.count) || 0,
+    gross: parseFloat(r.gross) || 0,
+    commission: parseFloat(r.commission) || 0,
+    net: parseFloat(r.net) || 0,
+  };
+}
+
+function mapTransaction(r) {
+  return {
+    id: r.id,
+    requestNumber: r.request_number,
+    date: r.event_date,
+    status: r.status,
+    gross: parseFloat(r.total_amount) || 0,
+    commission: parseFloat(r.commission_amount) || 0,
+    net: parseFloat(r.provider_net) || 0,
+    serviceTitle: r.service_title || '',
+    clientName: r.client_name || '',
+  };
+}
+
 export const providerDashboardService = {
   /**
    * Devuelve el dashboard agregado del proveedor autenticado.
@@ -92,6 +117,27 @@ export const providerDashboardService = {
       topServices:      (d.topServices || []).map(mapTopService),
       monthlyStats:     (d.monthlyStats || []).map(mapMonthly),
       upcomingCalendar: (d.upcomingCalendar || []).map(mapUpcoming),
+    };
+  },
+
+  /**
+   * Detalle de facturación/comisiones del proveedor autenticado.
+   * @returns {{ summary, byMonth, transactions }}
+   */
+  async getEarnings(filters = {}) {
+    const res = await api.get(`/dashboard/provider/earnings${buildQuery(filters)}`);
+    const d = res.data || {};
+    const s = d.summary || {};
+    return {
+      summary: {
+        bookingsCount:  parseInt(s.bookingsCount) || 0,
+        gross:          parseFloat(s.gross) || 0,
+        commission:     parseFloat(s.commission) || 0,
+        net:            parseFloat(s.net) || 0,
+        commissionRate: parseFloat(s.commissionRate) || 0.08,
+      },
+      byMonth:      (d.byMonth || []).map(mapEarningsMonth).reverse(), // backend: DESC → queremos cronológico
+      transactions: (d.transactions || []).map(mapTransaction),
     };
   },
 };

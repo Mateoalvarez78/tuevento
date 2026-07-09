@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '@/lib/AppContext';
@@ -33,7 +33,11 @@ export default function ProveedorRegistroPage() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(INITIAL);
   const [errors, setErrors] = useState({});
-  const categories = categoryService.getAll();
+  const [categories, setCategories] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  useEffect(() => {
+    categoryService.getAll().then(setCategories).catch(() => setCategories([]));
+  }, []);
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
@@ -64,26 +68,32 @@ export default function ProveedorRegistroPage() {
   const next = () => { if (validate()) setStep((s) => s + 1); };
   const back = () => setStep((s) => s - 1);
 
-  const handleSubmit = () => {
-    const catLabel = categories.find((c) => c.id === form.category)?.label || form.category;
-    providerService.register({
-      name: form.businessName,
-      ownerName: form.ownerName,
-      email: form.email,
-      phone: form.phone,
-      whatsapp: form.whatsapp || form.phone,
-      instagram: form.instagram,
-      website: form.website,
-      category: form.category,
-      categoryLabel: catLabel,
-      description: form.description,
-      zones: form.zones,
-      zone: form.zones[0] || '',
-      eventTypes: form.eventTypes,
-      priceFrom: Number(form.priceFrom) || 0,
-    });
-    showToast('¡Registro enviado! Revisaremos tu solicitud pronto.', 'success');
-    setStep(4);
+  const handleSubmit = async () => {
+    if (submitting) return;
+    // categoryService mapea id=slug y categoryId=UUID real; el backend necesita el UUID.
+    const categoryId = categories.find((c) => c.id === form.category)?.categoryId || null;
+    setSubmitting(true);
+    try {
+      await providerService.register({
+        ownerName:    form.ownerName,
+        email:        form.email,
+        password:     form.password,
+        phone:        form.phone,
+        businessName: form.businessName,
+        categoryId,
+        description:  form.description,
+        zones:        form.zones,
+        whatsapp:     form.whatsapp || form.phone,
+        instagram:    form.instagram,
+        website:      form.website,
+      });
+      showToast('Solicitud enviada. Revisaremos tu cuenta de proveedor.', 'success');
+      setStep(4);
+    } catch (err) {
+      showToast(err?.message || 'No pudimos enviar tu solicitud. Intentá de nuevo.', 'error');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -248,8 +258,8 @@ export default function ProveedorRegistroPage() {
 
               <div className="flex gap-3 mt-6">
                 <button onClick={back} className="px-5 py-3 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors">Atrás</button>
-                <button onClick={handleSubmit} className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors">
-                  Enviar solicitud
+                <button onClick={handleSubmit} disabled={submitting} className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                  {submitting ? 'Enviando…' : 'Enviar solicitud'}
                 </button>
               </div>
             </div>

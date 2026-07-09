@@ -234,9 +234,28 @@ export const providerService = {
     return mapAdminProvider(res.data);
   },
 
-  /** Applies to become a provider. */
+  /**
+   * Registro PÚBLICO de proveedor (sin sesión). Llama al endpoint público
+   * POST /providers/register, que no requiere token. Mapea la forma del
+   * formulario al contrato del backend. No inicia sesión: el alta queda pending.
+   */
   async register(data) {
-    const res = await api.post('/providers/apply', data);
+    const body = {
+      name:          data.ownerName,          // nombre del titular → users.name
+      email:         data.email,
+      password:      data.password,
+      phone:         data.phone || undefined,
+      business_name: data.businessName,       // nombre comercial → providers.business_name
+      category_id:   data.categoryId || null, // UUID real (no el slug); null si no hay
+      description:   data.description || undefined,
+      zones:         Array.isArray(data.zones) ? data.zones : [],
+      whatsapp:      data.whatsapp || undefined,
+      instagram:     data.instagram || undefined,
+      website:       data.website || undefined,
+    };
+    // skipUnauthorizedHandler: es un flujo público; un 401 aquí no debe cerrar
+    // sesión ni disparar el handler global de "sesión expirada".
+    const res = await api.post('/providers/register', body, { skipUnauthorizedHandler: true });
     return res.data;
   },
 

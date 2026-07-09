@@ -41,9 +41,17 @@ async function request(path, options = {}) {
     ...options.headers,
   };
 
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  const { skipUnauthorizedHandler, ...fetchOptions } = options;
+  const res = await fetch(`${BASE_URL}${path}`, { ...fetchOptions, headers });
 
   if (res.status === 401) {
+    // En endpoints públicos (ej. registro sin sesión) no cerramos sesión ni
+    // disparamos el handler global: no hay sesión que expirar.
+    if (skipUnauthorizedHandler) {
+      let data;
+      try { data = await res.json(); } catch { data = {}; }
+      throw new ApiError(data.message || 'No autorizado', 401, data.code || 'UNAUTHORIZED');
+    }
     tokenStorage.remove();
     if (typeof window !== 'undefined') localStorage.removeItem('te_user');
     if (_onUnauthorized) _onUnauthorized();
@@ -77,10 +85,11 @@ export class ApiError extends Error {
 export const api = {
   get: (path) => request(path),
 
-  post: (path, body) =>
+  post: (path, body, options = {}) =>
     request(path, {
       method: 'POST',
       body: body instanceof FormData ? body : JSON.stringify(body),
+      ...options,
     }),
 
   put: (path, body) =>

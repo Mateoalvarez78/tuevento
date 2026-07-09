@@ -39,7 +39,6 @@ import EmptyState from "@/components/EmptyState";
 import ProviderOverview from "@/components/dashboard/proveedor/ProviderOverview";
 import { FullCalendarView } from "@/components/dashboard/proveedor/DashCalendar";
 import { ReviewsSection } from "@/components/dashboard/proveedor/DashWidgets";
-import { DASH_PROVIDER } from "@/lib/proveedorDashboardData";
 import DashCommissions from "@/components/dashboard/proveedor/DashCommissions";
 import MenuManager from "@/components/dashboard/proveedor/MenuManager";
 import ServiceImageManager from "@/components/dashboard/proveedor/ServiceImageManager";
@@ -54,6 +53,21 @@ const TABS = [
   { id: "comisiones", label: "Finanzas", icon: BarChart3 },
   { id: "perfil", label: "Perfil", icon: Settings },
 ];
+
+// Completitud de perfil calculada en base a los campos reales cargados por el proveedor.
+function computeProfileCompleteness(p) {
+  if (!p) return 0;
+  const checks = [
+    Boolean(p.description),
+    Boolean(p.categoryLabel),
+    Array.isArray(p.zones) && p.zones.length > 0,
+    Boolean(p.phone),
+    Boolean(p.logo_url),
+    Boolean(p.whatsapp || p.instagram || p.website),
+  ];
+  const done = checks.filter(Boolean).length;
+  return Math.round((done / checks.length) * 100);
+}
 
 const TAB_TITLE = {
   dashboard: "Dashboard",
@@ -107,7 +121,7 @@ export default function ProveedorDashboard() {
       setProviderData(p);
       if (p) {
         const [bRes, sRes] = await Promise.all([
-          bookingService.getByProvider(p.id),
+          bookingService.getByProvider(p.id, { limit: 50 }),
           serviceService.getByProvider(p.id),
         ]);
         setRequests(bRes.data || []);
@@ -156,6 +170,10 @@ export default function ProveedorDashboard() {
   const pendingCount = requests.filter((r) => r.status === "pending").length;
   const accountStatus = providerData?.status || "pending";
   const isApproved = accountStatus === "approved";
+  const displayName = providerData?.name || "Tu negocio";
+  const ownerName = user?.name || "Proveedor";
+  const profileComplete = computeProfileCompleteness(providerData);
+  const totalBookings = providerData?.totalBookings || 0;
 
   const logDev = (label, err) => {
     if (process.env.NODE_ENV !== "production")
@@ -260,38 +278,43 @@ export default function ProveedorDashboard() {
             </div>
             <span className="font-bold text-gray-900 text-lg">Eventonow</span>
           </Link>
-          <span className="text-[10px] font-bold text-primary bg-primary-light px-1.5 py-0.5 rounded-md shrink-0">
-            PRO
-          </span>
         </div>
 
         {/* Provider card */}
         <div className="px-4 pt-4 pb-3 border-b border-gray-100">
           <div className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3">
             <div className="relative shrink-0">
-              <img
-                src={DASH_PROVIDER.avatar}
-                alt={DASH_PROVIDER.ownerName}
-                className="w-11 h-11 rounded-xl object-cover"
-              />
+              {user?.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={ownerName}
+                  className="w-11 h-11 rounded-xl object-cover"
+                />
+              ) : (
+                <div className="w-11 h-11 rounded-xl bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
+                  {ownerName.charAt(0).toUpperCase()}
+                </div>
+              )}
               <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-gray-900 text-sm leading-tight truncate">
-                {DASH_PROVIDER.ownerName}
+                {ownerName}
               </p>
               <p className="text-[11px] text-gray-500 truncate leading-tight mt-0.5">
-                {DASH_PROVIDER.name}
+                {displayName}
               </p>
-              <div className="flex items-center gap-1 mt-1">
-                <Star size={10} className="text-yellow-400 fill-current" />
-                <span className="text-[11px] font-semibold text-gray-700">
-                  {DASH_PROVIDER.rating}
-                </span>
-                <span className="text-[10px] text-gray-400">
-                  ({DASH_PROVIDER.reviewCount})
-                </span>
-              </div>
+              {providerData?.rating > 0 && (
+                <div className="flex items-center gap-1 mt-1">
+                  <Star size={10} className="text-yellow-400 fill-current" />
+                  <span className="text-[11px] font-semibold text-gray-700">
+                    {providerData.rating.toFixed(1)}
+                  </span>
+                  <span className="text-[10px] text-gray-400">
+                    ({providerData.reviewCount})
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           {/* Profile completion */}
@@ -301,13 +324,13 @@ export default function ProveedorDashboard() {
                 Perfil completo
               </span>
               <span className="text-[11px] font-bold text-primary">
-                {DASH_PROVIDER.profileComplete}%
+                {profileComplete}%
               </span>
             </div>
             <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-primary rounded-full"
-                style={{ width: `${DASH_PROVIDER.profileComplete}%` }}
+                style={{ width: `${profileComplete}%` }}
               />
             </div>
           </div>
@@ -354,17 +377,17 @@ export default function ProveedorDashboard() {
         <div className="px-4 py-3 border-t border-gray-100">
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-gray-50 rounded-xl p-2.5 text-center">
-              <p className="text-base font-bold text-gray-900">52</p>
+              <p className="text-base font-bold text-gray-900">{totalBookings}</p>
               <p className="text-[10px] text-gray-400 leading-tight">
                 Reservas
               </p>
             </div>
             <div className="bg-gray-50 rounded-xl p-2.5 text-center">
               <p className="text-base font-bold text-gray-900">
-                {DASH_PROVIDER.responseTime}
+                {providerData?.rating > 0 ? providerData.rating.toFixed(1) : "—"}
               </p>
               <p className="text-[10px] text-gray-400 leading-tight">
-                Resp. media
+                Calificación
               </p>
             </div>
           </div>
@@ -398,13 +421,19 @@ export default function ProveedorDashboard() {
         <header className="sticky top-0 z-30 bg-white border-b border-gray-100 shadow-sticky px-4 lg:px-6 py-3 flex items-center gap-3">
           {/* Mobile: provider name */}
           <div className="lg:hidden flex items-center gap-2 flex-1 min-w-0">
-            <img
-              src={DASH_PROVIDER.avatar}
-              alt=""
-              className="w-7 h-7 rounded-full object-cover"
-            />
+            {user?.avatar ? (
+              <img
+                src={user.avatar}
+                alt=""
+                className="w-7 h-7 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-[11px] font-bold text-gray-500 shrink-0">
+                {ownerName.charAt(0).toUpperCase()}
+              </div>
+            )}
             <span className="font-bold text-sm text-gray-900 truncate">
-              {DASH_PROVIDER.name}
+              {displayName}
             </span>
           </div>
 
@@ -429,17 +458,23 @@ export default function ProveedorDashboard() {
 
           {/* Provider badge (desktop) */}
           <div className="hidden lg:flex items-center gap-2.5 bg-gray-50 rounded-xl px-3 py-2">
-            <img
-              src={DASH_PROVIDER.avatar}
-              alt=""
-              className="w-7 h-7 rounded-full object-cover"
-            />
+            {user?.avatar ? (
+              <img
+                src={user.avatar}
+                alt=""
+                className="w-7 h-7 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-[11px] font-bold text-gray-500 shrink-0">
+                {ownerName.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div>
               <p className="text-xs font-semibold text-gray-800 leading-tight">
-                {DASH_PROVIDER.ownerName}
+                {ownerName}
               </p>
               <p className="text-[10px] text-gray-400 flex items-center gap-1">
-                <BadgeCheck size={10} className="text-primary" /> Pro
+                <BadgeCheck size={10} className="text-primary" /> {isApproved ? "Verificado" : "Proveedor"}
               </p>
             </div>
           </div>
@@ -487,11 +522,17 @@ export default function ProveedorDashboard() {
                       <div className="p-4 sm:p-5">
                         <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex items-center gap-3">
-                            <img
-                              src={req.clientAvatar}
-                              alt={req.clientName}
-                              className="w-10 h-10 rounded-full shrink-0"
-                            />
+                            {req.clientAvatar ? (
+                              <img
+                                src={req.clientAvatar}
+                                alt={req.clientName}
+                                className="w-10 h-10 rounded-full shrink-0 object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-500 shrink-0">
+                                {(req.clientName || "?").charAt(0).toUpperCase()}
+                              </div>
+                            )}
                             <div>
                               <div className="font-bold text-gray-900">
                                 {req.clientName}
@@ -743,10 +784,10 @@ export default function ProveedorDashboard() {
           )}
 
           {/* ── CALENDARIO ── */}
-          {activeTab === "calendario" && <FullCalendarView />}
+          {activeTab === "calendario" && <FullCalendarView bookings={requests} />}
 
           {/* ── RESEÑAS ── */}
-          {activeTab === "resenas" && <ReviewsSection />}
+          {activeTab === "resenas" && <ReviewsSection provider={providerData} />}
 
           {/* ── FINANZAS / COMISIONES ── */}
           {activeTab === "comisiones" && <DashCommissions />}

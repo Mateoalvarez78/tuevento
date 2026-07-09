@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Check, X, Pause, RotateCcw, AlertTriangle } from 'lucide-react';
 import { adminService } from '@/services/adminService';
-import { serviceService } from '@/services/serviceService';
+import { assetUrl } from '@/services/api';
 import ProviderStatusBadge from '@/components/ProviderStatusBadge';
 import ServiceStatusBadge from '@/components/ServiceStatusBadge';
 import { formatDate, formatCurrency } from '@/utils/formatters';
@@ -53,37 +53,64 @@ export default function AdminProviderDetailPage() {
   const router = useRouter();
   const [provider, setProvider] = useState(null);
   const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [modal, setModal] = useState(null); // { type: 'approve'|'reject'|'suspend'|'reactivate' }
 
-  const reload = useCallback(() => {
-    const p = adminService.providers.getById(id);
-    if (!p) return;
-    setProvider(p);
-    setServices(serviceService.getByProvider(id));
+  const reload = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [p, svcs] = await Promise.all([
+        adminService.getProvider(id),
+        adminService.getProviderServices(id).catch(() => []),
+      ]);
+      setProvider(p);
+      setServices(svcs || []);
+    } catch (e) {
+      setError(e?.message || 'No se pudo cargar el proveedor');
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
   useEffect(() => { reload(); }, [reload]);
 
-  if (!provider) {
+  if (loading) {
+    return <div className="p-8 text-gray-500 text-sm">Cargando proveedor…</div>;
+  }
+  if (error || !provider) {
     return (
-      <div className="p-8 text-gray-500 text-sm">Proveedor no encontrado.</div>
+      <div className="p-8">
+        <Link href="/admin/proveedores" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 mb-4"><ArrowLeft size={15} /> Proveedores</Link>
+        <div className="rounded-2xl border border-gray-800 bg-gray-900 p-8 text-center text-gray-400 text-sm">
+          {error || 'Proveedor no encontrado.'}
+        </div>
+      </div>
     );
   }
 
-  const handleAction = (type, reason) => {
-    if (type === 'approve') adminService.providers.approve(id);
-    else if (type === 'reject') adminService.providers.reject(id, reason);
-    else if (type === 'suspend') adminService.providers.suspend(id, reason);
-    else if (type === 'reactivate') adminService.providers.reactivate(id);
-    setModal(null);
-    reload();
+  const displayName = provider.businessName || provider.name || 'Proveedor';
+
+  const handleAction = async (type, reason) => {
+    try {
+      if (type === 'approve') await adminService.providers.approve(id);
+      else if (type === 'reject') await adminService.providers.reject(id, reason);
+      else if (type === 'suspend') await adminService.providers.suspend(id, reason);
+      else if (type === 'reactivate') await adminService.providers.reactivate(id);
+      setModal(null);
+      await reload();
+    } catch (e) {
+      setModal(null);
+      setError(e?.message || 'No se pudo completar la acción');
+    }
   };
 
   const MODAL_CONFIGS = {
-    approve:    { title: 'Aprobar proveedor',  description: `¿Confirmar aprobación de "${provider.name}"? Aparecerá en el catálogo.`, confirmLabel: 'Aprobar', confirmClass: 'bg-emerald-600 hover:bg-emerald-700', requireReason: false },
-    reject:     { title: 'Rechazar proveedor', description: `Indicá el motivo del rechazo para "${provider.name}".`, confirmLabel: 'Rechazar', confirmClass: 'bg-red-600 hover:bg-red-700', requireReason: true },
-    suspend:    { title: 'Suspender proveedor',description: `Indicá el motivo de suspensión de "${provider.name}".`, confirmLabel: 'Suspender', confirmClass: 'bg-amber-600 hover:bg-amber-700', requireReason: true },
-    reactivate: { title: 'Reactivar proveedor',description: `¿Reactivar a "${provider.name}"? Volverá a aparecer en el catálogo.`, confirmLabel: 'Reactivar', confirmClass: 'bg-emerald-600 hover:bg-emerald-700', requireReason: false },
+    approve:    { title: 'Aprobar proveedor',  description: `¿Confirmar aprobación de "${displayName}"? Aparecerá en el catálogo.`, confirmLabel: 'Aprobar', confirmClass: 'bg-emerald-600 hover:bg-emerald-700', requireReason: false },
+    reject:     { title: 'Rechazar proveedor', description: `Indicá el motivo del rechazo para "${displayName}".`, confirmLabel: 'Rechazar', confirmClass: 'bg-red-600 hover:bg-red-700', requireReason: true },
+    suspend:    { title: 'Suspender proveedor',description: `Indicá el motivo de suspensión de "${displayName}".`, confirmLabel: 'Suspender', confirmClass: 'bg-amber-600 hover:bg-amber-700', requireReason: true },
+    reactivate: { title: 'Reactivar proveedor',description: `¿Reactivar a "${displayName}"? Volverá a aparecer en el catálogo.`, confirmLabel: 'Reactivar', confirmClass: 'bg-emerald-600 hover:bg-emerald-700', requireReason: false },
   };
 
   return (
@@ -96,16 +123,16 @@ export default function AdminProviderDetailPage() {
 
       {/* Header */}
       <div className="flex items-start gap-4 mb-8">
-        <div className="w-16 h-16 rounded-2xl bg-gray-800 border border-gray-700 overflow-hidden shrink-0">
-          {provider.images?.[0] ? (
-            <img src={provider.images[0]} alt={provider.name} className="w-full h-full object-cover" />
+        <div className="w-16 h-16 rounded-2xl bg-gray-800 border border-gray-700 overflow-hidden shrink-0 flex items-center justify-center">
+          {provider.logo_url ? (
+            <img src={assetUrl(provider.logo_url)} alt={displayName} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-2xl text-gray-600">{provider.name[0]}</div>
+            <span className="text-2xl text-gray-500">{displayName.charAt(0).toUpperCase()}</span>
           )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-white">{provider.name}</h1>
+            <h1 className="text-2xl font-bold text-white">{displayName}</h1>
             <ProviderStatusBadge status={provider.status} size="md" />
           </div>
           <p className="text-gray-400 text-sm mt-1">{provider.categoryLabel} · {provider.zone}</p>
@@ -144,7 +171,7 @@ export default function AdminProviderDetailPage() {
       {/* Info grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
         <InfoCard title="Información del negocio">
-          <InfoRow label="Razón social" value={provider.name} />
+          <InfoRow label="Razón social" value={displayName} />
           <InfoRow label="Categoría" value={provider.categoryLabel} />
           <InfoRow label="Zona" value={provider.zones?.join(', ') || provider.zone} />
           <InfoRow label="Descripción" value={provider.description} />

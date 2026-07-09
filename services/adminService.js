@@ -2,7 +2,7 @@
 // Admin-facing operations backed by real API.
 
 import { api, buildQuery } from './api';
-import { providerService } from './providerService';
+import { providerService, mapAdminProvider } from './providerService';
 import { serviceService } from './serviceService';
 
 export const adminService = {
@@ -33,6 +33,30 @@ export const adminService = {
       totalUsers:     d.users?.total     || 0,
       _raw: d,
     };
+  },
+
+  /** Detalle de un proveedor por id (admin, cualquier estado). */
+  async getProvider(id) {
+    const res = await api.get(`/admin/providers/${id}`);
+    return mapAdminProvider(res.data);
+  },
+
+  /** Servicios de un proveedor puntual (admin endpoint, evita el 403 de /services/mine). */
+  async getProviderServices(id) {
+    const res = await api.get(`/admin/providers/${id}/services`);
+    return (res.data || []).map((s) => ({
+      id: s.id,
+      title: s.title,
+      status: s.status,
+      category: s.category_name || '',
+      categoryEmoji: s.category_emoji || '',
+      priceFrom: parseFloat(s.price_from) || 0,
+      priceType: s.price_type || '',
+      totalBookings: parseInt(s.total_bookings) || 0,
+      views: parseInt(s.views) || 0,
+      createdAt: s.created_at || null,
+      primaryImage: s.primary_image || null,
+    }));
   },
 
   // ── Providers ──────────────────────────────────────────────────────────────

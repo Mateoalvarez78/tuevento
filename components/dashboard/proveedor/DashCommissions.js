@@ -1,34 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import {
   TrendingUp, TrendingDown, DollarSign, Percent, Info,
-  Wallet, BarChart3, Calendar, ChevronDown, Eye,
-  ArrowDownRight, ArrowUpRight, Check,
+  BarChart3, Calendar, AlertTriangle, ArrowUpRight,
 } from 'lucide-react';
-import { BOOKINGS } from '@/lib/proveedorDashboardData';
 import {
-  COMMISSION_RATE, COMMISSION_LABEL, COMMISSION_DESCRIPTION,
-  calcBookingFinancials, calcTotalsFromBookings, fmtUYU, fmtFull, trendPct,
+  COMMISSION_LABEL, COMMISSION_DESCRIPTION, fmtUYU, fmtFull, trendPct,
 } from '@/lib/commissionHelpers';
-import {
-  MONTHLY_COMMISSION_DATA, COMMISSION_BY_SERVICE, PAYOUT_HISTORY,
-  PAYMENT_STATUS_CONFIG, BOOKING_PAYMENT_STATUS, BOOKING_DEPOSIT_DATE,
-} from '@/lib/commissionData';
+import { providerDashboardService } from '@/services/providerDashboardService';
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } } };
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
 
-// Current month = Jun (index 11), prev = May (index 10)
-const CUR  = MONTHLY_COMMISSION_DATA[11];
-const PREV = MONTHLY_COMMISSION_DATA[10];
+const STATUS_PILL = {
+  accepted:  'bg-emerald-50 text-emerald-700 border-emerald-200',
+  pending:   'bg-amber-50   text-amber-700   border-amber-200',
+  completed: 'bg-blue-50    text-blue-700    border-blue-200',
+  cancelled: 'bg-red-50     text-red-500     border-red-200',
+  rejected:  'bg-red-50     text-red-500     border-red-200',
+};
+const STATUS_LABEL = { accepted: 'Confirmada', pending: 'Pendiente', completed: 'Finalizada', cancelled: 'Cancelada', rejected: 'Rechazada' };
 
-// ─── TOOLTIP (card info hover) ────────────────────────────────────────────────
 function InfoTooltip({ text }) {
   return (
     <div className="group relative inline-flex">
@@ -41,7 +39,6 @@ function InfoTooltip({ text }) {
   );
 }
 
-// ─── TREND BADGE ─────────────────────────────────────────────────────────────
 function TrendBadge({ pct, inverse = false }) {
   const up = pct >= 0;
   const good = inverse ? !up : up;
@@ -54,7 +51,6 @@ function TrendBadge({ pct, inverse = false }) {
   );
 }
 
-// ─── RECHARTS CUSTOM TOOLTIP ──────────────────────────────────────────────────
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
@@ -70,7 +66,6 @@ function ChartTooltip({ active, payload, label }) {
   );
 }
 
-// ─── SECTION CARD WRAPPER ─────────────────────────────────────────────────────
 function Card({ title, subtitle, action, children, className = '' }) {
   return (
     <motion.div variants={fadeUp} initial="hidden" animate="show" className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-5 ${className}`}>
@@ -88,75 +83,44 @@ function Card({ title, subtitle, action, children, className = '' }) {
   );
 }
 
-// ─── 1. SUMMARY CARDS ─────────────────────────────────────────────────────────
-function SummaryCards() {
-  // Annual totals from all 12 months
-  const annualGross      = MONTHLY_COMMISSION_DATA.reduce((s, m) => s + m.gross, 0);
-  const annualCommission = MONTHLY_COMMISSION_DATA.reduce((s, m) => s + m.commission, 0);
-
-  // Per-booking avg from visible BOOKINGS
-  const { avgNet } = calcTotalsFromBookings(BOOKINGS);
+function SummaryCards({ byMonth, summary }) {
+  const cur  = byMonth[byMonth.length - 1] || { gross: 0, commission: 0, net: 0 };
+  const prev = byMonth[byMonth.length - 2] || { gross: 0, commission: 0, net: 0 };
+  const annualGross      = byMonth.reduce((s, m) => s + m.gross, 0);
+  const annualCommission = byMonth.reduce((s, m) => s + m.commission, 0);
+  const avgNet = cur.count > 0 ? Math.round(cur.net / cur.count) : 0;
+  const prevAvgNet = prev.count > 0 ? Math.round(prev.net / prev.count) : 0;
 
   const CARDS = [
     {
-      key: 'gross',
-      label: 'Facturación bruta',
-      desc: 'Total facturado este mes',
-      value: fmtUYU(CUR.gross),
-      fullValue: fmtFull(CUR.gross),
-      trend: trendPct(CUR.gross, PREV.gross),
-      inverse: false,
-      icon: <DollarSign size={16} className="text-blue-600" />,
-      iconBg: 'bg-blue-50',
-      tooltip: 'Suma de todos los servicios confirmados o completados en el mes, antes de descontar la comisión de TuEvento.',
+      key: 'gross', label: 'Facturación bruta', desc: 'Total facturado este mes',
+      value: fmtUYU(cur.gross), trend: trendPct(cur.gross, prev.gross), inverse: false,
+      icon: <DollarSign size={16} className="text-blue-600" />, iconBg: 'bg-blue-50',
+      tooltip: 'Suma de reservas aceptadas o completadas este mes, antes de descontar la comisión de Eventonow.',
     },
     {
-      key: 'commission',
-      label: 'Comisión TuEvento',
-      desc: `${COMMISSION_LABEL} sobre facturación`,
-      value: fmtUYU(CUR.commission),
-      fullValue: fmtFull(CUR.commission),
-      trend: trendPct(CUR.commission, PREV.commission),
-      inverse: true,
-      icon: <Percent size={16} className="text-orange-600" />,
-      iconBg: 'bg-orange-50',
+      key: 'commission', label: 'Comisión Eventonow', desc: `${COMMISSION_LABEL} sobre facturación`,
+      value: fmtUYU(cur.commission), trend: trendPct(cur.commission, prev.commission), inverse: true,
+      icon: <Percent size={16} className="text-orange-600" />, iconBg: 'bg-orange-50',
       tooltip: COMMISSION_DESCRIPTION,
     },
     {
-      key: 'net',
-      label: 'Ingreso neto',
-      desc: 'Lo que recibís este mes',
-      value: fmtUYU(CUR.net),
-      fullValue: fmtFull(CUR.net),
-      trend: trendPct(CUR.net, PREV.net),
-      inverse: false,
-      icon: <ArrowUpRight size={16} className="text-emerald-600" />,
-      iconBg: 'bg-emerald-50',
-      tooltip: 'Facturación bruta menos la comisión del 8% de TuEvento. Este es el monto que recibirás en tu depósito.',
+      key: 'net', label: 'Ingreso neto', desc: 'Lo que recibís este mes',
+      value: fmtUYU(cur.net), trend: trendPct(cur.net, prev.net), inverse: false,
+      icon: <ArrowUpRight size={16} className="text-emerald-600" />, iconBg: 'bg-emerald-50',
+      tooltip: 'Facturación bruta menos la comisión de Eventonow.',
     },
     {
-      key: 'avgTicket',
-      label: 'Ticket neto promedio',
-      desc: 'Por reserva confirmada',
-      value: fmtUYU(avgNet),
-      fullValue: fmtFull(avgNet),
-      trend: trendPct(avgNet, Math.round(PREV.net / 48)),
-      inverse: false,
-      icon: <BarChart3 size={16} className="text-violet-600" />,
-      iconBg: 'bg-violet-50',
-      tooltip: 'Ingreso neto promedio por reserva, calculado dividiendo el ingreso neto del mes entre el número de reservas confirmadas.',
+      key: 'avgTicket', label: 'Ticket neto promedio', desc: 'Por reserva confirmada',
+      value: fmtUYU(avgNet), trend: trendPct(avgNet, prevAvgNet), inverse: false,
+      icon: <BarChart3 size={16} className="text-violet-600" />, iconBg: 'bg-violet-50',
+      tooltip: 'Ingreso neto promedio por reserva del mes.',
     },
     {
-      key: 'annualCommission',
-      label: 'Comisiones del año',
-      desc: 'Acumulado 12 meses',
-      value: fmtUYU(annualCommission),
-      fullValue: fmtFull(annualCommission),
-      trend: null,
-      inverse: true,
-      icon: <Calendar size={16} className="text-primary" />,
-      iconBg: 'bg-primary-light',
-      tooltip: `Total acumulado de comisiones cobradas por TuEvento en los últimos 12 meses. Representa el ${COMMISSION_LABEL} del total bruto de ${fmtUYU(annualGross)}.`,
+      key: 'annualCommission', label: 'Comisiones (12 meses)', desc: 'Acumulado del período',
+      value: fmtUYU(annualCommission), trend: null, inverse: true,
+      icon: <Calendar size={16} className="text-primary" />, iconBg: 'bg-primary-light',
+      tooltip: `Total de comisiones en los últimos 12 meses, sobre un bruto de ${fmtUYU(annualGross)}.`,
     },
   ];
 
@@ -166,9 +130,7 @@ function SummaryCards() {
         <motion.div key={c.key} variants={fadeUp} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-3">
             <div className={`w-9 h-9 rounded-xl ${c.iconBg} flex items-center justify-center`}>{c.icon}</div>
-            {c.trend !== null
-              ? <TrendBadge pct={c.trend} inverse={c.inverse} />
-              : <InfoTooltip text={c.tooltip} />}
+            {c.trend !== null ? <TrendBadge pct={c.trend} inverse={c.inverse} /> : <InfoTooltip text={c.tooltip} />}
           </div>
           <div className="mb-1">
             <p className="text-xs text-gray-400 font-medium leading-tight">{c.label}</p>
@@ -187,12 +149,11 @@ function SummaryCards() {
   );
 }
 
-// ─── 2. BRUTO vs NETO (STACKED BAR) ──────────────────────────────────────────
-function GrossVsNetChart() {
+function GrossVsNetChart({ byMonth }) {
   return (
     <Card
       title="Bruto vs. Neto por mes"
-      subtitle="Facturación bruta con comisión y neto diferenciados"
+      subtitle="Últimos meses con actividad"
       action={
         <div className="flex items-center gap-3 text-[11px]">
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block" />Neto</span>
@@ -202,35 +163,30 @@ function GrossVsNetChart() {
     >
       <div style={{ width: '100%', height: 240 }}>
         <ResponsiveContainer>
-          <BarChart data={MONTHLY_COMMISSION_DATA} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
+          <BarChart data={byMonth} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-            <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
             <Tooltip content={<ChartTooltip />} cursor={{ fill: '#f9fafb' }} />
-            <Bar dataKey="net"        name="Neto proveedor"   stackId="s" fill="#0BB885" radius={[0, 0, 4, 4]} maxBarSize={28} />
-            <Bar dataKey="commission" name="Comisión TuEvento" stackId="s" fill="#F97316" radius={[4, 4, 0, 0]} maxBarSize={28} />
+            <Bar dataKey="net"        name="Neto proveedor"    stackId="s" fill="#0BB885" radius={[0, 0, 4, 4]} maxBarSize={28} />
+            <Bar dataKey="commission" name="Comisión Eventonow" stackId="s" fill="#F97316" radius={[4, 4, 0, 0]} maxBarSize={28} />
           </BarChart>
         </ResponsiveContainer>
-      </div>
-      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-        <span>Junio (mes actual): <strong className="text-gray-800">{fmtUYU(CUR.gross)} bruto</strong></span>
-        <span>Neto: <strong className="text-emerald-600">{fmtUYU(CUR.net)}</strong> · Comisión: <strong className="text-orange-500">-{fmtUYU(CUR.commission)}</strong></span>
       </div>
     </Card>
   );
 }
 
-// ─── 3. DISTRIBUCIÓN DEL DINERO (PIE) ────────────────────────────────────────
-function MoneyDistributionPie() {
-  const annualGross      = MONTHLY_COMMISSION_DATA.reduce((s, m) => s + m.gross, 0);
-  const annualCommission = MONTHLY_COMMISSION_DATA.reduce((s, m) => s + m.commission, 0);
-  const annualNet        = MONTHLY_COMMISSION_DATA.reduce((s, m) => s + m.net, 0);
+function MoneyDistributionPie({ byMonth }) {
+  const annualGross      = byMonth.reduce((s, m) => s + m.gross, 0);
+  const annualCommission = byMonth.reduce((s, m) => s + m.commission, 0);
+  const annualNet        = byMonth.reduce((s, m) => s + m.net, 0);
   const pieData = [
-    { name: 'Ingreso neto',       value: annualNet,        color: '#0BB885' },
-    { name: 'Comisión TuEvento',  value: annualCommission, color: '#F97316' },
+    { name: 'Ingreso neto',        value: annualNet,        color: '#0BB885' },
+    { name: 'Comisión Eventonow',  value: annualCommission, color: '#F97316' },
   ];
   return (
-    <Card title="Distribución del dinero" subtitle="Últimos 12 meses">
+    <Card title="Distribución del dinero" subtitle="Períodos con actividad">
       <div className="flex items-center gap-4">
         <div style={{ width: 150, height: 150, flexShrink: 0 }}>
           <ResponsiveContainer>
@@ -244,7 +200,7 @@ function MoneyDistributionPie() {
         </div>
         <div className="flex-1 space-y-3">
           {pieData.map((d) => {
-            const pct = ((d.value / annualGross) * 100).toFixed(0);
+            const pct = annualGross > 0 ? ((d.value / annualGross) * 100).toFixed(0) : 0;
             return (
               <div key={d.name}>
                 <div className="flex items-center justify-between mb-1">
@@ -276,95 +232,31 @@ function MoneyDistributionPie() {
   );
 }
 
-// ─── 4. EVOLUCIÓN DE COMISIONES (LINE) ───────────────────────────────────────
-function CommissionEvolutionChart() {
+function CommissionEvolutionChart({ byMonth }) {
   return (
     <Card
       title="Evolución de comisiones"
-      subtitle="Comisión mensual descontada por TuEvento (últimos 12 meses)"
-      action={<span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">8% fijo</span>}
+      subtitle="Comisión mensual descontada por Eventonow"
+      action={<span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">{COMMISSION_LABEL} fijo</span>}
     >
       <div style={{ width: '100%', height: 200 }}>
         <ResponsiveContainer>
-          <LineChart data={MONTHLY_COMMISSION_DATA} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
-            <defs>
-              <linearGradient id="commGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#F97316" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#F97316" stopOpacity={0}   />
-              </linearGradient>
-            </defs>
+          <LineChart data={byMonth} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-            <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
             <Tooltip content={<ChartTooltip />} />
-            <Line type="monotone" dataKey="commission" name="Comisión TuEvento" stroke="#F97316" strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: '#F97316' }} />
+            <Line type="monotone" dataKey="commission" name="Comisión Eventonow" stroke="#F97316" strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: '#F97316' }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <div className="mt-3 bg-orange-50 rounded-xl px-4 py-2.5 border border-orange-100">
-        <p className="text-xs text-orange-700 leading-relaxed">
-          <strong>¿Por qué es fija?</strong> La comisión del 8% crece en términos absolutos a medida que facturás más — es la manera en que TuEvento te acompaña: si vos ganás más, la plataforma también.
-        </p>
-      </div>
     </Card>
   );
 }
 
-// ─── 5. COMISIÓN POR SERVICIO ─────────────────────────────────────────────────
-function CommissionByServiceChart() {
-  const max = COMMISSION_BY_SERVICE[0]?.commission || 1;
+function TransactionsTable({ transactions, summary }) {
   return (
-    <Card title="Comisión por servicio" subtitle="Servicios que más comisión generan para la plataforma">
-      <div className="space-y-3.5">
-        {COMMISSION_BY_SERVICE.map((s, i) => {
-          const pct = (s.commission / max) * 100;
-          return (
-            <div key={s.name}>
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold text-gray-400 w-4 shrink-0">{i + 1}</span>
-                  <span className="text-sm font-medium text-gray-700">{s.name}</span>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-[11px] text-gray-400">Bruto {fmtUYU(s.gross)}</span>
-                  <span className="text-sm font-bold text-orange-600">{fmtUYU(s.commission)}</span>
-                </div>
-              </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${pct}%` }}
-                  transition={{ duration: 0.7, delay: i * 0.1, ease: 'easeOut' }}
-                  className="h-full rounded-full"
-                  style={{ background: 'linear-gradient(90deg, #F97316, #E84D2C)' }}
-                />
-              </div>
-              <p className="text-[10px] text-gray-400 mt-0.5 text-right">Neto: {fmtUYU(s.net)}</p>
-            </div>
-          );
-        })}
-      </div>
-    </Card>
-  );
-}
-
-// ─── 6. TABLA DE RESERVAS CON DESGLOSE ───────────────────────────────────────
-function CommissionBookingsTable() {
-  const [page, setPage] = useState(1);
-  const PER_PAGE = 8;
-  const total = Math.ceil(BOOKINGS.length / PER_PAGE);
-  const paginated = BOOKINGS.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
-  const STATUS_PILL = {
-    confirmed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    pending:   'bg-amber-50   text-amber-700   border-amber-200',
-    completed: 'bg-blue-50    text-blue-700    border-blue-200',
-    cancelled: 'bg-red-50     text-red-500     border-red-200',
-  };
-  const STATUS_LABEL = { confirmed:'Confirmada', pending:'Pendiente', completed:'Finalizada', cancelled:'Cancelada' };
-
-  return (
-    <Card title="Detalle por reserva" subtitle="Desglose bruto · comisión · neto por cada servicio">
+    <Card title="Detalle por reserva" subtitle="Desglose bruto · comisión · neto (últimas 50)">
       <div className="overflow-x-auto -mx-5">
         <table className="w-full">
           <thead>
@@ -373,209 +265,61 @@ function CommissionBookingsTable() {
               <th className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide px-3 py-3 hidden md:table-cell">Servicio</th>
               <th className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide px-3 py-3 hidden sm:table-cell">Estado</th>
               <th className="text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wide px-3 py-3">Bruto</th>
-              <th className="text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wide px-3 py-3 hidden sm:table-cell">Comisión 8%</th>
+              <th className="text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wide px-3 py-3 hidden sm:table-cell">Comisión</th>
               <th className="text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wide px-3 py-3">Neto</th>
-              <th className="text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wide px-3 py-3 hidden md:table-cell">Pago</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {paginated.map((b) => {
-              const { gross, commission, net } = calcBookingFinancials(b.amount);
-              const payStatus = BOOKING_PAYMENT_STATUS[b.id] || 'pending';
-              const payConf   = PAYMENT_STATUS_CONFIG[payStatus];
-              const depositDt = BOOKING_DEPOSIT_DATE[b.id] || '—';
-              return (
-                <tr key={b.id} className="hover:bg-gray-50/50 transition-colors group">
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <img src={b.clientAvatar} alt={b.clientName} className="w-7 h-7 rounded-full object-cover shrink-0" />
-                      <div>
-                        <p className="text-xs font-semibold text-gray-800 leading-tight">{b.clientName}</p>
-                        <p className="text-[10px] text-gray-400">{new Date(b.date + 'T12:00:00').toLocaleDateString('es-UY', { day:'2-digit', month:'short' })}</p>
-                      </div>
+            {transactions.map((t) => (
+              <tr key={t.id} className="hover:bg-gray-50/50 transition-colors">
+                <td className="px-5 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-[11px] font-bold text-gray-500 shrink-0">
+                      {(t.clientName || '?').charAt(0).toUpperCase()}
                     </div>
-                  </td>
-                  <td className="px-3 py-3 hidden md:table-cell">
-                    <p className="text-xs text-gray-700">{b.service}</p>
-                  </td>
-                  <td className="px-3 py-3 hidden sm:table-cell">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${STATUS_PILL[b.status]}`}>
-                      {STATUS_LABEL[b.status]}
-                    </span>
-                  </td>
-                  {/* BRUTO */}
-                  <td className="px-3 py-3 text-right">
-                    <p className="text-xs font-semibold text-gray-700">{fmtUYU(gross)}</p>
-                  </td>
-                  {/* COMISIÓN */}
-                  <td className="px-3 py-3 text-right hidden sm:table-cell">
-                    <p className="text-xs font-bold text-orange-500">-{fmtUYU(commission)}</p>
-                  </td>
-                  {/* NETO */}
-                  <td className="px-3 py-3 text-right">
-                    <p className="text-sm font-bold text-emerald-600">{fmtUYU(net)}</p>
-                  </td>
-                  {/* PAYMENT STATE */}
-                  <td className="px-3 py-3 text-right hidden md:table-cell">
                     <div>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${payConf.bg} ${payConf.text}`}>
-                        {payConf.label}
-                      </span>
-                      <p className="text-[10px] text-gray-400 mt-0.5 text-right">{depositDt}</p>
+                      <p className="text-xs font-semibold text-gray-800 leading-tight">{t.clientName || 'Cliente'}</p>
+                      <p className="text-[10px] text-gray-400">{t.date ? new Date(t.date + 'T12:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'short' }) : '—'}</p>
                     </div>
-                  </td>
-                </tr>
-              );
-            })}
+                  </div>
+                </td>
+                <td className="px-3 py-3 hidden md:table-cell"><p className="text-xs text-gray-700">{t.serviceTitle}</p></td>
+                <td className="px-3 py-3 hidden sm:table-cell">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${STATUS_PILL[t.status] || STATUS_PILL.pending}`}>
+                    {STATUS_LABEL[t.status] || t.status}
+                  </span>
+                </td>
+                <td className="px-3 py-3 text-right"><p className="text-xs font-semibold text-gray-700">{fmtUYU(t.gross)}</p></td>
+                <td className="px-3 py-3 text-right hidden sm:table-cell"><p className="text-xs font-bold text-orange-500">-{fmtUYU(t.commission)}</p></td>
+                <td className="px-3 py-3 text-right"><p className="text-sm font-bold text-emerald-600">{fmtUYU(t.net)}</p></td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination */}
-      {total > 1 && (
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-3">
-          <p className="text-xs text-gray-400">Página {page} de {total}</p>
-          <div className="flex gap-1">
-            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:border-primary/30 disabled:opacity-30 transition-colors">
-              <ChevronDown size={13} className="rotate-90" />
-            </button>
-            <button onClick={() => setPage((p) => Math.min(total, p + 1))} disabled={page === total} className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:border-primary/30 disabled:opacity-30 transition-colors">
-              <ChevronDown size={13} className="-rotate-90" />
-            </button>
-          </div>
+      <div className="mt-3 bg-gray-50 rounded-xl px-4 py-3 flex flex-wrap gap-4 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500">Reservas (histórico):</span>
+          <strong className="text-gray-800">{summary.bookingsCount}</strong>
         </div>
-      )}
-
-      {/* Table totals bar */}
-      {(() => {
-        const { totalGross, totalCommission, totalNet, count } = calcTotalsFromBookings(BOOKINGS);
-        return (
-          <div className="mt-3 bg-gray-50 rounded-xl px-4 py-3 flex flex-wrap gap-4 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500">Reservas activas:</span>
-              <strong className="text-gray-800">{count}</strong>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500">Bruto total:</span>
-              <strong className="text-gray-800">{fmtUYU(totalGross)}</strong>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500">Comisiones:</span>
-              <strong className="text-orange-500">-{fmtUYU(totalCommission)}</strong>
-            </div>
-            <div className="flex items-center gap-2 ml-auto">
-              <span className="text-gray-500 font-medium">Neto a cobrar:</span>
-              <strong className="text-emerald-600 text-sm">{fmtUYU(totalNet)}</strong>
-            </div>
-          </div>
-        );
-      })()}
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500">Bruto total:</span>
+          <strong className="text-gray-800">{fmtFull(summary.gross)}</strong>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500">Comisiones:</span>
+          <strong className="text-orange-500">-{fmtFull(summary.commission)}</strong>
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+          <span className="text-gray-500 font-medium">Neto acumulado:</span>
+          <strong className="text-emerald-600 text-sm">{fmtFull(summary.net)}</strong>
+        </div>
+      </div>
     </Card>
   );
 }
 
-// ─── 7. PAGOS Y DEPÓSITOS ─────────────────────────────────────────────────────
-function PayoutsSection() {
-  const pending    = PAYOUT_HISTORY.find((p) => p.status === 'pending');
-  const totalPaid  = PAYOUT_HISTORY.filter((p) => p.status === 'paid').reduce((s, p) => s + p.netAmount, 0);
-  const totalComm  = PAYOUT_HISTORY.filter((p) => p.status === 'paid').reduce((s, p) => s + p.commissionAmount, 0);
-
-  return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-      {/* Pending payout card */}
-      <Card className="xl:col-span-1">
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white mb-4">
-          <p className="text-xs text-gray-400 mb-1">Próximo depósito</p>
-          <p className="text-3xl font-black">{fmtUYU(pending?.netAmount || 0)}</p>
-          <div className="flex items-center gap-2 mt-2">
-            <Calendar size={13} className="text-emerald-400" />
-            <p className="text-sm text-emerald-400 font-semibold">{pending?.date}</p>
-          </div>
-          <div className="mt-3 pt-3 border-t border-gray-700 space-y-1.5">
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-400">Bruto procesado</span>
-              <span className="font-semibold">{fmtUYU(pending?.grossAmount || 0)}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-400">Comisión TuEvento (8%)</span>
-              <span className="text-orange-400 font-semibold">-{fmtUYU(pending?.commissionAmount || 0)}</span>
-            </div>
-            <div className="flex justify-between text-xs pt-1.5 border-t border-gray-700">
-              <span className="font-bold text-white">Neto a depositar</span>
-              <span className="font-black text-emerald-400">{fmtUYU(pending?.netAmount || 0)}</span>
-            </div>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-emerald-50 rounded-xl p-3">
-            <p className="text-xs text-gray-500 leading-tight">Pagado total</p>
-            <p className="text-base font-bold text-emerald-700">{fmtUYU(totalPaid)}</p>
-          </div>
-          <div className="bg-orange-50 rounded-xl p-3">
-            <p className="text-xs text-gray-500 leading-tight">Comisiones ret.</p>
-            <p className="text-base font-bold text-orange-600">{fmtUYU(totalComm)}</p>
-          </div>
-        </div>
-        <div className="mt-3 bg-blue-50 rounded-xl px-3 py-2.5 border border-blue-100">
-          <p className="text-xs text-blue-700 leading-relaxed">
-            Los depósitos se procesan automáticamente el <strong>5 de cada mes</strong>. Las reservas canceladas no generan pago.
-          </p>
-        </div>
-      </Card>
-
-      {/* Deposit history table */}
-      <Card title="Historial de depósitos" subtitle="Últimos 6 ciclos de pago" className="xl:col-span-2">
-        <div className="overflow-x-auto -mx-5">
-          <table className="w-full">
-            <thead>
-              <tr className="border-y border-gray-100 bg-gray-50/60">
-                <th className="text-left text-[11px] font-semibold text-gray-400 uppercase px-5 py-2.5">Fecha</th>
-                <th className="text-left text-[11px] font-semibold text-gray-400 uppercase px-3 py-2.5 hidden sm:table-cell">Reservas</th>
-                <th className="text-right text-[11px] font-semibold text-gray-400 uppercase px-3 py-2.5 hidden md:table-cell">Bruto</th>
-                <th className="text-right text-[11px] font-semibold text-gray-400 uppercase px-3 py-2.5">Comisión</th>
-                <th className="text-right text-[11px] font-semibold text-gray-400 uppercase px-3 py-2.5">Neto dep.</th>
-                <th className="text-center text-[11px] font-semibold text-gray-400 uppercase px-3 py-2.5">Estado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {PAYOUT_HISTORY.map((p) => {
-                const cfg = PAYMENT_STATUS_CONFIG[p.status];
-                return (
-                  <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-5 py-3">
-                      <p className="text-xs font-semibold text-gray-800">{p.date}</p>
-                      <p className="text-[10px] text-gray-400 hidden sm:block">{p.note}</p>
-                    </td>
-                    <td className="px-3 py-3 hidden sm:table-cell">
-                      <p className="text-xs font-medium text-gray-600 text-center">{p.reservationsCount}</p>
-                    </td>
-                    <td className="px-3 py-3 text-right hidden md:table-cell">
-                      <p className="text-xs text-gray-600 font-medium">{fmtUYU(p.grossAmount)}</p>
-                    </td>
-                    <td className="px-3 py-3 text-right">
-                      <p className="text-xs font-bold text-orange-500">-{fmtUYU(p.commissionAmount)}</p>
-                    </td>
-                    <td className="px-3 py-3 text-right">
-                      <p className="text-sm font-bold text-emerald-600">{fmtUYU(p.netAmount)}</p>
-                    </td>
-                    <td className="px-3 py-3 text-center">
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.dot }} />
-                        {cfg.label}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-    </div>
-  );
-}
-
-// ─── 8. TRANSPARENCY BANNER ───────────────────────────────────────────────────
 function TransparencyBanner() {
   return (
     <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-5 flex items-center gap-5">
@@ -587,32 +331,79 @@ function TransparencyBanner() {
         <p className="text-gray-400 text-xs leading-relaxed">{COMMISSION_DESCRIPTION}</p>
       </div>
       <div className="shrink-0 text-right hidden sm:block">
-        <p className="text-3xl font-black text-white">8%</p>
+        <p className="text-3xl font-black text-white">{COMMISSION_LABEL}</p>
         <p className="text-xs text-gray-400">fijo por reserva</p>
       </div>
     </div>
   );
 }
 
-// ─── MAIN EXPORT ──────────────────────────────────────────────────────────────
 export default function DashCommissions() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const load = () => {
+    setLoading(true);
+    setError(null);
+    providerDashboardService.getEarnings()
+      .then((d) => { setData(d); setLoading(false); })
+      .catch((err) => { setError(err?.message || 'No se pudieron cargar las finanzas'); setLoading(false); });
+  };
+
+  useEffect(() => { load(); }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-5">
+        <div className="skeleton h-20 w-full rounded-2xl" />
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {[...Array(5)].map((_, i) => <div key={i} className="skeleton h-28 rounded-2xl" />)}
+        </div>
+        <div className="skeleton h-64 w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
+        <AlertTriangle size={32} className="mx-auto text-amber-500 mb-3" />
+        <p className="text-gray-700 font-medium mb-1">No pudimos cargar tus finanzas</p>
+        <p className="text-sm text-gray-500 mb-5">{error}</p>
+        <button onClick={load} className="px-5 py-2.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors text-sm">
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  const { summary, byMonth, transactions } = data;
+
+  if (summary.bookingsCount === 0) {
+    return (
+      <div className="space-y-5">
+        <TransparencyBanner />
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-gray-400 text-sm">
+          Todavía no tenés reservas confirmadas. Cuando recibas tu primera reserva, vas a ver acá el desglose de facturación y comisiones.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <TransparencyBanner />
-      <SummaryCards />
+      <SummaryCards byMonth={byMonth} summary={summary} />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-        <div className="xl:col-span-2"><GrossVsNetChart /></div>
-        <MoneyDistributionPie />
+        <div className="xl:col-span-2"><GrossVsNetChart byMonth={byMonth} /></div>
+        <MoneyDistributionPie byMonth={byMonth} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <CommissionEvolutionChart />
-        <CommissionByServiceChart />
-      </div>
+      <CommissionEvolutionChart byMonth={byMonth} />
 
-      <CommissionBookingsTable />
-      <PayoutsSection />
+      <TransactionsTable transactions={transactions} summary={summary} />
     </div>
   );
 }
