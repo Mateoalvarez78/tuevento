@@ -148,10 +148,13 @@ export default function ClienteDashboard() {
         {/* 8 · Historial reciente */}
         {data?.recentBookings?.length > 0 && (
           <section>
-            <h2 className="text-lg font-bold text-gray-900 mb-3">Historial reciente</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold text-gray-900">Historial reciente</h2>
+              <Link href="/dashboard/cliente/reservas" className="text-sm font-semibold text-primary hover:underline">Ver todas</Link>
+            </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
               {data.recentBookings.map((b) => (
-                <div key={b.id} className="flex items-center gap-3 p-4">
+                <Link key={b.id} href="/dashboard/cliente/reservas" className="group flex items-center gap-3 p-4 hover:bg-gray-50/60 transition-colors">
                   <img src={b.providerImage} alt={b.providerName} className="w-11 h-11 rounded-xl object-cover shrink-0 bg-gray-100" />
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-gray-900 text-sm truncate">{b.serviceTitle || b.providerName}</p>
@@ -159,12 +162,12 @@ export default function ClienteDashboard() {
                       {b.providerName}{b.date ? ` · ${new Date(b.date + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'short' })}` : ''}
                     </p>
                   </div>
-                  <ReservationStatusBadge status={b.status} />
+                  <ReservationStatusBadge status={b.displayStatus || b.status} />
                   <span className="text-sm font-semibold text-gray-800 hidden sm:block w-20 text-right">{money(b.totalEstimated)}</span>
-                  <Link href={`/proveedor/${b.serviceId}`} className="text-gray-300 hover:text-primary transition-colors shrink-0" title="Ver detalle">
+                  <span className="text-gray-300 group-hover:text-primary transition-colors shrink-0" title="Ver detalle">
                     <ArrowRight size={16} />
-                  </Link>
-                </div>
+                  </span>
+                </Link>
               ))}
             </div>
           </section>

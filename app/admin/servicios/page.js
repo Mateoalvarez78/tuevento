@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, Check, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Search, Check, X, Eye, Pause, ExternalLink, AlertTriangle, MapPin } from 'lucide-react';
 import { useAdminServices } from '@/hooks/useAdmin';
+import { adminService } from '@/services/adminService';
 import ServiceStatusBadge from '@/components/ServiceStatusBadge';
+import { assetUrl } from '@/services/api';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 
 const STATUS_TABS = [
@@ -15,14 +18,14 @@ const STATUS_TABS = [
   { value: 'rejected', label: 'Rechazados' },
 ];
 
-function RejectModal({ onConfirm, onCancel }) {
+function ReasonModal({ title, ctaLabel, ctaClass, onConfirm, onCancel }) {
   const [reason, setReason] = useState('');
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md mx-4">
-        <h3 className="text-white font-semibold mb-3">Rechazar servicio</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
+        <h3 className="text-white font-semibold mb-3">{title}</h3>
         <textarea
-          placeholder="Motivo del rechazo (requerido)…"
+          placeholder="Motivo (requerido)…"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={3}
@@ -33,11 +36,145 @@ function RejectModal({ onConfirm, onCancel }) {
           <button
             onClick={() => onConfirm(reason)}
             disabled={!reason.trim()}
-            className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-40"
+            className={`px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-40 ${ctaClass}`}
           >
-            Rechazar
+            {ctaLabel}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailDrawer({ serviceId, onClose }) {
+  const [service, setService] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    adminService.services.getById(serviceId)
+      .then((s) => { if (!cancelled) { setService(s); setLoading(false); } })
+      .catch((err) => { if (!cancelled) { setError(err?.message || 'No se pudo cargar el detalle'); setLoading(false); } });
+    return () => { cancelled = true; };
+  }, [serviceId]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-gray-900 border-l border-gray-800 shadow-2xl overflow-y-auto flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 sticky top-0 bg-gray-900 z-10">
+          <h3 className="text-base font-bold text-white">Detalle del servicio</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-800 flex items-center justify-center text-gray-400 transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+
+        {loading && (
+          <div className="p-5 space-y-3">
+            <div className="skeleton h-40 w-full rounded-xl bg-gray-800" />
+            <div className="skeleton h-4 w-2/3 rounded bg-gray-800" />
+            <div className="skeleton h-4 w-1/2 rounded bg-gray-800" />
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="p-8 text-center">
+            <AlertTriangle size={28} className="mx-auto text-amber-400 mb-3" />
+            <p className="text-gray-300 text-sm">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && service && (
+          <div className="p-5 space-y-5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <ServiceStatusBadge status={service._raw.status} size="md" />
+              {service.verified && <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full">Verificado</span>}
+            </div>
+
+            {service.images?.length > 0 ? (
+              <div className="grid grid-cols-3 gap-2">
+                {service.images.slice(0, 6).map((img, i) => (
+                  <img key={i} src={assetUrl(img)} alt="" className="w-full h-20 object-cover rounded-lg bg-gray-800" />
+                ))}
+              </div>
+            ) : (
+              <div className="h-24 rounded-xl bg-gray-800 flex items-center justify-center text-gray-500 text-sm">Sin imágenes</div>
+            )}
+
+            <div>
+              <h4 className="text-lg font-bold text-white">{service.serviceTitle}</h4>
+              <p className="text-sm text-gray-400">{service.categoryEmoji} {service.categoryLabel} · {service.businessName}</p>
+            </div>
+
+            {service.longDescription && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Descripción</p>
+                <p className="text-sm text-gray-300 leading-relaxed">{service.longDescription}</p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="text-xs text-gray-500">Precio desde</p>
+                <p className="text-gray-200 font-semibold">${formatCurrency(service.priceFrom)} <span className="text-xs text-gray-500">{service.priceType === 'per_person' ? 'por persona' : service.priceType === 'per_hour' ? 'por hora' : 'por evento'}</span></p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Reservas</p>
+                <p className="text-gray-200 font-semibold">{service.totalBookings}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs text-gray-500 mb-1">Zonas de cobertura</p>
+                {service.zones?.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {service.zones.map((z) => (
+                      <span key={z} className="inline-flex items-center gap-1 text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded-full">
+                        <MapPin size={10} /> {z}
+                      </span>
+                    ))}
+                  </div>
+                ) : <p className="text-sm text-gray-400">Sin zonas definidas</p>}
+              </div>
+            </div>
+
+            {service.packages?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Menús / paquetes</p>
+                <div className="space-y-2">
+                  {service.packages.map((p) => (
+                    <div key={p.id} className="bg-gray-800/60 border border-gray-800 rounded-xl p-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-200">{p.name}</p>
+                        {p.description && <p className="text-xs text-gray-500">{p.description}</p>}
+                      </div>
+                      <p className="text-sm font-semibold text-gray-200">${formatCurrency(p.price)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {service._raw.status_reason && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3">
+                <p className="text-xs font-semibold text-amber-400 mb-1">Motivo (último rechazo/pausa)</p>
+                <p className="text-sm text-amber-200">{service._raw.status_reason}</p>
+              </div>
+            )}
+
+            <div className="text-xs text-gray-500">
+              Creado el {formatDate(service._raw.created_at?.split('T')[0])}
+              {service._raw.published_at && ` · Publicado el ${formatDate(service._raw.published_at.split('T')[0])}`}
+            </div>
+
+            {service._raw.status === 'active' && (
+              <Link href={`/proveedor/${service.id}`} target="_blank" className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline">
+                <ExternalLink size={14} /> Ver publicación
+              </Link>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -47,8 +184,10 @@ export default function AdminServiciosPage() {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('');
   const [rejectTarget, setRejectTarget] = useState(null);
+  const [pauseTarget, setPauseTarget] = useState(null);
+  const [detailId, setDetailId] = useState(null);
 
-  const { services, loading, approve, reject } = useAdminServices();
+  const { services, loading, error, approve, reject, pause, reload } = useAdminServices();
 
   const displayed = services.filter((s) => {
     const matchStatus = !activeTab || s.status === activeTab;
@@ -81,12 +220,12 @@ export default function AdminServiciosPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-gray-800">
+      <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto">
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setActiveTab(tab.value)}
-            className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors ${
+            className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
               activeTab === tab.value
                 ? 'text-primary border-b-2 border-primary -mb-px bg-primary/5'
                 : 'text-gray-500 hover:text-gray-300'
@@ -101,16 +240,26 @@ export default function AdminServiciosPage() {
       <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-gray-500 text-sm">Cargando…</div>
+        ) : error ? (
+          <div className="p-12 text-center">
+            <AlertTriangle size={28} className="mx-auto text-amber-400 mb-3" />
+            <p className="text-gray-300 text-sm mb-4">{error?.message || 'No pudimos cargar los servicios'}</p>
+            <button onClick={reload} className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors">Reintentar</button>
+          </div>
         ) : displayed.length === 0 ? (
-          <div className="p-12 text-center text-gray-500 text-sm">No hay servicios con este filtro.</div>
+          <div className="p-12 text-center text-gray-500 text-sm">
+            {services.length === 0 ? 'Todavía no hay servicios creados en la plataforma.' : 'No hay servicios con este filtro.'}
+          </div>
         ) : (
           <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[520px]">
+          <table className="w-full text-sm min-w-[720px]">
             <thead>
               <tr className="border-b border-gray-800">
                 <th className="text-left px-5 py-3.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Servicio</th>
                 <th className="text-left px-4 py-3.5 text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">Proveedor</th>
                 <th className="text-left px-4 py-3.5 text-xs font-medium text-gray-500 uppercase tracking-wide hidden lg:table-cell">Precio</th>
+                <th className="text-left px-4 py-3.5 text-xs font-medium text-gray-500 uppercase tracking-wide hidden lg:table-cell">Zonas</th>
+                <th className="text-left px-4 py-3.5 text-xs font-medium text-gray-500 uppercase tracking-wide hidden sm:table-cell">Creado</th>
                 <th className="text-left px-4 py-3.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Estado</th>
                 <th className="px-4 py-3.5 text-xs font-medium text-gray-500 uppercase tracking-wide text-right">Acciones</th>
               </tr>
@@ -119,33 +268,57 @@ export default function AdminServiciosPage() {
               {displayed.map((s) => (
                 <tr key={s.id} className="hover:bg-gray-800/50 transition-colors group">
                   <td className="px-5 py-4">
-                    <p className="text-gray-100 font-medium">{s.title}</p>
-                    <p className="text-gray-500 text-xs">{s.category}</p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-800 shrink-0 flex items-center justify-center">
+                        {s.primaryImage ? <img src={assetUrl(s.primaryImage)} alt="" className="w-full h-full object-cover" /> : <span className="text-base">{s.categoryEmoji || '📦'}</span>}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-gray-100 font-medium truncate">{s.title}</p>
+                        <p className="text-gray-500 text-xs">{s.category}</p>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-4 text-gray-400 hidden md:table-cell">{s.providerName}</td>
-                  <td className="px-4 py-4 text-gray-400 hidden lg:table-cell">
-                    ${formatCurrency(s.priceFrom)}
-                  </td>
+                  <td className="px-4 py-4 text-gray-400 hidden lg:table-cell">${formatCurrency(s.priceFrom)}</td>
+                  <td className="px-4 py-4 text-gray-400 hidden lg:table-cell max-w-[160px] truncate">{s.zones?.length ? s.zones.join(', ') : '—'}</td>
+                  <td className="px-4 py-4 text-gray-400 hidden sm:table-cell">{formatDate(s.createdAt)}</td>
                   <td className="px-4 py-4">
                     <ServiceStatusBadge status={s.status} />
                   </td>
                   <td className="px-4 py-4 text-right">
-                    {s.status === 'pending_review' && (
-                      <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => setDetailId(s.id)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 border border-gray-700 text-gray-300 hover:border-primary/50 hover:text-primary rounded-lg text-xs font-semibold transition-colors"
+                        title="Ver detalle"
+                      >
+                        <Eye size={12} /> <span className="hidden sm:inline">Ver</span>
+                      </button>
+                      {s.status === 'pending_review' && (
+                        <>
+                          <button
+                            onClick={() => approve(s.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-colors"
+                          >
+                            <Check size={12} /> Aprobar
+                          </button>
+                          <button
+                            onClick={() => setRejectTarget(s.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition-colors"
+                          >
+                            <X size={12} /> Rechazar
+                          </button>
+                        </>
+                      )}
+                      {s.status === 'active' && (
                         <button
-                          onClick={() => approve(s.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-colors"
+                          onClick={() => setPauseTarget(s.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold transition-colors"
                         >
-                          <Check size={12} /> Aprobar
+                          <Pause size={12} /> Pausar
                         </button>
-                        <button
-                          onClick={() => setRejectTarget(s.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition-colors"
-                        >
-                          <X size={12} /> Rechazar
-                        </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -156,11 +329,26 @@ export default function AdminServiciosPage() {
       </div>
 
       {rejectTarget && (
-        <RejectModal
+        <ReasonModal
+          title="Rechazar servicio"
+          ctaLabel="Rechazar"
+          ctaClass="bg-red-600 hover:bg-red-700"
           onConfirm={(reason) => { reject(rejectTarget, reason); setRejectTarget(null); }}
           onCancel={() => setRejectTarget(null)}
         />
       )}
+
+      {pauseTarget && (
+        <ReasonModal
+          title="Pausar servicio publicado"
+          ctaLabel="Pausar"
+          ctaClass="bg-amber-600 hover:bg-amber-700"
+          onConfirm={(reason) => { pause(pauseTarget, reason); setPauseTarget(null); }}
+          onCancel={() => setPauseTarget(null)}
+        />
+      )}
+
+      {detailId && <DetailDrawer serviceId={detailId} onClose={() => setDetailId(null)} />}
     </div>
   );
 }

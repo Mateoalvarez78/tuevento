@@ -76,6 +76,7 @@ export const adminService = {
     getById:      (id)      => serviceService.admin.getById(id),
     approve:      (id)      => serviceService.admin.approve(id),
     reject:       (id, r)   => serviceService.admin.reject(id, r),
+    pause:        (id, r)   => serviceService.admin.pause(id, r),
     countByStatus:()        => serviceService.admin.countByStatus(),
   },
 };

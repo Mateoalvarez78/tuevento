@@ -2,7 +2,7 @@
 
 import { useState, use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, MapPin, CheckCircle, Clock, Users, CalendarDays, Heart, Share2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Star, MapPin, CheckCircle, Clock, CalendarDays, Heart, Share2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import { providerService } from '@/services/providerService';
 import ProviderGallery from '@/components/ProviderGallery';
@@ -49,9 +49,6 @@ export default function ProviderDetailPage({ params }) {
   const [provider, setProvider] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedPackageId, setSelectedPackageId] = useState(null);
-  const [bookingDate, setBookingDate] = useState('');
-  const [bookingTime, setBookingTime] = useState('');
-  const [bookingGuests, setBookingGuests] = useState('');
   const [descExpanded, setDescExpanded] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
 
@@ -99,16 +96,9 @@ export default function ProviderDetailPage({ params }) {
   };
 
   const handleConsultar = () => {
-    if (!bookingDate || !bookingGuests) {
-      showToast('Completá la fecha y cantidad de invitados', 'error');
-      return;
-    }
     const qs = new URLSearchParams({
       providerId: provider.id,
       packageId:  selectedPackageId || '',
-      date:       bookingDate,
-      time:       bookingTime,
-      guests:     bookingGuests,
     });
     router.push(`/reservar?${qs.toString()}`);
   };
@@ -328,33 +318,6 @@ export default function ProviderDetailPage({ params }) {
                   <div className="text-3xl font-extrabold text-gray-900">${(provider.priceFrom || 0).toLocaleString('es-UY')}</div>
                 </div>
               )}
-
-              <div className="space-y-3 mb-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Fecha del evento</label>
-                  <div className="relative">
-                    <CalendarDays size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="date"
-                      className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                      value={bookingDate}
-                      onChange={(e) => setBookingDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Hora</label>
-                  <input type="time" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" value={bookingTime} onChange={(e) => setBookingTime(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Cantidad de invitados</label>
-                  <div className="relative">
-                    <Users size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input type="number" min="1" className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="¿Cuántos?" value={bookingGuests} onChange={(e) => setBookingGuests(e.target.value)} />
-                  </div>
-                </div>
-              </div>
 
               <button
                 onClick={handleConsultar}

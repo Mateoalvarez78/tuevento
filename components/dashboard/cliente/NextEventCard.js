@@ -21,7 +21,7 @@ export default function NextEventCard({ booking }) {
         <div className="flex-1 p-5">
           <div className="flex items-center justify-between gap-2 mb-1">
             <span className="text-xs font-semibold text-primary uppercase tracking-wide">Tu próximo evento</span>
-            <ReservationStatusBadge status={booking.status} />
+            <ReservationStatusBadge status={booking.displayStatus || booking.status} />
           </div>
           <h3 className="text-lg font-bold text-gray-900 leading-tight">{booking.serviceTitle || booking.providerName}</h3>
           <p className="text-sm text-gray-500">{booking.providerName}</p>
@@ -37,7 +37,7 @@ export default function NextEventCard({ booking }) {
               <div className="text-[11px] text-gray-400">Total estimado</div>
               <div className="text-lg font-bold text-gray-900">{money(booking.totalEstimated)}</div>
             </div>
-            <Link href={`/proveedor/${booking.serviceId}`} className="inline-flex items-center gap-1.5 bg-primary text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-primary-dark transition-colors text-sm">
+            <Link href="/dashboard/cliente/reservas" className="inline-flex items-center gap-1.5 bg-primary text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-primary-dark transition-colors text-sm">
               Ver detalle <ArrowRight size={15} />
             </Link>
           </div>

@@ -107,5 +107,10 @@ export function useAdminServices(initialFilters = {}) {
     reload();
   }, [reload]);
 
-  return { services, loading, error, filters, setFilters, approve, reject, reload };
+  const pause = useCallback(async (id, reason) => {
+    await adminService.services.pause(id, reason);
+    reload();
+  }, [reload]);
+
+  return { services, loading, error, filters, setFilters, approve, reject, pause, reload };
 }

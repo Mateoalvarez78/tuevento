@@ -2,6 +2,7 @@
 // Provider self-service for managing their own listings.
 
 import { api, buildQuery } from './api';
+import { mapServiceToProvider } from './providerService';
 
 // Status mapper: some legacy UI uses 'confirmed', backend uses 'accepted'
 const STATUS_TO_BACKEND = { confirmed: 'accepted' };
@@ -20,6 +21,7 @@ function mapService(s) {
     providerLogo:  s.provider_logo || '',
     title:         s.title,
     category:      s.category_slug  || '',
+    categoryId:    s.category_id    || '',
     categoryLabel: s.category_name  || '',
     categoryEmoji: s.category_emoji || '',
     description:   s.description || '',
@@ -33,9 +35,12 @@ function mapService(s) {
     durationHours: s.duration_hours || null,
     status:        s.status || 'draft',
     statusReason:  s.status_reason || null,
+    rating:        parseFloat(s.rating_avg) || 0,
+    reviewCount:   parseInt(s.total_reviews) || 0,
     views:         s.views || 0,
     bookings:      s.total_bookings || 0,
     createdAt:     s.created_at ? s.created_at.split('T')[0] : '',
+    updatedAt:     s.updated_at  ? s.updated_at.split('T')[0]  : '',
     publishedAt:   s.published_at ? s.published_at.split('T')[0] : null,
     primaryImage:  s.primary_image || (Array.isArray(s.images) && s.images[0]?.url) || null,
     _raw: s,
@@ -125,6 +130,13 @@ export const serviceService = {
     if (data.eventTypes !== undefined)   body.event_types = data.eventTypes;
     if (data.event_types !== undefined)  body.event_types = data.event_types;
     if (data.category_id !== undefined)  body.category_id = data.category_id;
+    if (data.categoryId !== undefined)   body.category_id = data.categoryId;
+    if (data.minGuests !== undefined)    body.min_guests = data.minGuests;
+    if (data.min_guests !== undefined)   body.min_guests = data.min_guests;
+    if (data.maxGuests !== undefined)    body.max_guests = data.maxGuests;
+    if (data.max_guests !== undefined)   body.max_guests = data.max_guests;
+    if (data.durationHours !== undefined) body.duration_hours = data.durationHours;
+    if (data.duration_hours !== undefined) body.duration_hours = data.duration_hours;
     const res = await api.put(`/services/${id}`, body);
     return mapService(res.data);
   },
@@ -196,13 +208,20 @@ export const serviceService = {
       return (res.data || []).map(mapService);
     },
 
+    /** Detalle completo (cualquier estado): datos, imágenes, menús. Admin-only. */
     async getById(id) {
-      const res = await api.get(`/services/${id}`);
-      return mapService(res.data);
+      const res = await api.get(`/admin/services/${id}`);
+      return mapServiceToProvider(res.data);
     },
 
     async approve(id) {
       const res = await api.patch(`/admin/services/${id}/approve`);
+      return mapService(res.data);
+    },
+
+    /** Pausa un servicio ya publicado (no requiere volver a aprobar al reactivar). */
+    async pause(id, reason) {
+      const res = await api.patch(`/admin/services/${id}/pause`, { reason });
       return mapService(res.data);
     },
 

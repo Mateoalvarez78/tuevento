@@ -10,6 +10,15 @@ function normalizeStatus(status) {
   return STATUS_MAP[status] || status;
 }
 
+// Estado "humano" para UI: distingue aceptada-esperando-seña de confirmada-con-
+// seña-pagada sin tocar el status crudo del backend (que sigue siendo solo
+// pending/accepted/rejected/cancelled/completed). Úsese solo para badges/color,
+// nunca para lógica de negocio (ahí seguí usando `status`/`rawStatus`).
+function computeDisplayStatus(normalizedStatus, paymentStatus) {
+  if (normalizedStatus === 'confirmed' && paymentStatus !== 'paid') return 'accepted';
+  return normalizedStatus;
+}
+
 function mapBooking(b) {
   if (!b) return null;
   return {
@@ -51,10 +60,12 @@ function mapBooking(b) {
     providerNet:       parseFloat(b.provider_net) || 0,
     depositAmount:     parseFloat(b.deposit_amount) || 0,
     depositPaid:       b.deposit_paid || false,
-    paymentStatus:     b.payment_status || 'pending',
+    paymentStatus:     b.payment_status || 'unpaid',
     // Status — normalize accepted→confirmed for legacy UI
     status:            normalizeStatus(b.status),
     rawStatus:         b.status,
+    // Solo para mostrar: "accepted" (esperando seña) vs "confirmed" (seña pagada).
+    displayStatus:     computeDisplayStatus(normalizeStatus(b.status), b.payment_status || 'unpaid'),
     rejectionReason:   b.rejection_reason || null,
     cancellationReason:b.cancellation_reason || null,
     completedAt:       b.completed_at || null,
@@ -155,6 +166,15 @@ export const bookingService = {
   /** Get single booking detail. */
   async getById(id) {
     const res = await api.get(`/bookings/${id}`);
+    return mapBooking(res.data);
+  },
+
+  /**
+   * Simula el pago de la seña (sin pasarela real todavía). Solo el cliente
+   * dueño de la reserva puede llamarlo, y solo si está aceptada y sin pago.
+   */
+  async payDeposit(id) {
+    const res = await api.post(`/payments/booking/${id}/simulate-deposit`, {});
     return mapBooking(res.data);
   },
 };

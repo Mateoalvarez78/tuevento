@@ -15,7 +15,7 @@ const STEPS = [
   { label: 'Resumen',  icon: ClipboardList },
 ];
 
-export default function BookingWizard({ provider }) {
+export default function BookingWizard({ provider, initialPackageId }) {
   const router = useRouter();
   const { user, showToast } = useApp();
   const [step, setStep] = useState(0);
@@ -28,7 +28,7 @@ export default function BookingWizard({ provider }) {
     date: '', time: '', location: '', eventType: '', adults: '', children: '',
   });
   const [packageData, setPackageData] = useState({
-    packageId: provider.packages[1]?.id || provider.packages[0]?.id,
+    packageId: initialPackageId || provider.packages[1]?.id || provider.packages[0]?.id,
     extras: [],
   });
   const [contactData, setContactData] = useState({
@@ -109,16 +109,19 @@ export default function BookingWizard({ provider }) {
         <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-5">
           <CheckCircle size={40} className="text-green-500" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Solicitud enviada!</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Consulta enviada</h2>
         <p className="text-gray-500 mb-2">Tu número de solicitud es:</p>
         <div className="text-2xl font-bold text-primary mb-4">{requestNumber}</div>
-        <p className="text-sm text-gray-500 max-w-sm mb-8">
-          <strong>{provider.name}</strong> recibió tu consulta y te responderá en {provider.responseTime.replace('Responde en ', '')}.
+        <p className="text-sm text-gray-500 max-w-sm mb-3">
+          <strong>{provider.name}</strong> revisará la disponibilidad y te responderá en {provider.responseTime.replace('Responde en ', '')}.
           Te llegará un email de confirmación a <strong>{contactData.email}</strong>.
+        </p>
+        <p className="text-sm text-gray-500 max-w-sm mb-8 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5">
+          No se realizará ningún cobro hasta que el proveedor confirme tu reserva.
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <button
-            onClick={() => router.push('/dashboard/cliente')}
+            onClick={() => router.push('/dashboard/cliente/reservas')}
             className="px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors"
           >
             Ver mis reservas

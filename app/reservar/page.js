@@ -18,6 +18,7 @@ export default function ReservarPage() {
 function ReservarContent() {
   const searchParams = useSearchParams();
   const serviceId = searchParams.get('providerId') || searchParams.get('serviceId');
+  const initialPackageId = searchParams.get('packageId') || undefined;
 
   const [provider, setProvider] = useState(null);
   const [loading, setLoading] = useState(!!serviceId);
@@ -79,7 +80,7 @@ function ReservarContent() {
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
           <h1 className="text-xl font-extrabold text-gray-900 mb-1">Solicitar disponibilidad</h1>
           <p className="text-sm text-gray-500 mb-8">Completá los datos de tu evento y enviá la solicitud al proveedor.</p>
-          <BookingWizard provider={provider} />
+          <BookingWizard provider={provider} initialPackageId={initialPackageId} />
         </div>
       </div>
     </div>
