@@ -14,11 +14,18 @@ export const IMAGE_LIMITS = {
 
 function mapImage(img) {
   if (!img) return null;
+  // Imágenes subidas antes de la migración a Cloudinary viven en /uploads del
+  // filesystem de Render, que no es persistente — pueden estar rotas (404) en
+  // cualquier momento (restart/redeploy). Las identificamos por no tener
+  // public_id (todo lo nuevo se sube a Cloudinary y sí lo tiene).
+  const isLegacyLocal = !img.public_id && /^\/uploads\//.test(img.url || '');
   return {
     id: img.id,
     serviceId: img.service_id,
-    url: assetUrl(img.url),      // absoluta contra el backend
+    url: assetUrl(img.url),      // absoluta contra el backend (o ya absoluta si es Cloudinary)
     rawUrl: img.url,
+    publicId: img.public_id || null,
+    isLegacyLocal,
     isMain: !!img.is_primary,
     sortOrder: img.sort_order || 0,
     originalName: img.original_name || img.filename || '',

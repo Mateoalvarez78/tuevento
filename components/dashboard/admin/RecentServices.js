@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
 import ServiceStatusBadge from '@/components/ServiceStatusBadge';
+import { safeFormatDate } from '@/lib/date';
 
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('es-UY', { day: '2-digit', month: 'short' }) : '—';
+const fmtDate = safeFormatDate;
 
 export default function RecentServices({ services = [] }) {
   return (

@@ -6,6 +6,7 @@ import { useApp } from '@/lib/AppContext';
 import { bookingService } from '@/services/bookingService';
 import { Check, CalendarDays, MapPin, Users, Package, User, MessageSquare, ClipboardList, CheckCircle } from 'lucide-react';
 import PackageSelector from './PackageSelector';
+import { safeFormatDate } from '@/lib/date';
 
 const EVENT_TYPES = ['Cumpleaños', 'Casamiento', 'Empresarial', 'Infantil', 'Fiesta privada', 'Otro'];
 const STEPS = [
@@ -312,7 +313,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
             <div className="h-px bg-gray-200" />
             <div className="flex justify-between">
               <span className="text-gray-500">Fecha</span>
-              <span className="font-medium text-gray-900">{new Date(eventData.date + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'long', year: 'numeric' })} – {eventData.time}hs</span>
+              <span className="font-medium text-gray-900">{safeFormatDate(eventData.date)} – {eventData.time}hs</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Tipo de evento</span>

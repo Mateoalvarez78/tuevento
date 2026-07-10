@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Star, Send, AlertTriangle } from 'lucide-react';
 import { reviewService } from '@/services/reviewService';
 import EmptyState from '@/components/EmptyState';
+import { safeFormatDate } from '@/lib/date';
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
 
@@ -117,7 +118,7 @@ export function ReviewsSection({ provider }) {
                 </div>
                 <div className="flex flex-col items-end gap-0.5">
                   <StarRow rating={r.rating} />
-                  {r.createdAt && <p className="text-[10px] text-gray-400">{new Date(r.createdAt).toLocaleDateString('es-UY', { day: '2-digit', month: 'short' })}</p>}
+                  {r.createdAt && <p className="text-[10px] text-gray-400">{safeFormatDate(r.createdAt)}</p>}
                 </div>
               </div>
               {r.comment && <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">{r.comment}</p>}

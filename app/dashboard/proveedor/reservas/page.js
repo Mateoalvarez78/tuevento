@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import {
-  ArrowLeft, Search, Check, X, Eye, CheckCircle2, MapPin, AlertTriangle,
+  Search, Check, X, Eye, CheckCircle2, MapPin, AlertTriangle,
 } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
-import { useRequireRole } from '@/hooks/useRequireRole';
+import { useSessionState } from '@/hooks/useSessionState';
 import { bookingService } from '@/services/bookingService';
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import EmptyState from '@/components/EmptyState';
 import { CalendarDrawer } from '@/components/dashboard/proveedor/DashCalendar';
+import { safeFormatDate } from '@/lib/date';
 
 const STATUS_FILTERS = [
   { id: 'all',       label: 'Todas' },
@@ -24,14 +24,13 @@ const STATUS_FILTERS = [
 
 export default function ProviderReservationsPage() {
   const { showToast } = useApp();
-  const access = useRequireRole(['provider']);
 
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [search, setSearch] = useSessionState('provReservasSearch', '');
+  const [statusFilter, setStatusFilter] = useSessionState('provReservasStatus', 'all');
   const [selected, setSelected] = useState(null);
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -51,21 +50,6 @@ export default function ProviderReservationsPage() {
   }, []);
 
   useEffect(() => { reload(); }, [reload]);
-
-  if (access === 'loading' || access === 'denied') {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-400 text-sm">Verificando acceso…</div>;
-  }
-  if (access === 'unauth') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-sm">
-          <div className="text-5xl mb-4">🔒</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Necesitás iniciar sesión</h2>
-          <Link href="/provider/login" className="inline-block bg-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors">Ingresar</Link>
-        </div>
-      </div>
-    );
-  }
 
   const filtered = bookings.filter((b) => {
     const q = search.trim().toLowerCase();
@@ -109,24 +93,15 @@ export default function ProviderReservationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <Link href="/dashboard/proveedor" className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 mb-1">
-              <ArrowLeft size={13} /> Panel de proveedor
-            </Link>
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900">Reservas</h1>
-          </div>
-          {pendingCount > 0 && (
-            <span className="shrink-0 bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-full">
-              {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}
-            </span>
-          )}
+    <>
+      {pendingCount > 0 && (
+        <div className="flex justify-end mb-3">
+          <span className="shrink-0 bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-full">
+            {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}
+          </span>
         </div>
-      </div>
+      )}
 
-      <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <div className="flex flex-wrap items-center gap-2.5 mb-5">
           <div className="relative flex-1 min-w-[180px] max-w-xs">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -203,7 +178,7 @@ export default function ProviderReservationsPage() {
                   <div>
                     <span className="text-gray-400 block">Fecha</span>
                     <span className="font-medium text-gray-800">
-                      {b.date ? new Date(b.date + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'short' }) : '—'} {b.time}
+                      {safeFormatDate(b.date)} {b.time}
                     </span>
                   </div>
                   <div>
@@ -222,7 +197,7 @@ export default function ProviderReservationsPage() {
                   </div>
                   <div>
                     <span className="text-gray-400 block">Creada</span>
-                    <span className="font-medium text-gray-800">{b.createdAt ? new Date(b.createdAt + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'short' }) : '—'}</span>
+                    <span className="font-medium text-gray-800">{safeFormatDate(b.createdAt)}</span>
                   </div>
                 </div>
                 <div className="text-xs text-gray-500 flex items-center gap-1 mb-3">
@@ -268,7 +243,6 @@ export default function ProviderReservationsPage() {
             ))}
           </div>
         )}
-      </div>
 
       <CalendarDrawer booking={selected} onClose={() => setSelected(null)} />
 
@@ -296,6 +270,6 @@ export default function ProviderReservationsPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

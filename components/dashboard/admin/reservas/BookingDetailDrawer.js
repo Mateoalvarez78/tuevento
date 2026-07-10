@@ -10,10 +10,11 @@ import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import { bookingAdminService } from '@/services/bookingAdminService';
 import BookingActionsModal from './BookingActionsModal';
 import BookingCancelModal from './BookingCancelModal';
+import { safeFormatDate, safeFormatDateTime } from '@/lib/date';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
-const fmtDate = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('es-UY', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '—';
-const fmtDateTime = (d) => d ? new Date(d).toLocaleDateString('es-UY', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+const fmtDate = (d) => d ? safeFormatDate(d) : '—';
+const fmtDateTime = (d) => d ? safeFormatDateTime(d) : '';
 
 const STATUS_LABEL = { pending: 'Reserva creada', confirmed: 'Proveedor aceptó', rejected: 'Proveedor rechazó', cancelled: 'Reserva cancelada', completed: 'Evento completado' };
 

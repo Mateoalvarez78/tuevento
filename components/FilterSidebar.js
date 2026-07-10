@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, SlidersHorizontal, ChevronDown, Check, Star } from 'lucide-react';
-import { CATEGORIES } from '@/lib/mockData';
+import { categoryService } from '@/services/categoryService';
+import { ZONES } from '@/utils/constants';
 
-const ZONES = ['Montevideo', 'Canelones', 'Maldonado', 'Interior del país'];
 const RATINGS = [5, 4, 3];
 
 function Section({ title, children, defaultOpen = true }) {
@@ -54,11 +54,28 @@ function CheckRow({ active, onClick, children, count }) {
 }
 
 export default function FilterSidebar({ filters, onChange, mobileOpen, onMobileClose }) {
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    categoryService.getAll().then(setCategories).catch(() => setCategories([]));
+  }, []);
+
   const update = (key, val) => onChange({ ...filters, [key]: val });
+
+  // filters.category puede traer varias, separadas por coma (ej. "catering,dj")
+  const selectedCategoryIds = filters.category ? filters.category.split(',').filter(Boolean) : [];
+  const toggleCategory = (id) => {
+    const next = selectedCategoryIds.includes(id)
+      ? selectedCategoryIds.filter((c) => c !== id)
+      : [...selectedCategoryIds, id];
+    update('category', next.join(','));
+  };
 
   const activeCount = [
     filters.category,
     filters.zone,
+    filters.date,
+    filters.location,
     filters.eventType,
     filters.verified,
     filters.minRating > 0,
@@ -66,7 +83,10 @@ export default function FilterSidebar({ filters, onChange, mobileOpen, onMobileC
   ].filter(Boolean).length;
 
   const clearAll = () =>
-    onChange({ category: '', zone: '', minRating: 0, maxPrice: 200000, eventType: '', verified: false, search: filters.search || '' });
+    onChange({
+      category: '', zone: '', date: '', location: '', placeId: '', lat: '', lng: '',
+      minRating: 0, maxPrice: 200000, eventType: '', verified: false, search: filters.search || '',
+    });
 
   const content = (
     <div className="divide-y divide-gray-100">
@@ -96,17 +116,16 @@ export default function FilterSidebar({ filters, onChange, mobileOpen, onMobileC
       <Section title="Categorías">
         <div className="space-y-0.5">
           <CheckRow
-            active={!filters.category}
+            active={selectedCategoryIds.length === 0}
             onClick={() => update('category', '')}
           >
             Todas las categorías
           </CheckRow>
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <CheckRow
               key={cat.id}
-              active={filters.category === cat.id}
-              onClick={() => update('category', filters.category === cat.id ? '' : cat.id)}
-              count={cat.count}
+              active={selectedCategoryIds.includes(cat.id)}
+              onClick={() => toggleCategory(cat.id)}
             >
               <span className="flex items-center gap-2">
                 <span className="text-base leading-none">{cat.icon}</span>
@@ -175,15 +194,17 @@ export default function FilterSidebar({ filters, onChange, mobileOpen, onMobileC
         </div>
       </Section>
 
-      {/* ── Availability (date) ── */}
-      <Section title="Disponibilidad" defaultOpen={false}>
+      {/* ── Fecha del evento (informativa: hoy no filtra resultados, ver nota en catálogo) ── */}
+      <Section title="Fecha del evento" defaultOpen={false}>
         <div className="pt-1">
-          <label className="block text-xs text-gray-500 mb-1.5">Fecha del evento</label>
           <input
             type="date"
             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-primary transition-colors bg-white"
+            value={filters.date || ''}
+            onChange={(e) => update('date', e.target.value)}
             min={new Date().toISOString().split('T')[0]}
           />
+          <p className="text-[11px] text-gray-400 mt-1.5">Se usa para pre-completar tu reserva, no filtra los resultados.</p>
         </div>
       </Section>
 

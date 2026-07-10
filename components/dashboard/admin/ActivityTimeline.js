@@ -1,15 +1,9 @@
 'use client';
 
+import { formatRelativeDate } from '@/lib/date';
+
 function relative(dateStr) {
-  if (!dateStr) return '';
-  const then = new Date(dateStr).getTime();
-  const days = Math.floor((Date.now() - then) / 86400000);
-  if (Number.isNaN(days)) return '';
-  if (days <= 0) return 'hoy';
-  if (days === 1) return 'ayer';
-  if (days < 30) return `hace ${days} días`;
-  const months = Math.floor(days / 30);
-  return `hace ${months} mes${months !== 1 ? 'es' : ''}`;
+  return formatRelativeDate(dateStr, '');
 }
 
 export default function ActivityTimeline({ activity = [] }) {

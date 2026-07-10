@@ -2,10 +2,11 @@
 
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import { Eye, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { safeFormatDate } from '@/lib/date';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
-const fmtDate = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
-const fmtCreated = (d) => d ? new Date(d).toLocaleDateString('es-UY', { day: '2-digit', month: 'short' }) : '—';
+const fmtDate = safeFormatDate;
+const fmtCreated = safeFormatDate;
 
 export default function BookingsTable({ bookings = [], loading, pagination, onPage, onRowClick, onCopy }) {
   if (loading) {

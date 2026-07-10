@@ -8,7 +8,8 @@ import { adminService } from '@/services/adminService';
 import { assetUrl } from '@/services/api';
 import ProviderStatusBadge from '@/components/ProviderStatusBadge';
 import ServiceStatusBadge from '@/components/ServiceStatusBadge';
-import { formatDate, formatCurrency } from '@/utils/formatters';
+import { formatCurrency } from '@/utils/formatters';
+import { safeFormatDate } from '@/lib/date';
 
 function ConfirmModal({ title, description, confirmLabel, confirmClass, onConfirm, onCancel, requireReason }) {
   const [reason, setReason] = useState('');
@@ -184,8 +185,8 @@ export default function AdminProviderDetailPage() {
         </InfoCard>
         <InfoCard title="Plataforma">
           <InfoRow label="ID" value={provider.id} mono />
-          <InfoRow label="Registrado" value={provider.createdAt ? formatDate(provider.createdAt) : '—'} />
-          <InfoRow label="Aprobado" value={provider.approvedAt ? formatDate(provider.approvedAt) : '—'} />
+          <InfoRow label="Registrado" value={safeFormatDate(provider.createdAt, '—')} />
+          <InfoRow label="Aprobado" value={safeFormatDate(provider.approvedAt, '—')} />
           <InfoRow label="Rating" value={provider.rating ? `${provider.rating} (${provider.reviewCount} reseñas)` : '—'} />
         </InfoCard>
         <InfoCard title="Estadísticas">

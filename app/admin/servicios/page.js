@@ -7,7 +7,8 @@ import { useAdminServices } from '@/hooks/useAdmin';
 import { adminService } from '@/services/adminService';
 import ServiceStatusBadge from '@/components/ServiceStatusBadge';
 import { assetUrl } from '@/services/api';
-import { formatDate, formatCurrency } from '@/utils/formatters';
+import { formatCurrency } from '@/utils/formatters';
+import { safeFormatDate } from '@/lib/date';
 
 const STATUS_TABS = [
   { value: '', label: 'Todos' },
@@ -164,8 +165,8 @@ function DetailDrawer({ serviceId, onClose }) {
             )}
 
             <div className="text-xs text-gray-500">
-              Creado el {formatDate(service._raw.created_at?.split('T')[0])}
-              {service._raw.published_at && ` · Publicado el ${formatDate(service._raw.published_at.split('T')[0])}`}
+              Creado el {safeFormatDate(service._raw.created_at)}
+              {service._raw.published_at && ` · Publicado el ${safeFormatDate(service._raw.published_at)}`}
             </div>
 
             {service._raw.status === 'active' && (
@@ -281,7 +282,7 @@ export default function AdminServiciosPage() {
                   <td className="px-4 py-4 text-gray-400 hidden md:table-cell">{s.providerName}</td>
                   <td className="px-4 py-4 text-gray-400 hidden lg:table-cell">${formatCurrency(s.priceFrom)}</td>
                   <td className="px-4 py-4 text-gray-400 hidden lg:table-cell max-w-[160px] truncate">{s.zones?.length ? s.zones.join(', ') : '—'}</td>
-                  <td className="px-4 py-4 text-gray-400 hidden sm:table-cell">{formatDate(s.createdAt)}</td>
+                  <td className="px-4 py-4 text-gray-400 hidden sm:table-cell">{safeFormatDate(s.createdAt)}</td>
                   <td className="px-4 py-4">
                     <ServiceStatusBadge status={s.status} />
                   </td>

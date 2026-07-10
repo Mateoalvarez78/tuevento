@@ -7,6 +7,7 @@ import {
   MapPin, Users, DollarSign, CalendarClock, FileText,
 } from 'lucide-react';
 import { fmtFull } from '@/lib/commissionHelpers';
+import { parseApiDate } from '@/lib/date';
 
 const STATUS_STYLES = {
   confirmed: { bg: 'bg-emerald-100',  text: 'text-emerald-700', dot: '#0BB885', label: 'Confirmada' },
@@ -127,8 +128,10 @@ export function ProviderCalendar({ bookings = [], onTabChange }) {
 export function CalendarDrawer({ booking, onClose }) {
   if (!booking) return null;
   const s = STATUS_STYLES[booking.status] || STATUS_STYLES.pending;
-  const dateObj = new Date(booking.date + 'T12:00:00');
-  const dateLabel = dateObj.toLocaleDateString('es-UY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const dateObj = parseApiDate(booking.date);
+  const dateLabel = dateObj
+    ? dateObj.toLocaleDateString('es-UY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    : 'Fecha no disponible';
   const gross = booking.totalEstimated || 0;
   const commission = booking.commissionAmount || 0;
   const net = booking.providerNet || 0;

@@ -12,6 +12,7 @@ import ProviderStatusBadge from '@/components/ProviderStatusBadge';
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import EmptyState from '@/components/EmptyState';
 import { providerDashboardService } from '@/services/providerDashboardService';
+import { parseApiDate, safeFormatDate } from '@/lib/date';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
 const currentMonthKey = () => {
@@ -218,11 +219,13 @@ export default function ProviderOverview({ provider, services = [], onCreateServ
                 <div className="py-8 text-center text-sm text-gray-400">No tenés reservas próximas.</div>
               ) : (
                 <div className="space-y-2.5">
-                  {upcomingCalendar.slice(0, 5).map((b) => (
+                  {upcomingCalendar.slice(0, 5).map((b) => {
+                    const bDate = parseApiDate(b.date);
+                    return (
                     <div key={b.id} className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-primary-light flex flex-col items-center justify-center shrink-0 leading-none">
-                        <span className="text-[10px] text-primary font-semibold uppercase">{new Date(b.date + 'T00:00:00').toLocaleDateString('es-UY', { month: 'short' })}</span>
-                        <span className="text-sm font-bold text-primary">{new Date(b.date + 'T00:00:00').getDate()}</span>
+                        <span className="text-[10px] text-primary font-semibold uppercase">{bDate ? bDate.toLocaleDateString('es-UY', { month: 'short' }) : '—'}</span>
+                        <span className="text-sm font-bold text-primary">{bDate ? bDate.getDate() : '—'}</span>
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-gray-800 truncate">{b.clientName}</p>
@@ -230,7 +233,8 @@ export default function ProviderOverview({ provider, services = [], onCreateServ
                       </div>
                       <ReservationStatusBadge status={b.status === 'accepted' ? 'confirmed' : b.status} />
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -264,7 +268,7 @@ export default function ProviderOverview({ provider, services = [], onCreateServ
                         <tr key={b.id}>
                           <td className="py-2.5 font-medium text-gray-800 truncate max-w-[120px]">{b.clientName}</td>
                           <td className="py-2.5 text-gray-500 truncate max-w-[140px]">{b.serviceTitle}</td>
-                          <td className="py-2.5 text-gray-500 whitespace-nowrap">{b.date ? new Date(b.date + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'short' }) : '—'}</td>
+                          <td className="py-2.5 text-gray-500 whitespace-nowrap">{safeFormatDate(b.date, '—')}</td>
                           <td className="py-2.5"><ReservationStatusBadge status={b.status === 'accepted' ? 'confirmed' : b.status} /></td>
                           <td className="py-2.5 text-right font-semibold text-gray-800 whitespace-nowrap">{money(b.total)}</td>
                         </tr>

@@ -3,11 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
-  ArrowLeft, Plus, Search, Eye, Pencil, Pause, Play, Trash2, Image as ImageIcon,
+  Plus, Search, Eye, Pencil, Pause, Play, Trash2, Image as ImageIcon,
   ClipboardList, Send, Star, MapPin, CalendarClock, AlertTriangle, X,
 } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
-import { useRequireRole } from '@/hooks/useRequireRole';
+import { useSessionState } from '@/hooks/useSessionState';
+import { safeFormatDate } from '@/lib/date';
 import { serviceService } from '@/services/serviceService';
 import { categoryService } from '@/services/categoryService';
 import { assetUrl } from '@/services/api';
@@ -53,16 +54,15 @@ function serviceToForm(s) {
 
 export default function ProviderServicesPage() {
   const { showToast } = useApp();
-  const access = useRequireRole(['provider']);
 
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [search, setSearch] = useSessionState('provServiciosSearch', '');
+  const [statusFilter, setStatusFilter] = useSessionState('provServiciosStatus', 'all');
+  const [categoryFilter, setCategoryFilter] = useSessionState('provServiciosCategory', 'all');
 
   const [drawer, setDrawer] = useState(null); // { editing: service|null, form }
   const [saving, setSaving] = useState(false);
@@ -89,21 +89,6 @@ export default function ProviderServicesPage() {
   }, []);
 
   useEffect(() => { reload(); }, [reload]);
-
-  if (access === 'loading' || access === 'denied') {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-400 text-sm">Verificando acceso…</div>;
-  }
-  if (access === 'unauth') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-sm">
-          <div className="text-5xl mb-4">🔒</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Necesitás iniciar sesión</h2>
-          <Link href="/provider/login" className="inline-block bg-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors">Ingresar</Link>
-        </div>
-      </div>
-    );
-  }
 
   const filtered = services.filter((s) => {
     const q = search.trim().toLowerCase();
@@ -182,27 +167,18 @@ export default function ProviderServicesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top bar */}
-      <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <Link href="/dashboard/proveedor" className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 mb-1">
-              <ArrowLeft size={13} /> Panel de proveedor
-            </Link>
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900">Mis servicios</h1>
-          </div>
-          <button
-            onClick={openCreate}
-            className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors"
-          >
-            <Plus size={15} /> Crear servicio
-          </button>
-        </div>
+    <>
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <p className="text-sm text-gray-500">{services.length} servicio{services.length !== 1 ? 's' : ''}</p>
+        <button
+          onClick={openCreate}
+          className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors"
+        >
+          <Plus size={15} /> Crear servicio
+        </button>
       </div>
 
-      <div className="max-w-6xl mx-auto p-4 sm:p-6">
-        {/* Filters */}
+      {/* Filters */}
         <div className="flex flex-wrap items-center gap-2.5 mb-5">
           <div className="relative flex-1 min-w-[180px] max-w-xs">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -291,7 +267,6 @@ export default function ProviderServicesPage() {
             ))}
           </div>
         )}
-      </div>
 
       {/* Create/Edit drawer */}
       {drawer && (
@@ -328,7 +303,7 @@ export default function ProviderServicesPage() {
 
       {menuService && <MenuManager service={menuService} onClose={() => setMenuService(null)} onChanged={reload} />}
       {imageService && <ServiceImageManager service={imageService} onClose={() => setImageService(null)} onChanged={reload} />}
-    </div>
+    </>
   );
 }
 
@@ -358,7 +333,7 @@ function ServiceRow({ service: s, busy, onEdit, onImages, onMenus, onSubmit, onP
               {s.rating > 0 ? `${s.rating.toFixed(1)} (${s.reviewCount})` : 'Sin reseñas'}
             </span>
             <span>{s.bookings} reserva{s.bookings !== 1 ? 's' : ''}</span>
-            {s.updatedAt && <span className="flex items-center gap-1"><CalendarClock size={11} /> {new Date(s.updatedAt + 'T12:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'short' })}</span>}
+            {s.updatedAt && <span className="flex items-center gap-1"><CalendarClock size={11} /> {safeFormatDate(s.updatedAt)}</span>}
           </div>
           {s.statusReason && (
             <div className="mt-1.5 text-xs text-amber-600 flex items-center gap-1">

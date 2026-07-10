@@ -14,6 +14,7 @@ import {
   COMMISSION_LABEL, COMMISSION_DESCRIPTION, fmtUYU, fmtFull, trendPct,
 } from '@/lib/commissionHelpers';
 import { providerDashboardService } from '@/services/providerDashboardService';
+import { safeFormatDate } from '@/lib/date';
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } } };
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
@@ -279,7 +280,7 @@ function TransactionsTable({ transactions, summary }) {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-gray-800 leading-tight">{t.clientName || 'Cliente'}</p>
-                      <p className="text-[10px] text-gray-400">{t.date ? new Date(t.date + 'T12:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'short' }) : '—'}</p>
+                      <p className="text-[10px] text-gray-400">{safeFormatDate(t.date)}</p>
                     </div>
                   </div>
                 </td>

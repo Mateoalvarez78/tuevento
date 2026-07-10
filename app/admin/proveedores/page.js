@@ -6,7 +6,7 @@ import { Search, ChevronRight } from 'lucide-react';
 import { useAdminProviders } from '@/hooks/useAdmin';
 import ProviderStatusBadge from '@/components/ProviderStatusBadge';
 import { PROVIDER_STATUS } from '@/utils/constants';
-import { formatDate } from '@/utils/formatters';
+import { safeFormatDate } from '@/lib/date';
 
 const STATUS_TABS = [
   { value: '', label: 'Todos' },
@@ -111,7 +111,7 @@ export default function AdminProveedoresPage() {
                   </td>
                   <td className="px-4 py-4 text-gray-400 hidden md:table-cell">{p.categoryLabel}</td>
                   <td className="px-4 py-4 text-gray-500 text-xs hidden lg:table-cell">
-                    {p.createdAt ? formatDate(p.createdAt) : '—'}
+                    {safeFormatDate(p.createdAt, '—')}
                   </td>
                   <td className="px-4 py-4">
                     <ProviderStatusBadge status={p.status} />

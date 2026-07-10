@@ -1,9 +1,10 @@
 'use client';
 
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
+import { safeFormatDate } from '@/lib/date';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
-const fmtDate = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'short' }) : '—';
+const fmtDate = safeFormatDate;
 const uiStatus = (s) => (s === 'accepted' ? 'confirmed' : s);
 
 export default function RecentBookings({ bookings = [] }) {

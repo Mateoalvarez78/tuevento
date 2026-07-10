@@ -12,7 +12,8 @@ import ServiceCard from '@/components/ServiceCard';
 import SkeletonCard from '@/components/SkeletonCard';
 import EmptyState from '@/components/EmptyState';
 import { providerService } from '@/services/providerService';
-import { CATEGORIES } from '@/lib/mockData';
+import { categoryService } from '@/services/categoryService';
+import { safeFormatDate } from '@/lib/date';
 
 const SORT_OPTIONS = [
   { value: 'recommended', label: 'Más populares' },
@@ -41,10 +42,22 @@ function CatalogoContent() {
   const [pageItems, setPageItems] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [categories, setCategories] = useState([]);
 
+  useEffect(() => {
+    categoryService.getAll().then(setCategories).catch(() => setCategories([]));
+  }, []);
+
+  // "categories" (plural, multi, viene del buscador de la home) tiene prioridad
+  // sobre "categoria" (singular, legacy — quick-pills del propio catálogo).
   const [filters, setFilters] = useState({
-    category:  searchParams.get('categoria') || '',
+    category:  searchParams.get('categories') || searchParams.get('categoria') || '',
     zone:      searchParams.get('zona') || '',
+    date:      searchParams.get('date') || searchParams.get('fecha') || '',
+    location:  searchParams.get('location') || '',
+    placeId:   searchParams.get('placeId') || '',
+    lat:       searchParams.get('lat') || '',
+    lng:       searchParams.get('lng') || '',
     minRating: 0,
     maxPrice:  200000,
     eventType: '',
@@ -57,10 +70,16 @@ function CatalogoContent() {
   useEffect(() => {
     setFilters((prev) => ({
       ...prev,
-      category: searchParams.get('categoria') || prev.category,
+      category: searchParams.get('categories') || searchParams.get('categoria') || prev.category,
       search:   searchParams.get('q')          || prev.search,
       zone:     searchParams.get('zona')        || prev.zone,
+      date:     searchParams.get('date') || searchParams.get('fecha') || prev.date,
+      location: searchParams.get('location')    || prev.location,
+      placeId:  searchParams.get('placeId')     || prev.placeId,
+      lat:      searchParams.get('lat')         || prev.lat,
+      lng:      searchParams.get('lng')         || prev.lng,
     }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const handleFilterChange = (f) => { setFilters(f); setPage(1); };
@@ -87,13 +106,25 @@ function CatalogoContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtersKey]);
 
-  const activeCategory = CATEGORIES.find((c) => c.id === filters.category);
-  const pageTitle = activeCategory
-    ? `Proveedores de ${activeCategory.label}`
+  // filters.category puede traer varias, separadas por coma (ej. "catering,dj")
+  const selectedCategoryIds = filters.category ? filters.category.split(',').filter(Boolean) : [];
+  const selectedCategories = categories.filter((c) => selectedCategoryIds.includes(c.id));
+  const activeCategory = selectedCategories[0]; // usado solo para el ícono del título cuando hay una sola
+  const pageTitle = selectedCategories.length === 1
+    ? `Proveedores de ${selectedCategories[0].label}`
+    : selectedCategories.length > 1
+    ? `Proveedores de ${selectedCategories.length} categorías`
     : 'Todos los proveedores';
 
+  const toggleCategory = (id) => {
+    const next = selectedCategoryIds.includes(id)
+      ? selectedCategoryIds.filter((c) => c !== id)
+      : [...selectedCategoryIds, id];
+    handleFilterChange({ ...filters, category: next.join(',') });
+  };
+
   const activeFilterCount = [
-    filters.category, filters.zone, filters.eventType, filters.verified,
+    filters.category, filters.zone, filters.date, filters.location, filters.eventType, filters.verified,
     filters.minRating > 0, filters.maxPrice < 200000,
   ].filter(Boolean).length;
 
@@ -232,14 +263,21 @@ function CatalogoContent() {
             {/* Active filter chips */}
             {activeFilterCount > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
-                {filters.category && (
+                {selectedCategories.map((cat) => (
                   <Chip
-                    label={`${activeCategory?.icon || ''} ${activeCategory?.label || filters.category}`}
-                    onRemove={() => handleFilterChange({ ...filters, category: '' })}
+                    key={cat.id}
+                    label={`${cat.icon || ''} ${cat.label}`}
+                    onRemove={() => toggleCategory(cat.id)}
                   />
-                )}
+                ))}
                 {filters.zone && (
                   <Chip label={`📍 ${filters.zone}`} onRemove={() => handleFilterChange({ ...filters, zone: '' })} />
+                )}
+                {filters.location && (
+                  <Chip label={`🗺️ ${filters.location}`} onRemove={() => handleFilterChange({ ...filters, location: '', placeId: '', lat: '', lng: '' })} />
+                )}
+                {filters.date && (
+                  <Chip label={`📅 ${safeFormatDate(filters.date)}`} onRemove={() => handleFilterChange({ ...filters, date: '' })} />
                 )}
                 {filters.eventType && (
                   <Chip label={`🎉 ${filters.eventType}`} onRemove={() => handleFilterChange({ ...filters, eventType: '' })} />
@@ -257,7 +295,7 @@ function CatalogoContent() {
                   />
                 )}
                 <button
-                  onClick={() => handleFilterChange({ category: '', zone: '', minRating: 0, maxPrice: 200000, eventType: '', verified: false, search: filters.search })}
+                  onClick={() => handleFilterChange({ category: '', zone: '', date: '', location: '', placeId: '', lat: '', lng: '', minRating: 0, maxPrice: 200000, eventType: '', verified: false, search: filters.search })}
                   className="text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1.5 font-medium"
                 >
                   Limpiar todos
@@ -265,13 +303,20 @@ function CatalogoContent() {
               </div>
             )}
 
+            {/* Nota informativa: la fecha no filtra resultados todavía, solo se usa para pre-completar la reserva */}
+            {filters.date && (
+              <div className="text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 mb-4">
+                Buscando proveedores disponibles para consultar el <strong>{safeFormatDate(filters.date)}</strong>. Vas a confirmar la fecha exacta al reservar.
+              </div>
+            )}
+
             {/* Category quick-pills (only when no category selected) */}
-            {!filters.category && !loading && (
+            {selectedCategories.length === 0 && !loading && (
               <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-5">
-                {CATEGORIES.slice(0, 10).map((cat) => (
+                {categories.slice(0, 10).map((cat) => (
                   <button
                     key={cat.id}
-                    onClick={() => handleFilterChange({ ...filters, category: cat.id })}
+                    onClick={() => toggleCategory(cat.id)}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-600 hover:border-primary/40 hover:text-primary hover:bg-primary-light transition-all whitespace-nowrap shrink-0 shadow-sm"
                   >
                     <span className="text-sm leading-none">{cat.icon}</span>

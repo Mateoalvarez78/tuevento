@@ -124,6 +124,7 @@ export function mapAdminProvider(p) {
     categoryLabel:p.category_name || '',
     city:         p.city || '',
     zones:        p.zones || [],
+    description:  p.description || '',
     status:       p.status,
     statusReason: p.status_reason || null,
     rating:       parseFloat(p.rating_avg) || 0,
@@ -191,6 +192,7 @@ export const providerService = {
       most_booked: 'popular',
     };
     const params = {
+      // category acepta uno o varios slugs separados por coma (ej. "catering,dj")
       category:  filters.category  || undefined,
       zone:      filters.zone      || undefined,
       minRating: filters.minRating > 0 ? filters.minRating : undefined,
@@ -200,6 +202,10 @@ export const providerService = {
       sort:      sortMap[filters.sort] || undefined,
       page:      filters.page      || 1,
       limit:     filters.limit     || 9,
+      // Base para matching por ubicación real (radio). Hoy no matchea nada
+      // porque ningún proveedor tiene lat/lng cargado todavía — no rompe nada.
+      lat:       filters.lat       || undefined,
+      lng:       filters.lng       || undefined,
     };
     const res = await api.get(`/services${buildQuery(params)}`);
     return {

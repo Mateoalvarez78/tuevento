@@ -12,6 +12,7 @@ import { bookingService } from '@/services/bookingService';
 import { assetUrl } from '@/services/api';
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import EmptyState from '@/components/EmptyState';
+import { safeFormatDate } from '@/lib/date';
 
 const STATUS_FILTERS = [
   { id: 'all',       label: 'Todas' },
@@ -212,7 +213,7 @@ export default function ClientReservationsPage() {
                   <div>
                     <span className="text-gray-400 block">Fecha</span>
                     <span className="font-medium text-gray-800">
-                      {b.date ? new Date(b.date + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'short' }) : '—'} {b.time}
+                      {safeFormatDate(b.date)} {b.time}
                     </span>
                   </div>
                   <div>
@@ -332,7 +333,7 @@ function BookingDetailDrawer({ booking: b, onClose, onCancel, onPay, paying }) {
         </div>
 
         <div className="px-5 py-4 space-y-3 border-b border-gray-100">
-          <DetailRow icon={<CalendarClock size={15} className="text-primary" />} label="Fecha y hora" value={`${b.date ? new Date(b.date + 'T12:00:00').toLocaleDateString('es-UY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '—'}${b.time ? `, ${b.time}` : ''}`} />
+          <DetailRow icon={<CalendarClock size={15} className="text-primary" />} label="Fecha y hora" value={`${safeFormatDate(b.date)}${b.time ? `, ${b.time}` : ''}`} />
           <DetailRow icon={<MapPin size={15} className="text-primary" />} label="Ubicación" value={b.location || '—'} />
           <DetailRow icon={<Users size={15} className="text-primary" />} label="Invitados" value={b.adults != null ? `${b.adults} adultos${b.children ? ` + ${b.children} niños` : ''}` : `${b.guests} personas`} />
           <DetailRow icon={<DollarSign size={15} className="text-primary" />} label="Total estimado" value={`$${b.totalEstimated?.toLocaleString('es-UY')}`} />

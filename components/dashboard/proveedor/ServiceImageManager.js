@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { X, UploadCloud, Star, Trash2, ArrowLeft, ArrowRight, ImageIcon, Loader2 } from 'lucide-react';
+import { X, UploadCloud, Star, Trash2, ArrowLeft, ArrowRight, ImageIcon, Loader2, AlertTriangle } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import { serviceImageService, IMAGE_LIMITS } from '@/services/serviceImageService';
 
@@ -15,6 +15,7 @@ export default function ServiceImageManager({ service, onClose, onChanged }) {
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [brokenIds, setBrokenIds] = useState(() => new Set());
 
   const reload = useCallback(() => {
     setLoading(true); setError(null);
@@ -166,7 +167,27 @@ export default function ServiceImageManager({ service, onClose, onChanged }) {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {images.map((im, i) => (
                   <div key={im.id} className={`relative group aspect-video rounded-xl overflow-hidden border ${im.isMain ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200'} bg-gray-50`}>
-                    <img src={im.url} alt={im.originalName || 'Foto del servicio'} className="w-full h-full object-cover" />
+                    {brokenIds.has(im.id) ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-gray-400 bg-gray-100 px-2 text-center">
+                        <AlertTriangle size={18} className="text-amber-500" />
+                        <span className="text-[10px] leading-tight">No se pudo cargar. Volvé a subirla.</span>
+                      </div>
+                    ) : (
+                      <img
+                        src={im.url}
+                        alt={im.originalName || 'Foto del servicio'}
+                        className="w-full h-full object-cover"
+                        onError={() => setBrokenIds((prev) => new Set(prev).add(im.id))}
+                      />
+                    )}
+                    {im.isLegacyLocal && !brokenIds.has(im.id) && (
+                      <span
+                        className="absolute top-1.5 right-1.5 text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full flex items-center gap-1"
+                        title="Subida antes de la migración a Cloudinary — puede desaparecer en cualquier momento. Recomendado: volver a subirla."
+                      >
+                        <AlertTriangle size={9} /> Antigua
+                      </span>
+                    )}
                     {im.isMain && <span className="absolute top-1.5 left-1.5 text-[10px] font-bold text-white bg-primary px-1.5 py-0.5 rounded-full flex items-center gap-1"><Star size={9} className="fill-current" /> Principal</span>}
                     {/* Acciones */}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">

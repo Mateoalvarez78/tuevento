@@ -3,12 +3,14 @@
 import Link from 'next/link';
 import { CalendarDays, Clock, MapPin, ArrowRight } from 'lucide-react';
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
+import { parseApiDate } from '@/lib/date';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
 
 export default function NextEventCard({ booking }) {
-  const dateLabel = booking.date
-    ? new Date(booking.date + 'T00:00:00').toLocaleDateString('es-UY', { weekday: 'long', day: '2-digit', month: 'long' })
+  const bDate = parseApiDate(booking.date);
+  const dateLabel = bDate
+    ? bDate.toLocaleDateString('es-UY', { weekday: 'long', day: '2-digit', month: 'long' })
     : '';
   return (
     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">

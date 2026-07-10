@@ -1,8 +1,9 @@
 'use client';
 
 import { Check, X } from 'lucide-react';
+import { safeFormatDate } from '@/lib/date';
 
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('es-UY', { day: '2-digit', month: 'short' }) : '—';
+const fmtDate = safeFormatDate;
 
 export default function PendingProviders({ providers = [], onApprove, onReject }) {
   return (

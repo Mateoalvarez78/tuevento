@@ -3,7 +3,7 @@ import { ArrowRight, Star, Search, Users, CalendarCheck } from 'lucide-react';
 import SearchBar from '@/components/SearchBar';
 import CategoryCard from '@/components/CategoryCard';
 import FeaturedProviders from '@/components/home/FeaturedProviders';
-import { CATEGORIES } from '@/lib/mockData';
+import { categoryService } from '@/services/categoryService';
 
 export const metadata = {
   title: 'TuEvento – Encontrá los mejores servicios para tu evento en Uruguay',
@@ -59,9 +59,10 @@ const TESTIMONIALS = [
   },
 ];
 
-const QUICK_TAGS = ['Catering', 'DJ', 'Fotografía', 'Decoración', 'Animación', 'Parrilla'];
+export default async function HomePage() {
+  const categories = await categoryService.getAll();
+  const quickTags = categories.slice(0, 6);
 
-export default function HomePage() {
   return (
     <>
       {/* ── HERO ───────────────────────────────────────────────────────── */}
@@ -104,13 +105,13 @@ export default function HomePage() {
 
           {/* Quick tags */}
           <div className="flex flex-wrap gap-2 mt-5 max-w-5xl">
-            {QUICK_TAGS.map((t) => (
+            {quickTags.map((cat) => (
               <Link
-                key={t}
-                href={`/catalogo?q=${t}`}
+                key={cat.id}
+                href={`/catalogo?categories=${cat.id}`}
                 className="text-xs sm:text-sm text-white/70 border border-white/20 hover:border-white/60 hover:bg-white/10 hover:text-white px-3.5 py-1.5 rounded-full transition-all"
               >
-                {t}
+                {cat.icon} {cat.label}
               </Link>
             ))}
           </div>
@@ -147,7 +148,7 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 gap-2.5 sm:gap-3">
-            {CATEGORIES.slice(0, 8).map((cat) => (
+            {categories.slice(0, 8).map((cat) => (
               <CategoryCard key={cat.id} category={cat} />
             ))}
           </div>

@@ -17,6 +17,7 @@ import EventOrganizer from '@/components/dashboard/cliente/EventOrganizer';
 import CategoryGrid from '@/components/dashboard/cliente/CategoryGrid';
 import SmartBuilderCTA from '@/components/dashboard/cliente/SmartBuilderCTA';
 import { CalendarPlus, ArrowRight } from 'lucide-react';
+import { safeFormatDate } from '@/lib/date';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
 
@@ -159,7 +160,7 @@ export default function ClienteDashboard() {
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-gray-900 text-sm truncate">{b.serviceTitle || b.providerName}</p>
                     <p className="text-xs text-gray-400 truncate">
-                      {b.providerName}{b.date ? ` · ${new Date(b.date + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: 'short' })}` : ''}
+                      {b.providerName}{b.date ? ` · ${safeFormatDate(b.date)}` : ''}
                     </p>
                   </div>
                   <ReservationStatusBadge status={b.displayStatus || b.status} />
