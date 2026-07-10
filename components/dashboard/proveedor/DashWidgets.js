@@ -5,23 +5,25 @@ import { motion } from 'framer-motion';
 import { Star, Send, AlertTriangle } from 'lucide-react';
 import { reviewService } from '@/services/reviewService';
 import EmptyState from '@/components/EmptyState';
+import RatingStars from '@/components/RatingStars';
 import { safeFormatDate } from '@/lib/date';
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
 
-function StarRow({ rating }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star key={i} size={12} className={i <= rating ? 'text-yellow-400 fill-current' : 'text-gray-200'} />
-      ))}
-    </div>
-  );
-}
-
 // ─── REVIEWS (datos reales vía GET /reviews/mine) ─────────────────────────────
+const RATING_FILTERS = [
+  { value: '', label: 'Todas' },
+  { value: '5', label: '5★' },
+  { value: '4', label: '4★' },
+  { value: '3', label: '3★' },
+  { value: '2', label: '2★' },
+  { value: '1', label: '1★' },
+];
+
 export function ReviewsSection({ provider }) {
   const [reviews, setReviews] = useState([]);
+  const [stats, setStats] = useState({ unanswered: 0, avgResponseHours: null });
+  const [ratingFilter, setRatingFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [replyOpen, setReplyOpen] = useState(null);
@@ -31,12 +33,12 @@ export function ReviewsSection({ provider }) {
   const load = () => {
     setLoading(true);
     setError(null);
-    reviewService.getMine()
-      .then((res) => { setReviews(res.data); setLoading(false); })
+    reviewService.getMine({ rating: ratingFilter || undefined })
+      .then((res) => { setReviews(res.data); setStats(res.stats); setLoading(false); })
       .catch((err) => { setError(err?.message || 'No se pudieron cargar las reseñas'); setLoading(false); });
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [ratingFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleReply = async (id) => {
     if (!reply.trim()) return;
@@ -54,18 +56,47 @@ export function ReviewsSection({ provider }) {
   };
 
   const header = (
-    <div className="flex items-center justify-between mb-4">
-      <div>
-        <h3 className="font-semibold text-gray-900 text-sm">Reseñas recientes</h3>
-        {provider?.reviewCount > 0 && (
-          <p className="text-xs text-gray-400">{provider.reviewCount} reseña{provider.reviewCount !== 1 ? 's' : ''} · promedio {provider.rating?.toFixed(1)}★</p>
+    <div className="mb-4">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="font-semibold text-gray-900 text-sm">Opiniones</h3>
+          {provider?.reviewCount > 0 && (
+            <p className="text-xs text-gray-400">{provider.reviewCount} reseña{provider.reviewCount !== 1 ? 's' : ''} · promedio {provider.rating?.toFixed(1)}★</p>
+          )}
+        </div>
+        {provider?.rating > 0 && (
+          <div className="flex items-center gap-1 bg-yellow-50 text-yellow-600 text-xs font-bold px-2.5 py-1 rounded-xl">
+            <Star size={12} className="fill-current" /> {provider.rating.toFixed(1)}
+          </div>
         )}
       </div>
-      {provider?.rating > 0 && (
-        <div className="flex items-center gap-1 bg-yellow-50 text-yellow-600 text-xs font-bold px-2.5 py-1 rounded-xl">
-          <Star size={12} className="fill-current" /> {provider.rating.toFixed(1)}
-        </div>
-      )}
+
+      <div className="flex items-center gap-2 mb-3">
+        {stats.unanswered > 0 && (
+          <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
+            {stats.unanswered} sin responder
+          </span>
+        )}
+        {stats.avgResponseHours != null && (
+          <span className="text-xs font-medium text-gray-500 bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-lg">
+            Responde en ~{stats.avgResponseHours}hs en promedio
+          </span>
+        )}
+      </div>
+
+      <div className="flex gap-1.5 overflow-x-auto">
+        {RATING_FILTERS.map((f) => (
+          <button
+            key={f.value}
+            onClick={() => setRatingFilter(f.value)}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+              ratingFilter === f.value ? 'bg-primary text-white' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 
@@ -97,7 +128,11 @@ export function ReviewsSection({ provider }) {
     <motion.div variants={fadeUp} initial="hidden" animate="show" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
       {header}
       {reviews.length === 0 ? (
-        <EmptyState icon="⭐" title="Sin reseñas todavía" description="Cuando un cliente reseñe una reserva completada, va a aparecer acá." />
+        ratingFilter ? (
+          <EmptyState icon="⭐" title="Sin reseñas con este filtro" description="Probá con otra calificación." />
+        ) : (
+          <EmptyState icon="⭐" title="Sin reseñas todavía" description="Cuando un cliente reseñe una reserva completada, va a aparecer acá." />
+        )
       ) : (
         <div className="space-y-4">
           {reviews.map((r) => (
@@ -117,10 +152,11 @@ export function ReviewsSection({ provider }) {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-0.5">
-                  <StarRow rating={r.rating} />
+                  <RatingStars rating={r.rating} size={12} />
                   {r.createdAt && <p className="text-[10px] text-gray-400">{safeFormatDate(r.createdAt)}</p>}
                 </div>
               </div>
+              {r.title && <p className="text-xs font-bold text-gray-800 mb-0.5">{r.title}</p>}
               {r.comment && <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">{r.comment}</p>}
               {r.providerReply ? (
                 <div className="mt-2.5 bg-gray-50 rounded-lg px-3 py-2 border-l-2 border-primary/30">

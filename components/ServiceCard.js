@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart, Star, MapPin, CheckCircle, Zap, TrendingUp, Award } from 'lucide-react';
+import { Heart, MapPin, CheckCircle, Zap, TrendingUp, Award, Sparkles } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import { assetUrl } from '@/services/api';
+import RatingStars from '@/components/RatingStars';
 
 // Portada del servicio: resuelve /uploads/... contra el backend; fallback por categoría.
 function Cover({ provider, className }) {
@@ -26,17 +27,20 @@ const BADGE_CONFIG = {
   popular:  { label: 'Más reservado', className: 'badge-popular', icon: TrendingUp },
 };
 
-function Stars({ rating }) {
+function RatingOrNew({ provider }) {
+  if (provider.reviewCount > 0) {
+    return (
+      <>
+        <RatingStars rating={provider.rating} size={13} />
+        <span className="text-sm font-semibold text-gray-800">{provider.rating.toFixed(1)}</span>
+        <span className="text-xs text-gray-400">({provider.reviewCount})</span>
+      </>
+    );
+  }
   return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          size={13}
-          className={i <= Math.round(rating) ? 'star-filled fill-current' : 'star-empty'}
-        />
-      ))}
-    </div>
+    <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary-light px-2 py-0.5 rounded-full">
+      <Sparkles size={11} /> Nuevo
+    </span>
   );
 }
 
@@ -77,9 +81,7 @@ export default function ServiceCard({ provider, layout = 'grid' }) {
                 </div>
               </div>
               <div className="flex items-center gap-1.5 mb-2">
-                <Stars rating={provider.rating} />
-                <span className="text-sm font-semibold text-gray-800">{provider.rating.toFixed(1)}</span>
-                <span className="text-xs text-gray-500">({provider.reviewCount} reseñas)</span>
+                <RatingOrNew provider={provider} />
               </div>
               <p className="text-sm text-gray-500 line-clamp-2">{provider.description}</p>
             </div>
@@ -138,9 +140,7 @@ export default function ServiceCard({ provider, layout = 'grid' }) {
 
           {/* Rating */}
           <div className="flex items-center gap-1.5 mb-2">
-            <Stars rating={provider.rating} />
-            <span className="text-sm font-semibold text-gray-800">{provider.rating.toFixed(1)}</span>
-            <span className="text-xs text-gray-400">({provider.reviewCount})</span>
+            <RatingOrNew provider={provider} />
           </div>
 
           {/* Zone */}

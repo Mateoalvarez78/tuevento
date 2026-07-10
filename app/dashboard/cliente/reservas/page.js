@@ -4,15 +4,20 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, Search, Eye, X, MapPin, AlertTriangle, Phone, MessageCircle,
-  CalendarClock, Users, DollarSign, FileText, CheckCircle, CreditCard,
+  CalendarClock, Users, DollarSign, FileText, CheckCircle, CreditCard, Star, Pencil,
 } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import { useRequireRole } from '@/hooks/useRequireRole';
 import { bookingService } from '@/services/bookingService';
 import { assetUrl } from '@/services/api';
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
+import RatingStars from '@/components/RatingStars';
+import RateBookingModal from '@/components/dashboard/cliente/RateBookingModal';
 import EmptyState from '@/components/EmptyState';
 import { safeFormatDate } from '@/lib/date';
+
+const EDIT_WINDOW_MS = 30 * 60 * 1000;
+const canEditReview = (b) => b.reviewId && b.reviewCreatedAt && (Date.now() - new Date(b.reviewCreatedAt).getTime()) < EDIT_WINDOW_MS;
 
 const STATUS_FILTERS = [
   { id: 'all',       label: 'Todas' },
@@ -52,6 +57,7 @@ export default function ClientReservationsPage() {
   const [cancelModal, setCancelModal] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const [rateModal, setRateModal] = useState(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -232,6 +238,37 @@ export default function ClientReservationsPage() {
                   </div>
                 </div>
 
+                {b.displayStatus === 'completed' && (
+                  <div className="mb-3">
+                    {b.canReview ? (
+                      <div className="flex items-center justify-between gap-3 bg-primary-light/60 border border-primary/20 rounded-xl px-3.5 py-2.5">
+                        <span className="text-xs font-semibold text-gray-700">¿Cómo fue tu experiencia?</span>
+                        <button
+                          onClick={() => setRateModal(b)}
+                          className="flex items-center gap-1.5 text-xs font-bold text-white bg-primary px-3 py-1.5 rounded-lg hover:bg-primary-dark transition-colors shrink-0"
+                        >
+                          <Star size={12} /> Calificar servicio
+                        </button>
+                      </div>
+                    ) : b.reviewId ? (
+                      <div className="flex items-center justify-between gap-3 bg-gray-50 border border-gray-100 rounded-xl px-3.5 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <RatingStars rating={b.reviewRating} size={13} />
+                          <span className="text-xs text-gray-500">Tu valoración</span>
+                        </div>
+                        {canEditReview(b) && (
+                          <button
+                            onClick={() => setRateModal(b)}
+                            className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline shrink-0"
+                          >
+                            <Pencil size={11} /> Editar
+                          </button>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-end gap-2 flex-wrap">
                   <button
                     onClick={() => setSelected(b)}
@@ -297,6 +334,15 @@ export default function ClientReservationsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {rateModal && (
+        <RateBookingModal
+          booking={rateModal}
+          existingReview={rateModal.reviewId ? rateModal : null}
+          onClose={() => setRateModal(null)}
+          onSaved={() => { setRateModal(null); showToast('¡Gracias por tu valoración!', 'success'); reload(); }}
+        />
       )}
     </div>
   );

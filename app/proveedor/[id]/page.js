@@ -2,20 +2,34 @@
 
 import { useState, use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, MapPin, CheckCircle, Clock, CalendarDays, Heart, Share2, ChevronDown, ChevronUp } from 'lucide-react';
+import { MapPin, CheckCircle, Clock, CalendarDays, Heart, Share2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import { providerService } from '@/services/providerService';
+import { reviewService } from '@/services/reviewService';
 import ProviderGallery from '@/components/ProviderGallery';
 import PackageSelector from '@/components/PackageSelector';
 import ReviewCard from '@/components/ReviewCard';
+import RatingStars from '@/components/RatingStars';
 import EmptyState from '@/components/EmptyState';
 
-function Stars({ rating, size = 14 }) {
+const REVIEWS_PAGE_SIZE = 6;
+
+function RatingDistribution({ distribution, total }) {
   return (
-    <div className="flex items-center gap-0.5">
-      {[1,2,3,4,5].map((i) => (
-        <Star key={i} size={size} className={i <= Math.round(rating) ? 'star-filled fill-current' : 'star-empty'} />
-      ))}
+    <div className="space-y-1.5 mb-6">
+      {[5, 4, 3, 2, 1].map((star) => {
+        const count = distribution?.[star] || 0;
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        return (
+          <div key={star} className="flex items-center gap-2 text-xs">
+            <span className="w-10 text-gray-500 font-medium shrink-0">{star}★</span>
+            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${pct}%` }} />
+            </div>
+            <span className="w-9 text-gray-400 text-right shrink-0">{pct}%</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -52,6 +66,12 @@ export default function ProviderDetailPage({ params }) {
   const [descExpanded, setDescExpanded] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
 
+  const [reviews, setReviews] = useState([]);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewsPagination, setReviewsPagination] = useState(null);
+  const [distribution, setDistribution] = useState(null);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
@@ -71,6 +91,23 @@ export default function ProviderDetailPage({ params }) {
       });
     return () => { cancelled = true; };
   }, [id]);
+
+  // Reseñas reales del servicio (endpoint separado, paginado + distribución).
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    setReviewsLoading(true);
+    reviewService.getForService(id, { page: reviewsPage, limit: REVIEWS_PAGE_SIZE })
+      .then((res) => {
+        if (cancelled) return;
+        setReviews((prev) => (reviewsPage === 1 ? res.data : [...prev, ...res.data]));
+        setReviewsPagination(res.pagination);
+        setDistribution(res.distribution);
+        setReviewsLoading(false);
+      })
+      .catch(() => { if (!cancelled) setReviewsLoading(false); });
+    return () => { cancelled = true; };
+  }, [id, reviewsPage]);
 
   if (loading) return <LoadingSkeleton />;
 
@@ -159,7 +196,7 @@ export default function ProviderDetailPage({ params }) {
             {/* Rating + info */}
             <div className="flex flex-wrap items-center gap-4 mb-6 pb-6 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <Stars rating={provider.rating} />
+                <RatingStars rating={provider.rating} />
                 <span className="font-bold text-gray-900">{(provider.rating || 0).toFixed(1)}</span>
                 <span className="text-sm text-gray-500">({provider.reviewCount} reseñas)</span>
               </div>
@@ -282,18 +319,40 @@ export default function ProviderDetailPage({ params }) {
             {/* Reviews */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900">Reseñas ({provider.reviewCount})</h2>
+                <h2 className="text-lg font-bold text-gray-900">Opiniones de clientes ({provider.reviewCount})</h2>
                 <div className="flex items-center gap-2">
-                  <Stars rating={provider.rating} size={16} />
+                  <RatingStars rating={provider.rating} size={16} />
                   <span className="font-bold text-gray-900">{(provider.rating || 0).toFixed(1)}</span>
                 </div>
               </div>
-              {provider.reviews?.length > 0 ? (
+
+              {provider.reviewCount > 0 && (
+                <RatingDistribution distribution={distribution} total={provider.reviewCount} />
+              )}
+
+              {reviewsLoading && reviews.length === 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {provider.reviews.map((r) => (
-                    <ReviewCard key={r.id} review={r} />
-                  ))}
+                  {[...Array(2)].map((_, i) => <div key={i} className="skeleton h-32 rounded-2xl" />)}
                 </div>
+              ) : reviews.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {reviews.map((r) => (
+                      <ReviewCard key={r.id} review={r} />
+                    ))}
+                  </div>
+                  {reviewsPagination?.hasNext && (
+                    <div className="flex justify-center mt-5">
+                      <button
+                        onClick={() => setReviewsPage((p) => p + 1)}
+                        disabled={reviewsLoading}
+                        className="text-sm font-semibold text-primary border border-primary/30 px-5 py-2.5 rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50"
+                      >
+                        {reviewsLoading ? 'Cargando...' : 'Ver más reseñas'}
+                      </button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <p className="text-sm text-gray-400">Aún no hay reseñas para este proveedor.</p>
               )}

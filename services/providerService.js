@@ -40,7 +40,6 @@ export function mapServiceToProvider(s) {
     eventTypes:      Array.isArray(s.event_types) ? s.event_types : [],
     packages:        mapPackages(s.packages),
     extras:          mapExtras(s.extras),
-    reviews:         mapReviews(s.reviews),
     faq:             [],
     // Provider info
     providerId:      s.provider_id,
@@ -94,19 +93,6 @@ function mapExtras(extras) {
     name:      e.name,
     price:     parseFloat(e.price) || 0,
     priceUnit: '',
-  }));
-}
-
-function mapReviews(reviews) {
-  if (!Array.isArray(reviews)) return [];
-  return reviews.map((r) => ({
-    id:        r.id,
-    author:    r.client_name || 'Cliente',
-    avatar:    r.client_avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
-    rating:    r.rating,
-    text:      r.comment || '',
-    date:      r.created_at ? r.created_at.split('T')[0] : '',
-    reply:     r.provider_reply || null,
   }));
 }
 

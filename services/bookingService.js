@@ -71,6 +71,13 @@ function mapBooking(b) {
     completedAt:       b.completed_at || null,
     createdAt:         b.created_at ? b.created_at.split('T')[0] : '',
     updatedAt:         b.updated_at  || null,
+    // Valoración del cliente sobre esta reserva (si existe).
+    reviewId:          b.review_id || null,
+    reviewRating:      b.review_rating != null ? parseInt(b.review_rating) : null,
+    reviewCreatedAt:   b.review_created_at || null,
+    reviewTitle:       b.review_title || '',
+    reviewComment:     b.review_comment || '',
+    canReview:         b.status === 'completed' && !b.review_id,
     _raw: b,
   };
 }

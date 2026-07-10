@@ -4,6 +4,7 @@
 import { api, buildQuery } from './api';
 import { providerService, mapAdminProvider } from './providerService';
 import { serviceService } from './serviceService';
+import { reviewService } from './reviewService';
 
 export const adminService = {
   /** Aggregated platform stats for the admin overview page. */
@@ -78,5 +79,12 @@ export const adminService = {
     reject:       (id, r)   => serviceService.admin.reject(id, r),
     pause:        (id, r)   => serviceService.admin.pause(id, r),
     countByStatus:()        => serviceService.admin.countByStatus(),
+  },
+
+  // ── Reviews (moderación) ──────────────────────────────────────────────────
+  reviews: {
+    getAll:  (filters) => reviewService.admin.getAll(filters),
+    hide:    (id)      => reviewService.admin.hide(id),
+    restore: (id)      => reviewService.admin.restore(id),
   },
 };
