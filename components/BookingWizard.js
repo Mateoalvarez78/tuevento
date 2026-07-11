@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
 import { bookingService } from '@/services/bookingService';
-import { Check, CalendarDays, MapPin, Users, Package, User, MessageSquare, ClipboardList, CheckCircle } from 'lucide-react';
+import { Check, CalendarDays, MapPin, Users, Package, User, ClipboardList, CheckCircle } from 'lucide-react';
 import PackageSelector from './PackageSelector';
 import { safeFormatDate } from '@/lib/date';
 

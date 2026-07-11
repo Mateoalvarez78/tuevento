@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
   CalendarClock, Clock, CheckCircle2, DollarSign, Percent, Wallet,
-  Package, AlertTriangle, Plus, ArrowRight, TrendingUp, Star,
+  Package, AlertTriangle, Plus, ArrowRight, TrendingUp, Star, Rocket,
 } from 'lucide-react';
 import ProviderStatusBadge from '@/components/ProviderStatusBadge';
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
@@ -133,7 +133,7 @@ export default function ProviderOverview({ provider, services = [], onCreateServ
       {noActivity ? (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
           <EmptyState
-            icon="🚀"
+            icon={Rocket}
             title="Empecemos con tu primer servicio"
             description="Publicá un servicio con sus menús para empezar a recibir reservas de clientes."
             cta="Crear mi primer servicio"

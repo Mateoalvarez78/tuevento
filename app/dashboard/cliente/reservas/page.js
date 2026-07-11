@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {
   ArrowLeft, Search, Eye, X, MapPin, AlertTriangle, Phone, MessageCircle,
   CalendarClock, Users, DollarSign, FileText, CheckCircle, CreditCard, Star, Pencil,
+  AlertCircle, Lock, CalendarX, SearchX,
 } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import { useRequireRole } from '@/hooks/useRequireRole';
@@ -81,7 +82,9 @@ export default function ClientReservationsPage() {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
-          <div className="text-5xl mb-4">🔒</div>
+          <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-4">
+            <Lock size={28} strokeWidth={1.5} className="text-gray-400" aria-hidden="true" />
+          </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Necesitás iniciar sesión</h2>
           <Link href="/login" className="inline-block bg-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors">Ingresar</Link>
         </div>
@@ -179,7 +182,7 @@ export default function ClientReservationsPage() {
         {!loading && !error && bookings.length === 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
             <EmptyState
-              icon="📅"
+              icon={CalendarX}
               title="Todavía no hiciste ninguna consulta"
               description="Explorá el catálogo y consultá disponibilidad con los proveedores que te interesen."
               cta="Explorar catálogo"
@@ -190,7 +193,7 @@ export default function ClientReservationsPage() {
 
         {!loading && !error && bookings.length > 0 && filtered.length === 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-            <EmptyState icon="🔍" title="Sin resultados" description="Ninguna reserva coincide con estos filtros." />
+            <EmptyState icon={SearchX} title="Sin resultados" description="Ninguna reserva coincide con estos filtros." />
           </div>
         )}
 
@@ -387,7 +390,15 @@ function BookingDetailDrawer({ booking: b, onClose, onCancel, onPay, paying }) {
             <DetailRow
               icon={<CreditCard size={15} className="text-primary" />}
               label="Seña"
-              value={`$${b.depositAmount.toLocaleString('es-UY')}${b.depositPaid ? ' · Pagada' : ' · Pendiente de pago'}`}
+              value={
+                <span className="inline-flex items-center gap-1">
+                  ${b.depositAmount.toLocaleString('es-UY')}
+                  <span className={`inline-flex items-center gap-1 ${b.depositPaid ? 'text-emerald-600' : 'text-amber-500'}`}>
+                    · {b.depositPaid ? <CheckCircle size={12} aria-hidden="true" /> : <AlertCircle size={12} aria-hidden="true" />}
+                    {b.depositPaid ? 'Pagada' : 'Pendiente de pago'}
+                  </span>
+                </span>
+              }
             />
           )}
           {b.packageName && <DetailRow icon={<FileText size={15} className="text-primary" />} label="Menú/paquete" value={b.packageName} />}

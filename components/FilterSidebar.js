@@ -128,7 +128,7 @@ export default function FilterSidebar({ filters, onChange, mobileOpen, onMobileC
               onClick={() => toggleCategory(cat.id)}
             >
               <span className="flex items-center gap-2">
-                <span className="text-base leading-none">{cat.icon}</span>
+                <cat.icon size={16} aria-hidden="true" className="text-gray-500" />
                 <span>{cat.label}</span>
               </span>
             </CheckRow>

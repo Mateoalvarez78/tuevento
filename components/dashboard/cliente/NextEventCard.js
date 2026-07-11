@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarDays, Clock, MapPin, ArrowRight } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, ArrowRight, PartyPopper } from 'lucide-react';
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import { parseApiDate } from '@/lib/date';
 
@@ -18,7 +18,7 @@ export default function NextEventCard({ booking }) {
         <div className="sm:w-56 h-40 sm:h-auto shrink-0 bg-gray-100">
           {booking.providerImage
             ? <img src={booking.providerImage} alt={booking.serviceTitle || booking.providerName} className="w-full h-full object-cover" />
-            : <div className="w-full h-full flex items-center justify-center text-4xl">🎉</div>}
+            : <div className="w-full h-full flex items-center justify-center"><PartyPopper size={32} strokeWidth={1.5} className="text-gray-300" aria-hidden="true" /></div>}
         </div>
         <div className="flex-1 p-5">
           <div className="flex items-center justify-between gap-2 mb-1">

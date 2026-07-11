@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { AlertTriangle, ArrowRight } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 const DOT = { amber: 'bg-amber-400', blue: 'bg-blue-400', gray: 'bg-gray-500' };
 
@@ -9,8 +9,8 @@ export default function AdminAlerts({ alerts = [] }) {
   if (!alerts.length) {
     return (
       <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5 flex items-center gap-3">
-        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-        <span className="text-sm text-gray-300">No hay alertas. Todo en orden. 🎉</span>
+        <CheckCircle2 size={18} className="text-emerald-400 shrink-0" aria-hidden="true" />
+        <span className="text-sm text-gray-300">No hay alertas. Todo en orden.</span>
       </div>
     );
   }

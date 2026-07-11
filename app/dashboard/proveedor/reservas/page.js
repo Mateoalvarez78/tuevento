@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Search, Check, X, Eye, CheckCircle2, MapPin, AlertTriangle,
+  Search, Check, X, Eye, CheckCircle2, MapPin, AlertTriangle, Inbox, SearchX,
 } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import { useSessionState } from '@/hooks/useSessionState';
@@ -143,13 +143,13 @@ export default function ProviderReservationsPage() {
 
         {!loading && !error && bookings.length === 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-            <EmptyState icon="📭" title="Sin reservas todavía" description="Cuando un cliente consulte disponibilidad, aparecerá aquí." />
+            <EmptyState icon={Inbox} title="Sin reservas todavía" description="Cuando un cliente consulte disponibilidad, aparecerá aquí." />
           </div>
         )}
 
         {!loading && !error && bookings.length > 0 && filtered.length === 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-            <EmptyState icon="🔍" title="Sin resultados" description="Ninguna reserva coincide con estos filtros." />
+            <EmptyState icon={SearchX} title="Sin resultados" description="Ninguna reserva coincide con estos filtros." />
           </div>
         )}
 

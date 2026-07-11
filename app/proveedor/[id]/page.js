@@ -2,7 +2,7 @@
 
 import { useState, use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin, CheckCircle, Clock, CalendarDays, Heart, Share2, ChevronDown, ChevronUp } from 'lucide-react';
+import { MapPin, CheckCircle, Clock, CalendarDays, Heart, Share2, ChevronDown, ChevronUp, PackageX, Star } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import { providerService } from '@/services/providerService';
 import { reviewService } from '@/services/reviewService';
@@ -11,6 +11,7 @@ import PackageSelector from '@/components/PackageSelector';
 import ReviewCard from '@/components/ReviewCard';
 import RatingStars from '@/components/RatingStars';
 import EmptyState from '@/components/EmptyState';
+import { BADGE_CONFIG } from '@/components/ServiceCard';
 
 const REVIEWS_PAGE_SIZE = 6;
 
@@ -22,7 +23,7 @@ function RatingDistribution({ distribution, total }) {
         const pct = total > 0 ? Math.round((count / total) * 100) : 0;
         return (
           <div key={star} className="flex items-center gap-2 text-xs">
-            <span className="w-10 text-gray-500 font-medium shrink-0">{star}★</span>
+            <span className="w-10 flex items-center gap-0.5 text-gray-500 font-medium shrink-0">{star} <Star size={11} aria-hidden="true" /></span>
             <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
               <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${pct}%` }} />
             </div>
@@ -114,7 +115,7 @@ export default function ProviderDetailPage({ params }) {
   if (!provider) {
     return (
       <EmptyState
-        icon="🏠"
+        icon={PackageX}
         title="Proveedor no encontrado"
         description="El proveedor que buscás no existe o fue dado de baja."
         cta="Ver catálogo"
@@ -140,13 +141,6 @@ export default function ProviderDetailPage({ params }) {
     router.push(`/reservar?${qs.toString()}`);
   };
 
-  const BADGE_LABELS = {
-    verified: { text: 'Verificado',     icon: '✓',  cls: 'badge-verified' },
-    top:      { text: 'Top proveedor',  icon: '🏆', cls: 'badge-top'      },
-    fast:     { text: 'Respuesta rápida', icon: '⚡', cls: 'badge-fast'   },
-    popular:  { text: 'Más reservado',  icon: '🔥', cls: 'badge-popular'  },
-  };
-
   return (
     <div className="bg-white min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -160,7 +154,7 @@ export default function ProviderDetailPage({ params }) {
         </nav>
 
         {/* Gallery */}
-        <ProviderGallery images={provider.images} name={provider.name} emoji={provider.categoryEmoji} />
+        <ProviderGallery images={provider.images} name={provider.name} categorySlug={provider.category} />
 
         <div className="mt-8 flex flex-col lg:flex-row gap-8">
           {/* Left: Details */}
@@ -171,11 +165,12 @@ export default function ProviderDetailPage({ params }) {
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <span className="text-sm font-semibold text-primary">{provider.categoryLabel}</span>
                   {(provider.badges || []).map((b) => {
-                    const cfg = BADGE_LABELS[b];
+                    const cfg = BADGE_CONFIG[b];
                     if (!cfg) return null;
+                    const Icon = cfg.icon;
                     return (
-                      <span key={b} className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.cls}`}>
-                        {cfg.icon} {cfg.text}
+                      <span key={b} className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.className}`}>
+                        <Icon size={12} aria-hidden="true" /> {cfg.label}
                       </span>
                     );
                   })}

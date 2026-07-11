@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Check, X, Eye, Pause, ExternalLink, AlertTriangle, MapPin } from 'lucide-react';
+import { Search, Check, X, Eye, Pause, ExternalLink, AlertTriangle, MapPin, Package } from 'lucide-react';
 import { useAdminServices } from '@/hooks/useAdmin';
 import { adminService } from '@/services/adminService';
 import ServiceStatusBadge from '@/components/ServiceStatusBadge';
 import { assetUrl } from '@/services/api';
 import { formatCurrency } from '@/utils/formatters';
 import { safeFormatDate } from '@/lib/date';
+import { getCategoryIcon } from '@/utils/icons';
 
 const STATUS_TABS = [
   { value: '', label: 'Todos' },
@@ -107,7 +108,7 @@ function DetailDrawer({ serviceId, onClose }) {
 
             <div>
               <h4 className="text-lg font-bold text-white">{service.serviceTitle}</h4>
-              <p className="text-sm text-gray-400">{service.categoryEmoji} {service.categoryLabel} · {service.businessName}</p>
+              <p className="text-sm text-gray-400">{service.categoryLabel} · {service.businessName}</p>
             </div>
 
             {service.longDescription && (
@@ -248,8 +249,13 @@ export default function AdminServiciosPage() {
             <button onClick={reload} className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors">Reintentar</button>
           </div>
         ) : displayed.length === 0 ? (
-          <div className="p-12 text-center text-gray-500 text-sm">
-            {services.length === 0 ? 'Todavía no hay servicios creados en la plataforma.' : 'No hay servicios con este filtro.'}
+          <div className="p-12 text-center">
+            <div className="w-11 h-11 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-3">
+              <Package size={20} strokeWidth={1.5} className="text-gray-500" aria-hidden="true" />
+            </div>
+            <p className="text-gray-500 text-sm">
+              {services.length === 0 ? 'Todavía no hay servicios creados en la plataforma.' : 'No hay servicios con este filtro.'}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -271,7 +277,9 @@ export default function AdminServiciosPage() {
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-800 shrink-0 flex items-center justify-center">
-                        {s.primaryImage ? <img src={assetUrl(s.primaryImage)} alt="" className="w-full h-full object-cover" /> : <span className="text-base">{s.categoryEmoji || '📦'}</span>}
+                        {s.primaryImage
+                          ? <img src={assetUrl(s.primaryImage)} alt="" className="w-full h-full object-cover" />
+                          : (() => { const CategoryIcon = getCategoryIcon(s.category); return <CategoryIcon size={18} strokeWidth={1.5} className="text-gray-500" aria-hidden="true" />; })()}
                       </div>
                       <div className="min-w-0">
                         <p className="text-gray-100 font-medium truncate">{s.title}</p>

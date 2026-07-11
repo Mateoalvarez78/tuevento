@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Camera, Globe, MessageCircle, Play, CheckCircle2 } from 'lucide-react';
 
 const COMPANY_LINKS = [
   { label: 'Nosotros',           href: '#' },
@@ -19,11 +20,14 @@ const SUPPORT_LINKS = [
   { label: 'Reportar problema',    href: '#' },
 ];
 
+// lucide-react no incluye íconos de marca (Instagram/Facebook/Youtube no existen
+// en el paquete instalado) — se usan equivalentes genéricos consistentes con el
+// resto del sistema de íconos.
 const SOCIALS = [
-  { label: 'IG', href: '#', title: 'Instagram' },
-  { label: 'FB', href: '#', title: 'Facebook' },
-  { label: 'WA', href: '#', title: 'WhatsApp' },
-  { label: 'YT', href: '#', title: 'YouTube' },
+  { icon: Camera, href: '#', title: 'Instagram' },
+  { icon: Globe, href: '#', title: 'Facebook' },
+  { icon: MessageCircle, href: '#', title: 'WhatsApp' },
+  { icon: Play, href: '#', title: 'YouTube' },
 ];
 
 export default function Footer() {
@@ -58,12 +62,13 @@ export default function Footer() {
             <div className="flex gap-2">
               {SOCIALS.map((s) => (
                 <a
-                  key={s.label}
+                  key={s.title}
                   href={s.href}
                   title={s.title}
-                  className="w-9 h-9 rounded-full bg-gray-800 hover:bg-primary flex items-center justify-center text-xs font-bold text-white transition-colors"
+                  aria-label={s.title}
+                  className="w-9 h-9 rounded-full bg-gray-800 hover:bg-primary flex items-center justify-center text-white transition-colors"
                 >
-                  {s.label}
+                  <s.icon size={16} aria-hidden="true" />
                 </a>
               ))}
             </div>
@@ -104,8 +109,9 @@ export default function Footer() {
               Recibí tips de eventos y los mejores proveedores cada semana.
             </p>
             {subscribed ? (
-              <div className="bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3 text-sm text-green-400 font-medium">
-                ✓ ¡Gracias! Te sumamos a la lista.
+              <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3 text-sm text-green-400 font-medium">
+                <CheckCircle2 size={16} className="shrink-0" aria-hidden="true" />
+                ¡Gracias! Te sumamos a la lista.
               </div>
             ) : (
               <form onSubmit={handleSubscribe} className="flex gap-2">

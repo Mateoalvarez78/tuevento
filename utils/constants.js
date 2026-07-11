@@ -1,6 +1,11 @@
 // ─── STATUS CONFIGURATIONS ────────────────────────────────────────────────────
 // Single source of truth for all status labels, colors, and descriptions.
 // Used by ProviderStatusBadge, ServiceStatusBadge, admin tables, and dashboards.
+// `icon` es siempre un componente Lucide (nunca un emoji).
+
+import {
+  CheckCircle2, PauseCircle, CircleSlash, FileEdit, Clock, XCircle,
+} from 'lucide-react';
 
 export const PROVIDER_STATUS = {
   active: {
@@ -11,7 +16,7 @@ export const PROVIDER_STATUS = {
     text: 'text-emerald-800',
     border: 'border-emerald-200',
     dot: 'bg-emerald-400',
-    icon: '✓',
+    icon: CheckCircle2,
   },
   suspended: {
     label: 'Suspendido',
@@ -21,7 +26,7 @@ export const PROVIDER_STATUS = {
     text: 'text-amber-800',
     border: 'border-amber-200',
     dot: 'bg-amber-400',
-    icon: '⊘',
+    icon: PauseCircle,
   },
   inactive: {
     label: 'Desactivado',
@@ -31,7 +36,7 @@ export const PROVIDER_STATUS = {
     text: 'text-gray-700',
     border: 'border-gray-300',
     dot: 'bg-gray-400',
-    icon: '✕',
+    icon: CircleSlash,
   },
 };
 
@@ -43,6 +48,7 @@ export const SERVICE_STATUS = {
     text: 'text-gray-600',
     border: 'border-gray-200',
     dot: 'bg-gray-400',
+    icon: FileEdit,
   },
   pending_review: {
     label: 'En revisión',
@@ -51,6 +57,7 @@ export const SERVICE_STATUS = {
     text: 'text-amber-800',
     border: 'border-amber-200',
     dot: 'bg-amber-400',
+    icon: Clock,
   },
   active: {
     label: 'Activo',
@@ -59,6 +66,7 @@ export const SERVICE_STATUS = {
     text: 'text-emerald-800',
     border: 'border-emerald-200',
     dot: 'bg-emerald-400',
+    icon: CheckCircle2,
   },
   paused: {
     label: 'Pausado',
@@ -67,6 +75,7 @@ export const SERVICE_STATUS = {
     text: 'text-blue-800',
     border: 'border-blue-200',
     dot: 'bg-blue-400',
+    icon: PauseCircle,
   },
   rejected: {
     label: 'Rechazado',
@@ -75,15 +84,16 @@ export const SERVICE_STATUS = {
     text: 'text-red-800',
     border: 'border-red-200',
     dot: 'bg-red-400',
+    icon: XCircle,
   },
 };
 
 export const BOOKING_STATUS = {
-  pending:   { label: 'Pendiente',   bg: 'bg-amber-50',   text: 'text-amber-700'  },
-  confirmed: { label: 'Confirmado',  bg: 'bg-emerald-50', text: 'text-emerald-700' },
-  rejected:  { label: 'Rechazado',   bg: 'bg-red-50',     text: 'text-red-700'    },
-  cancelled: { label: 'Cancelado',   bg: 'bg-gray-100',   text: 'text-gray-600'   },
-  completed: { label: 'Completado',  bg: 'bg-blue-50',    text: 'text-blue-700'   },
+  pending:   { label: 'Pendiente',   bg: 'bg-amber-50',   text: 'text-amber-700',   icon: Clock },
+  confirmed: { label: 'Confirmado',  bg: 'bg-emerald-50', text: 'text-emerald-700', icon: CheckCircle2 },
+  rejected:  { label: 'Rechazado',   bg: 'bg-red-50',     text: 'text-red-700',     icon: XCircle },
+  cancelled: { label: 'Cancelado',   bg: 'bg-gray-100',   text: 'text-gray-600',    icon: CircleSlash },
+  completed: { label: 'Completado',  bg: 'bg-blue-50',    text: 'text-blue-700',    icon: CheckCircle2 },
 };
 
 // ─── GEOGRAPHIC ZONES ─────────────────────────────────────────────────────────
@@ -105,11 +115,4 @@ export const PRICE_TYPES = [
   { id: 'per_event',  label: 'Por evento'  },
   { id: 'per_hour',   label: 'Por hora'    },
   { id: 'consultar',  label: 'A consultar' },
-];
-
-// ─── ADMIN NAVIGATION ─────────────────────────────────────────────────────────
-export const ADMIN_NAV = [
-  { href: '/admin',                   label: 'Overview',     icon: 'LayoutDashboard' },
-  { href: '/admin/proveedores',       label: 'Proveedores',  icon: 'Store'           },
-  { href: '/admin/servicios',         label: 'Servicios',    icon: 'Package'         },
 ];

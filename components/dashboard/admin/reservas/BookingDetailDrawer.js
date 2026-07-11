@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   X, CalendarDays, Clock, MapPin, User, Store, Users,
-  RefreshCw, Ban, UserCog, Mail, Phone, AlertTriangle,
+  RefreshCw, Ban, UserCog, Mail, Phone, AlertTriangle, Package,
 } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
@@ -110,7 +110,7 @@ export default function BookingDetailDrawer({ bookingId, onClose, onChanged }) {
 
               {/* Servicio */}
               <Section title="Servicio">
-                <div className="flex items-center gap-2 text-sm text-gray-200"><span>{data.categoryEmoji || '📦'}</span> {data.serviceTitle}</div>
+                <div className="flex items-center gap-2 text-sm text-gray-200"><Package size={14} className="text-gray-500" aria-hidden="true" /> {data.serviceTitle}</div>
                 <Row label="Categoría">{data.category}</Row>
                 <Row label="Menú">{data.packageName || '—'}</Row>
                 {data.adults != null && <Row label="Invitados"><Users size={12} className="inline mr-1" />{data.adults} adultos{data.children ? ` + ${data.children} niños` : ''}</Row>}

@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, X, ImageIcon } from 'lucide-react';
 import { assetUrl } from '@/services/api';
+import { getCategoryIcon } from '@/utils/icons';
 
-export default function ProviderGallery({ images = [], name, emoji = '🎉' }) {
+export default function ProviderGallery({ images = [], name, categorySlug }) {
   const imgs = (images || []).map(assetUrl).filter(Boolean);
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
@@ -14,9 +15,10 @@ export default function ProviderGallery({ images = [], name, emoji = '🎉' }) {
 
   // Fallback elegante cuando el servicio no tiene fotos
   if (imgs.length === 0) {
+    const CategoryIcon = getCategoryIcon(categorySlug);
     return (
       <div className="rounded-2xl overflow-hidden h-[300px] md:h-[420px] flex flex-col items-center justify-center bg-gradient-to-br from-primary-light to-gray-100">
-        <span className="text-7xl opacity-70 select-none mb-3">{emoji}</span>
+        <CategoryIcon size={64} strokeWidth={1.5} className="text-primary/40 mb-3" aria-hidden="true" />
         <div className="flex items-center gap-1.5 text-gray-400 text-sm">
           <ImageIcon size={15} /> Este servicio todavía no tiene fotos
         </div>

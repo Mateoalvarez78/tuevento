@@ -3,6 +3,7 @@
 
 import { api } from './api';
 import { CATEGORIES as MOCK_CATEGORIES } from '@/mocks/categories.mock';
+import { getCategoryIcon } from '@/utils/icons';
 
 // In-memory cache to avoid repeated requests within the session
 let _cache = null;
@@ -12,8 +13,8 @@ function mapCategory(c) {
     id:    c.slug || c.id,   // slug — usado por filtros del catálogo
     categoryId: c.id,        // UUID real — necesario para crear servicios
     label: c.name,
-    icon:  c.emoji || '',
-    count: 0,
+    icon:  getCategoryIcon(c.slug || c.id), // componente Lucide, no emoji
+    count: parseInt(c.service_count) || 0,
     _raw: c,
   };
 }

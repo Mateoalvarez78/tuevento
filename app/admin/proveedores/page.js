@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Search, ChevronRight, Plus } from 'lucide-react';
+import { Search, ChevronRight, Plus, Users } from 'lucide-react';
 import { useAdminProviders } from '@/hooks/useAdmin';
 import ProviderStatusBadge from '@/components/ProviderStatusBadge';
 import { PROVIDER_STATUS } from '@/utils/constants';
@@ -81,7 +81,12 @@ export default function AdminProveedoresPage() {
         {loading ? (
           <div className="p-12 text-center text-gray-500 text-sm">Cargando…</div>
         ) : displayed.length === 0 ? (
-          <div className="p-12 text-center text-gray-500 text-sm">No hay proveedores con este filtro.</div>
+          <div className="p-12 text-center">
+            <div className="w-11 h-11 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-3">
+              <Users size={20} strokeWidth={1.5} className="text-gray-500" aria-hidden="true" />
+            </div>
+            <p className="text-gray-500 text-sm">No hay proveedores con este filtro.</p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[480px]">

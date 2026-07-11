@@ -74,7 +74,7 @@ export default function SearchBar({ className = '' }) {
               <div className="flex flex-wrap gap-1">
                 {selectedCategories.slice(0, 3).map((c) => (
                   <span key={c.id} className="inline-flex items-center gap-1 text-xs font-medium bg-primary-light text-primary px-2 py-0.5 rounded-full">
-                    {c.icon} {c.label}
+                    <c.icon size={12} aria-hidden="true" /> {c.label}
                   </span>
                 ))}
                 {selectedCategories.length > 3 && (
@@ -116,7 +116,7 @@ export default function SearchBar({ className = '' }) {
                       <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${active ? 'bg-primary border-primary' : 'border-gray-300'}`}>
                         {active && <Check size={11} className="text-white" />}
                       </div>
-                      <span className="text-base leading-none">{c.icon}</span>
+                      <c.icon size={16} aria-hidden="true" className={active ? 'text-primary' : 'text-gray-500'} />
                       <span className={`text-sm ${active ? 'text-primary font-semibold' : 'text-gray-700'}`}>{c.label}</span>
                     </button>
                   );

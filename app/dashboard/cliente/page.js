@@ -16,7 +16,7 @@ import NextEventCard from '@/components/dashboard/cliente/NextEventCard';
 import EventOrganizer from '@/components/dashboard/cliente/EventOrganizer';
 import CategoryGrid from '@/components/dashboard/cliente/CategoryGrid';
 import SmartBuilderCTA from '@/components/dashboard/cliente/SmartBuilderCTA';
-import { CalendarPlus, ArrowRight } from 'lucide-react';
+import { CalendarPlus, ArrowRight, Lock, CalendarX, HeartOff } from 'lucide-react';
 import { safeFormatDate } from '@/lib/date';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
@@ -72,7 +72,9 @@ export default function ClienteDashboard() {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
-          <div className="text-5xl mb-4">🔒</div>
+          <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-4">
+            <Lock size={28} strokeWidth={1.5} className="text-gray-400" aria-hidden="true" />
+          </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Necesitás iniciar sesión</h2>
           <p className="text-gray-500 text-sm mb-6">Ingresá a tu cuenta para organizar tu evento.</p>
           <Link href="/login" className="inline-block bg-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors">Ingresar</Link>
@@ -101,7 +103,9 @@ export default function ClienteDashboard() {
             <NextEventCard booking={data.nextBooking} />
           ) : (
             <div className="bg-white rounded-3xl border border-dashed border-gray-200 p-8 text-center">
-              <div className="text-4xl mb-3">📅</div>
+              <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-3">
+                <CalendarX size={24} strokeWidth={1.5} className="text-gray-400" aria-hidden="true" />
+              </div>
               <h3 className="font-bold text-gray-800 mb-1">Aún no reservaste ningún servicio</h3>
               <p className="text-sm text-gray-500 mb-5">Comenzá explorando nuestro catálogo y armá tu evento ideal.</p>
               <Link href="/catalogo" className="inline-flex items-center gap-2 bg-primary text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-primary-dark transition-colors text-sm">
@@ -141,7 +145,7 @@ export default function ClienteDashboard() {
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <EmptyState icon="❤️" title="Todavía no guardaste favoritos" description="Guardá los servicios que más te gusten para encontrarlos rápido." cta="Explorar servicios" ctaHref="/catalogo" />
+              <EmptyState icon={HeartOff} title="Todavía no guardaste favoritos" description="Guardá los servicios que más te gusten para encontrarlos rápido." cta="Explorar servicios" ctaHref="/catalogo" />
             </div>
           )}
         </section>

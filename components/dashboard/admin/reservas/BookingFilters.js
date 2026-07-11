@@ -45,7 +45,7 @@ export default function BookingFilters({ filters, categories = [], onChange, onR
 
         <select className={inputCls} value={filters.category || ''} onChange={(e) => set({ category: e.target.value })}>
           <option value="">Todas las categorías</option>
-          {categories.map((c) => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
+          {categories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
         </select>
 
         <div className="flex flex-col">

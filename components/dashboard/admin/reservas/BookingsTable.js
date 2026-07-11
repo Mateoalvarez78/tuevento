@@ -1,7 +1,7 @@
 'use client';
 
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
-import { Eye, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Copy, ChevronLeft, ChevronRight, CalendarX } from 'lucide-react';
 import { safeFormatDate } from '@/lib/date';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
@@ -19,7 +19,9 @@ export default function BookingsTable({ bookings = [], loading, pagination, onPa
   if (!bookings.length) {
     return (
       <div className="rounded-2xl border border-gray-800 bg-gray-900 p-16 text-center">
-        <div className="text-4xl mb-3">🗂️</div>
+        <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-3">
+          <CalendarX size={24} strokeWidth={1.5} className="text-gray-500" aria-hidden="true" />
+        </div>
         <p className="text-gray-300 font-medium">No hay reservas</p>
         <p className="text-sm text-gray-500 mt-1">Probá ajustar los filtros o esperá a que lleguen nuevas reservas.</p>
       </div>
@@ -53,9 +55,7 @@ export default function BookingsTable({ bookings = [], loading, pagination, onPa
                 </td>
                 <td className="px-4 py-3 text-gray-300 truncate max-w-[130px]">{b.clientName}</td>
                 <td className="px-4 py-3 text-gray-300 truncate max-w-[130px]">{b.providerName}</td>
-                <td className="px-4 py-3 text-gray-400 truncate max-w-[160px]">
-                  <span className="mr-1">{b.categoryEmoji}</span>{b.serviceTitle}
-                </td>
+                <td className="px-4 py-3 text-gray-400 truncate max-w-[160px]">{b.serviceTitle}</td>
                 <td className="px-4 py-3 text-gray-400 whitespace-nowrap">
                   {fmtDate(b.eventDate)}
                   <span className="text-gray-600"> · {b.adults != null ? `${b.adults + b.children} pers.` : `${b.guests} pers.`}</span>

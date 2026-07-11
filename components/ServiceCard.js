@@ -5,6 +5,7 @@ import { Heart, MapPin, CheckCircle, Zap, TrendingUp, Award, Sparkles } from 'lu
 import { useApp } from '@/lib/AppContext';
 import { assetUrl } from '@/services/api';
 import RatingStars from '@/components/RatingStars';
+import { getCategoryIcon } from '@/utils/icons';
 
 // Portada del servicio: resuelve /uploads/... contra el backend; fallback por categoría.
 function Cover({ provider, className }) {
@@ -13,14 +14,15 @@ function Cover({ provider, className }) {
   if (src) {
     return <img src={src} alt={provider.name} className={className} onError={(e) => { e.currentTarget.style.display = 'none'; }} />;
   }
+  const CategoryIcon = getCategoryIcon(provider.category);
   return (
     <div className={`${className} flex items-center justify-center bg-gradient-to-br from-primary-light to-gray-100`}>
-      <span className="text-5xl opacity-70 select-none">{provider.categoryEmoji || '🎉'}</span>
+      <CategoryIcon size={48} strokeWidth={1.5} className="text-primary/40" aria-hidden="true" />
     </div>
   );
 }
 
-const BADGE_CONFIG = {
+export const BADGE_CONFIG = {
   verified: { label: 'Verificado', className: 'badge-verified', icon: CheckCircle },
   top:      { label: 'Top proveedor', className: 'badge-top', icon: Award },
   fast:     { label: 'Respuesta rápida', className: 'badge-fast', icon: Zap },

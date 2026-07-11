@@ -52,9 +52,9 @@ function mapService(s) {
 // recientes). Preparado para reemplazar por GET /admin/activity (admin_logs).
 function buildActivity({ recentProviders, recentServices, recentBookings }) {
   const items = [];
-  recentProviders.forEach((p) => items.push({ type: 'provider', icon: '🏪', text: `Proveedor creado: ${p.businessName}`, date: p.createdAt }));
-  recentServices.forEach((s) => items.push({ type: 'service', icon: '📦', text: `Servicio publicado: ${s.title}`, date: s.createdAt }));
-  recentBookings.forEach((b) => items.push({ type: 'booking', icon: '📅', text: `Reserva ${b.requestNumber} · ${b.clientName}`, date: b.createdAt }));
+  recentProviders.forEach((p) => items.push({ type: 'provider', text: `Proveedor creado: ${p.businessName}`, date: p.createdAt }));
+  recentServices.forEach((s) => items.push({ type: 'service', text: `Servicio publicado: ${s.title}`, date: s.createdAt }));
+  recentBookings.forEach((b) => items.push({ type: 'booking', text: `Reserva ${b.requestNumber} · ${b.clientName}`, date: b.createdAt }));
   return items
     .filter((i) => i.date)
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''))

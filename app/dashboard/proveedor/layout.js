@@ -6,12 +6,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutDashboard, ClipboardList, Package, Calendar, Star, BarChart3, Settings,
-  LogOut, Bell, ChevronRight, Home, BadgeCheck,
+  LogOut, Bell, ChevronRight, Home, BadgeCheck, Lock,
 } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import { useRequireRole } from '@/hooks/useRequireRole';
 import { providerService } from '@/services/providerService';
 import { providerDashboardService } from '@/services/providerDashboardService';
+import { PROVIDER_STATUS } from '@/utils/constants';
 
 const NAV_ITEMS = [
   { href: '/dashboard/proveedor',            label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -103,7 +104,9 @@ export default function ProviderDashboardLayout({ children }) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
-          <div className="text-5xl mb-4">🔒</div>
+          <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+            <Lock size={28} strokeWidth={1.5} className="text-gray-400" aria-hidden="true" />
+          </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Necesitás iniciar sesión</h2>
           <p className="text-gray-500 text-sm mb-6">Ingresá a tu cuenta de proveedor para gestionar tu negocio.</p>
           <Link href="/provider/login" className="inline-block bg-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors">
@@ -343,18 +346,21 @@ export default function ProviderDashboardLayout({ children }) {
   );
 }
 
+const STATUS_BANNER_MSG = {
+  suspended: 'Tu cuenta está suspendida temporalmente.',
+  inactive: 'Tu cuenta fue desactivada por Eventonow.',
+};
+
 function StatusBanner({ status, reason }) {
-  const configs = {
-    suspended: { bg: 'bg-amber-50 border-amber-200', icon: '⊘', text: 'text-amber-800', msg: 'Tu cuenta está suspendida temporalmente.' },
-    inactive: { bg: 'bg-gray-100 border-gray-300', icon: '✕', text: 'text-gray-700', msg: 'Tu cuenta fue desactivada por Eventonow.' },
-  };
-  const cfg = configs[status];
-  if (!cfg) return null;
+  const cfg = PROVIDER_STATUS[status];
+  const msg = STATUS_BANNER_MSG[status];
+  if (!cfg || !msg) return null;
+  const Icon = cfg.icon;
   return (
-    <div className={`border-b ${cfg.bg} px-4 lg:px-6 py-2.5`}>
+    <div className={`border-b ${cfg.bg} ${cfg.border} px-4 lg:px-6 py-2.5`}>
       <div className="flex items-start sm:items-center gap-2 text-sm flex-wrap">
-        <span>{cfg.icon}</span>
-        <span className={`font-medium ${cfg.text}`}>{cfg.msg}</span>
+        <Icon size={16} className={`shrink-0 ${cfg.text}`} aria-hidden="true" />
+        <span className={`font-medium ${cfg.text}`}>{msg}</span>
         {reason && <span className={`${cfg.text} opacity-70`}>— {reason}</span>}
       </div>
     </div>

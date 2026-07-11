@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { providerService } from '@/services/providerService';
 import BookingWizard from '@/components/BookingWizard';
 import EmptyState from '@/components/EmptyState';
-import { Star, MapPin } from 'lucide-react';
+import { Star, MapPin, PackageX } from 'lucide-react';
 
 export default function ReservarPage() {
   return (
@@ -47,7 +47,7 @@ function ReservarContent() {
   if (!provider) {
     return (
       <EmptyState
-        icon="🏠"
+        icon={PackageX}
         title="Proveedor no encontrado"
         description="El proveedor seleccionado no existe."
         cta="Ver catálogo"

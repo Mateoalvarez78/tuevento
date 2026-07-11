@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Plus, Search, Eye, Pencil, Pause, Play, Trash2, Image as ImageIcon,
-  ClipboardList, Send, Star, MapPin, CalendarClock, AlertTriangle, X,
+  ClipboardList, Send, Star, MapPin, CalendarClock, AlertTriangle, X, SearchX,
 } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import { useSessionState } from '@/hooks/useSessionState';
+import { getCategoryIcon } from '@/utils/icons';
 import { safeFormatDate } from '@/lib/date';
 import { serviceService } from '@/services/serviceService';
 import { categoryService } from '@/services/categoryService';
@@ -202,7 +203,7 @@ export default function ProviderServicesPage() {
             onChange={(e) => setCategoryFilter(e.target.value)}
           >
             <option value="all">Todas las categorías</option>
-            {categories.map((c) => <option key={c.categoryId} value={c.categoryId}>{c.icon} {c.label}</option>)}
+            {categories.map((c) => <option key={c.categoryId} value={c.categoryId}>{c.label}</option>)}
           </select>
           {!loading && !error && (
             <span className="text-xs text-gray-400 ml-auto">{filtered.length} de {services.length} servicio{services.length !== 1 ? 's' : ''}</span>
@@ -232,7 +233,7 @@ export default function ProviderServicesPage() {
         {!loading && !error && services.length === 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
             <EmptyState
-              icon="📋"
+              icon={ClipboardList}
               title="Todavía no tenés servicios"
               description="Creá tu primer servicio para empezar a aparecer en el catálogo de Eventonow."
               cta="Crear mi primer servicio"
@@ -244,7 +245,7 @@ export default function ProviderServicesPage() {
         {/* Empty: sin resultados para filtros */}
         {!loading && !error && services.length > 0 && filtered.length === 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-            <EmptyState icon="🔍" title="Sin resultados" description="Ningún servicio coincide con estos filtros." />
+            <EmptyState icon={SearchX} title="Sin resultados" description="Ningún servicio coincide con estos filtros." />
           </div>
         )}
 
@@ -308,6 +309,7 @@ export default function ProviderServicesPage() {
 }
 
 function ServiceRow({ service: s, busy, onEdit, onImages, onMenus, onSubmit, onPause, onResume, onDelete }) {
+  const CategoryIcon = getCategoryIcon(s.category);
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
       <div className="flex items-start gap-3">
@@ -315,7 +317,7 @@ function ServiceRow({ service: s, busy, onEdit, onImages, onMenus, onSubmit, onP
           {s.primaryImage ? (
             <img src={assetUrl(s.primaryImage)} alt={s.title} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-2xl leading-none">{s.categoryEmoji || '📦'}</span>
+            <CategoryIcon size={24} strokeWidth={1.5} className="text-gray-400" aria-hidden="true" />
           )}
         </div>
         <div className="flex-1 min-w-0">
@@ -421,7 +423,7 @@ function ServiceDrawer({ drawer, setDrawer, categories, saving, onSave, onClose 
               onChange={(e) => setForm({ category_id: e.target.value })}
             >
               <option value="">Seleccioná...</option>
-              {categories.map((c) => <option key={c.categoryId} value={c.categoryId}>{c.icon} {c.label}</option>)}
+              {categories.map((c) => <option key={c.categoryId} value={c.categoryId}>{c.label}</option>)}
             </select>
           </div>
 

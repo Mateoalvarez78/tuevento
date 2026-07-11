@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Eye, EyeOff, AlertTriangle, Flag } from 'lucide-react';
+import { Search, Eye, EyeOff, AlertTriangle, Flag, Star } from 'lucide-react';
 import { useAdminReviews } from '@/hooks/useAdmin';
 import RatingStars from '@/components/RatingStars';
 import { safeFormatDate } from '@/lib/date';
@@ -83,8 +83,13 @@ export default function AdminResenasPage() {
             <button onClick={reload} className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors">Reintentar</button>
           </div>
         ) : displayed.length === 0 ? (
-          <div className="p-12 text-center text-gray-500 text-sm">
-            {reviews.length === 0 ? 'Todavía no hay reseñas en la plataforma.' : 'No hay reseñas con este filtro.'}
+          <div className="p-12 text-center">
+            <div className="w-11 h-11 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-3">
+              <Star size={20} strokeWidth={1.5} className="text-gray-500" aria-hidden="true" />
+            </div>
+            <p className="text-gray-500 text-sm">
+              {reviews.length === 0 ? 'Todavía no hay reseñas en la plataforma.' : 'No hay reseñas con este filtro.'}
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-gray-800">

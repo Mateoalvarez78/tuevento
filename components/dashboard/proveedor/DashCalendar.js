@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, X, Phone, MessageCircle, Clock,
-  MapPin, Users, DollarSign, CalendarClock, FileText,
+  MapPin, Users, DollarSign, CalendarClock, FileText, CheckCircle2, AlertCircle,
 } from 'lucide-react';
 import { fmtFull } from '@/lib/commissionHelpers';
 import { parseApiDate } from '@/lib/date';
@@ -189,7 +189,7 @@ export function CalendarDrawer({ booking, onClose }) {
             <DetailRow icon={<CalendarClock size={15} className="text-primary" />} label="Fecha y hora" value={`${dateLabel}${booking.time ? `, ${booking.time}` : ''}`} />
             <DetailRow icon={<MapPin size={15} className="text-primary" />} label="Ubicación" value={booking.location || '—'} />
             <DetailRow icon={<Users size={15} className="text-primary" />} label="Invitados" value={`${booking.guests} personas`} />
-            <DetailRow icon={<DollarSign size={15} className="text-primary" />} label="Monto" value={fmtFull(gross)} sub={booking.depositPaid ? '✓ Seña pagada' : '⚠ Seña pendiente'} subColor={booking.depositPaid ? 'text-emerald-600' : 'text-amber-500'} />
+            <DetailRow icon={<DollarSign size={15} className="text-primary" />} label="Monto" value={fmtFull(gross)} sub={booking.depositPaid ? 'Seña pagada' : 'Seña pendiente'} subIcon={booking.depositPaid ? CheckCircle2 : AlertCircle} subColor={booking.depositPaid ? 'text-emerald-600' : 'text-amber-500'} />
             <DetailRow icon={<FileText size={15} className="text-primary" />} label="Servicio" value={booking.serviceTitle || '—'} />
             {booking.message && (
               <DetailRow icon={<FileText size={15} className="text-gray-400" />} label="Mensaje del cliente" value={booking.message} />
@@ -225,14 +225,19 @@ export function CalendarDrawer({ booking, onClose }) {
   );
 }
 
-function DetailRow({ icon, label, value, sub, subColor = 'text-gray-400' }) {
+function DetailRow({ icon, label, value, sub, subIcon: SubIcon, subColor = 'text-gray-400' }) {
   return (
     <div className="flex items-start gap-2.5">
       <div className="w-5 shrink-0 mt-0.5">{icon}</div>
       <div className="flex-1 min-w-0">
         <p className="text-[11px] text-gray-400 font-medium">{label}</p>
         <p className="text-sm text-gray-800 font-medium leading-snug">{value}</p>
-        {sub && <p className={`text-[11px] font-medium ${subColor} mt-0.5`}>{sub}</p>}
+        {sub && (
+          <p className={`flex items-center gap-1 text-[11px] font-medium ${subColor} mt-0.5`}>
+            {SubIcon && <SubIcon size={11} aria-hidden="true" />}
+            {sub}
+          </p>
+        )}
       </div>
     </div>
   );

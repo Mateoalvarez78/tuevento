@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import {
   LayoutGrid, List, SlidersHorizontal,
   ChevronDown, ChevronLeft, ChevronRight, Search, X,
+  MapPin, Map, CalendarDays, PartyPopper, Star, CheckCircle2, DollarSign, SearchX,
 } from 'lucide-react';
 import FilterSidebar from '@/components/FilterSidebar';
 import ServiceCard from '@/components/ServiceCard';
@@ -188,7 +189,7 @@ function CatalogoContent() {
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2 leading-tight">
                   {activeCategory && (
-                    <span className="text-2xl leading-none">{activeCategory.icon}</span>
+                    <activeCategory.icon size={24} className="text-gray-500" aria-hidden="true" />
                   )}
                   {pageTitle}
                 </h1>
@@ -266,31 +267,33 @@ function CatalogoContent() {
                 {selectedCategories.map((cat) => (
                   <Chip
                     key={cat.id}
-                    label={`${cat.icon || ''} ${cat.label}`}
+                    icon={cat.icon}
+                    label={cat.label}
                     onRemove={() => toggleCategory(cat.id)}
                   />
                 ))}
                 {filters.zone && (
-                  <Chip label={`📍 ${filters.zone}`} onRemove={() => handleFilterChange({ ...filters, zone: '' })} />
+                  <Chip icon={MapPin} label={filters.zone} onRemove={() => handleFilterChange({ ...filters, zone: '' })} />
                 )}
                 {filters.location && (
-                  <Chip label={`🗺️ ${filters.location}`} onRemove={() => handleFilterChange({ ...filters, location: '', placeId: '', lat: '', lng: '' })} />
+                  <Chip icon={Map} label={filters.location} onRemove={() => handleFilterChange({ ...filters, location: '', placeId: '', lat: '', lng: '' })} />
                 )}
                 {filters.date && (
-                  <Chip label={`📅 ${safeFormatDate(filters.date)}`} onRemove={() => handleFilterChange({ ...filters, date: '' })} />
+                  <Chip icon={CalendarDays} label={safeFormatDate(filters.date)} onRemove={() => handleFilterChange({ ...filters, date: '' })} />
                 )}
                 {filters.eventType && (
-                  <Chip label={`🎉 ${filters.eventType}`} onRemove={() => handleFilterChange({ ...filters, eventType: '' })} />
+                  <Chip icon={PartyPopper} label={filters.eventType} onRemove={() => handleFilterChange({ ...filters, eventType: '' })} />
                 )}
                 {filters.minRating > 0 && (
-                  <Chip label={`⭐ ${filters.minRating}.0+`} onRemove={() => handleFilterChange({ ...filters, minRating: 0 })} />
+                  <Chip icon={Star} label={`${filters.minRating}.0+`} onRemove={() => handleFilterChange({ ...filters, minRating: 0 })} />
                 )}
                 {filters.verified && (
-                  <Chip label="✓ Verificados" onRemove={() => handleFilterChange({ ...filters, verified: false })} />
+                  <Chip icon={CheckCircle2} label="Verificados" onRemove={() => handleFilterChange({ ...filters, verified: false })} />
                 )}
                 {filters.maxPrice < 200000 && (
                   <Chip
-                    label={`💰 hasta $${(filters.maxPrice / 1000).toFixed(0)}k`}
+                    icon={DollarSign}
+                    label={`hasta $${(filters.maxPrice / 1000).toFixed(0)}k`}
                     onRemove={() => handleFilterChange({ ...filters, maxPrice: 200000 })}
                   />
                 )}
@@ -319,7 +322,7 @@ function CatalogoContent() {
                     onClick={() => toggleCategory(cat.id)}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-600 hover:border-primary/40 hover:text-primary hover:bg-primary-light transition-all whitespace-nowrap shrink-0 shadow-sm"
                   >
-                    <span className="text-sm leading-none">{cat.icon}</span>
+                    <cat.icon size={14} aria-hidden="true" />
                     {cat.label}
                   </button>
                 ))}
@@ -337,7 +340,7 @@ function CatalogoContent() {
             ) : pageItems.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
                 <EmptyState
-                  icon="🔍"
+                  icon={SearchX}
                   title="Sin resultados"
                   description="No encontramos proveedores con esos filtros. Probá ajustarlos o explorar sin filtros."
                   cta="Ver todos los proveedores"
@@ -412,9 +415,10 @@ function CatalogoContent() {
   );
 }
 
-function Chip({ label, onRemove }) {
+function Chip({ label, icon: Icon, onRemove }) {
   return (
     <span className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 bg-primary-light text-primary text-xs font-medium rounded-full border border-primary/20">
+      {Icon && <Icon size={12} aria-hidden="true" />}
       {label}
       <button
         onClick={onRemove}

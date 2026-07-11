@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
 import { homePathForRole } from '@/lib/roles';
-import { Eye, EyeOff, Mail, Lock, Phone, UserCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Phone, UserCircle, Check } from 'lucide-react';
 
 // Alta de cuenta de CLIENTE únicamente. Eventonow es un marketplace curado:
 // los proveedores no se autoregistran, se dan de alta desde el panel de admin.
@@ -50,14 +50,16 @@ export default function RegistroPage() {
         <div className="relative z-10">
           <div className="grid grid-cols-1 gap-4">
             {[
-              { emoji: '✓', text: 'Gratis para empezar' },
-              { emoji: '✓', text: 'Acceso a miles de proveedores verificados' },
-              { emoji: '✓', text: 'Gestión de reservas en un solo lugar' },
-              { emoji: '✓', text: 'Soporte en español' },
-            ].map((item) => (
-              <div key={item.text} className="flex items-center gap-3 text-white">
-                <span className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-xs font-bold shrink-0">{item.emoji}</span>
-                <span className="text-sm">{item.text}</span>
+              'Gratis para empezar',
+              'Acceso a miles de proveedores verificados',
+              'Gestión de reservas en un solo lugar',
+              'Soporte en español',
+            ].map((text) => (
+              <div key={text} className="flex items-center gap-3 text-white">
+                <span className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+                  <Check size={13} strokeWidth={3} aria-hidden="true" />
+                </span>
+                <span className="text-sm">{text}</span>
               </div>
             ))}
           </div>

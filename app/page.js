@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Star, Search, Users, CalendarCheck } from 'lucide-react';
+import { ArrowRight, Star, Search, Users, CalendarCheck, Store, CheckCircle2 } from 'lucide-react';
 import SearchBar from '@/components/SearchBar';
 import CategoryCard from '@/components/CategoryCard';
 import FeaturedProviders from '@/components/home/FeaturedProviders';
@@ -108,9 +108,10 @@ export default async function HomePage() {
               <Link
                 key={cat.id}
                 href={`/catalogo?categories=${cat.id}`}
-                className="text-xs sm:text-sm text-white/70 border border-white/20 hover:border-white/60 hover:bg-white/10 hover:text-white px-3.5 py-1.5 rounded-full transition-all"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-white/70 border border-white/20 hover:border-white/60 hover:bg-white/10 hover:text-white px-3.5 py-1.5 rounded-full transition-all"
               >
-                {cat.icon} {cat.label}
+                <cat.icon size={14} aria-hidden="true" />
+                {cat.label}
               </Link>
             ))}
           </div>
@@ -293,7 +294,9 @@ export default async function HomePage() {
       {/* ── PROVIDER CTA ───────────────────────────────────────────────── */}
       <section className="py-16 sm:py-20 bg-gray-950">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="text-5xl mb-5">🎉</div>
+          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-5">
+            <Store size={32} strokeWidth={1.5} className="text-primary" aria-hidden="true" />
+          </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
             ¿Ofrecés servicios para eventos?
           </h2>
@@ -316,13 +319,9 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-8">
-            {[
-              ['✓', 'Gratis para empezar'],
-              ['✓', 'Panel de gestión incluido'],
-              ['✓', 'Soporte en español'],
-            ].map(([check, text]) => (
+            {['Gratis para empezar', 'Panel de gestión incluido', 'Soporte en español'].map((text) => (
               <div key={text} className="flex items-center justify-center gap-1.5 text-sm text-gray-500">
-                <span className="text-green-500 font-bold">{check}</span>
+                <CheckCircle2 size={15} className="text-green-500" aria-hidden="true" />
                 {text}
               </div>
             ))}

@@ -129,9 +129,9 @@ export function ReviewsSection({ provider }) {
       {header}
       {reviews.length === 0 ? (
         ratingFilter ? (
-          <EmptyState icon="⭐" title="Sin reseñas con este filtro" description="Probá con otra calificación." />
+          <EmptyState icon={Star} title="Sin reseñas con este filtro" description="Probá con otra calificación." />
         ) : (
-          <EmptyState icon="⭐" title="Sin reseñas todavía" description="Cuando un cliente reseñe una reserva completada, va a aparecer acá." />
+          <EmptyState icon={Star} title="Sin reseñas todavía" description="Cuando un cliente reseñe una reserva completada, va a aparecer acá." />
         )
       ) : (
         <div className="space-y-4">
