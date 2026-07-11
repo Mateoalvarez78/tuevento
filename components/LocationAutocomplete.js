@@ -9,7 +9,7 @@
 // script), degrada a un input de texto simple con sugerencias de las zonas
 // canónicas de Uruguay — nunca rompe la pantalla ni bloquea la búsqueda.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { MapPin } from 'lucide-react';
 import { useGoogleMapsScript } from '@/hooks/useGoogleMapsScript';
 import { ZONES } from '@/utils/constants';
@@ -50,7 +50,7 @@ export default function LocationAutocomplete({
   const localRef = useRef(null);
   const inputEl = externalRef || localRef;
   const autocompleteRef = useRef(null);
-  const datalistId = useRef(`zones-${Math.random().toString(36).slice(2)}`).current;
+  const datalistId = `zones-${useId()}`;
 
   useEffect(() => {
     if (status !== 'ready' || !inputEl.current || autocompleteRef.current) return;

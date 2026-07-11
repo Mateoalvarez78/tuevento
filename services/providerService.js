@@ -107,8 +107,11 @@ export function mapAdminProvider(p) {
     email:        p.email,
     phone:        p.phone || p.owner_phone || '',
     category:     p.category_slug || '',
+    categoryId:   p.category_id || '',
     categoryLabel:p.category_name || '',
     city:         p.city || '',
+    department:   p.department || '',
+    address:      p.address || '',
     zones:        p.zones || [],
     description:  p.description || '',
     status:       p.status,
@@ -123,6 +126,13 @@ export function mapAdminProvider(p) {
     whatsapp:     p.whatsapp || '',
     website:      p.website || '',
     logo_url:     p.logo_url || '',
+    legalName:      p.legal_name || '',
+    taxId:          p.tax_id || '',
+    currency:       p.currency || 'UYU',
+    paymentMethod:  p.payment_method || '',
+    bankAccount:    p.bank_account || {},
+    commissionRate: p.commission_rate != null ? parseFloat(p.commission_rate) : null,
+    internalNotes:  p.internal_notes || '',
     _raw: p,
   };
 }
@@ -226,32 +236,9 @@ export const providerService = {
     return mapAdminProvider(res.data);
   },
 
-  /**
-   * Registro PÚBLICO de proveedor (sin sesión). Llama al endpoint público
-   * POST /providers/register, que no requiere token. Mapea la forma del
-   * formulario al contrato del backend. No inicia sesión: el alta queda pending.
-   */
-  async register(data) {
-    const body = {
-      name:          data.ownerName,          // nombre del titular → users.name
-      email:         data.email,
-      password:      data.password,
-      phone:         data.phone || undefined,
-      business_name: data.businessName,       // nombre comercial → providers.business_name
-      category_id:   data.categoryId || null, // UUID real (no el slug); null si no hay
-      description:   data.description || undefined,
-      zones:         Array.isArray(data.zones) ? data.zones : [],
-      whatsapp:      data.whatsapp || undefined,
-      instagram:     data.instagram || undefined,
-      website:       data.website || undefined,
-    };
-    // skipUnauthorizedHandler: es un flujo público; un 401 aquí no debe cerrar
-    // sesión ni disparar el handler global de "sesión expirada".
-    const res = await api.post('/providers/register', body, { skipUnauthorizedHandler: true });
-    return res.data;
-  },
-
   // ── Admin API ─────────────────────────────────────────────────────────────
+  // No existe alta pública de proveedor: se crean únicamente desde
+  // admin.create() (POST /admin/providers), ver panel de administración.
   admin: {
     async getAll(filters = {}) {
       const res = await api.get(`/admin/providers${buildQuery(filters)}`);
@@ -259,28 +246,73 @@ export const providerService = {
     },
 
     async getById(id) {
-      const res = await api.get(`/admin/providers${buildQuery({ search: id })}`);
-      return (res.data || []).map(mapAdminProvider)[0] || null;
-    },
-
-    async approve(id) {
-      const res = await api.patch(`/admin/providers/${id}/approve`);
+      const res = await api.get(`/admin/providers/${id}`);
       return mapAdminProvider(res.data);
     },
 
-    async reject(id, reason) {
-      const res = await api.patch(`/admin/providers/${id}/reject`, { reason });
+    /** Alta manual de proveedor. Devuelve también la contraseña temporal (una única vez). */
+    async create(data) {
+      const body = {
+        owner_name:      data.ownerName,
+        email:           data.email,
+        phone:           data.phone || undefined,
+        business_name:   data.businessName,
+        legal_name:      data.legalName || undefined,
+        tax_id:          data.taxId || undefined,
+        category_id:     data.categoryId || null,
+        description:     data.description || undefined,
+        city:            data.city || undefined,
+        department:      data.department || undefined,
+        address:         data.address || undefined,
+        zones:           Array.isArray(data.zones) ? data.zones : [],
+        whatsapp:        data.whatsapp || undefined,
+        instagram:       data.instagram || undefined,
+        website:         data.website || undefined,
+        currency:        data.currency || undefined,
+        payment_method:  data.paymentMethod || undefined,
+        bank_account:    data.bankAccount || undefined,
+        commission_rate: data.commissionRate != null ? data.commissionRate : undefined,
+        internal_notes:  data.internalNotes || undefined,
+      };
+      const res = await api.post('/admin/providers', body);
+      return {
+        user: res.data.user,
+        provider: mapAdminProvider(res.data.provider),
+        temporaryPassword: res.data.temporaryPassword,
+      };
+    },
+
+    /** Edita datos ya cargados (typos, cambios de comisión/contacto/etc.). PATCH parcial. */
+    async update(id, data) {
+      const body = {
+        owner_name:      data.ownerName || undefined,
+        email:           data.email || undefined,
+        phone:           data.phone || undefined,
+        business_name:   data.businessName || undefined,
+        legal_name:      data.legalName || undefined,
+        tax_id:          data.taxId || undefined,
+        category_id:     data.categoryId || undefined,
+        description:     data.description || undefined,
+        city:            data.city || undefined,
+        department:      data.department || undefined,
+        address:         data.address || undefined,
+        zones:           Array.isArray(data.zones) ? data.zones : undefined,
+        whatsapp:        data.whatsapp || undefined,
+        instagram:       data.instagram || undefined,
+        website:         data.website || undefined,
+        currency:        data.currency || undefined,
+        payment_method:  data.paymentMethod || undefined,
+        bank_account:    data.bankAccount || undefined,
+        commission_rate: data.commissionRate != null ? data.commissionRate : undefined,
+        internal_notes:  data.internalNotes || undefined,
+      };
+      const res = await api.patch(`/admin/providers/${id}`, body);
       return mapAdminProvider(res.data);
     },
 
-    async suspend(id, reason) {
-      // Backend: suspend = reject with reason (or we use a custom endpoint if added)
-      const res = await api.patch(`/admin/providers/${id}/reject`, { reason });
-      return mapAdminProvider(res.data);
-    },
-
-    async reactivate(id) {
-      const res = await api.patch(`/admin/providers/${id}/approve`);
+    /** Transición de estado: 'active' | 'suspended' | 'inactive'. */
+    async updateStatus(id, status, reason) {
+      const res = await api.patch(`/admin/providers/${id}/status`, { status, reason });
       return mapAdminProvider(res.data);
     },
 

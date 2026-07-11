@@ -13,10 +13,9 @@ export const adminService = {
     const d = res.data || {};
     return {
       providers: {
-        pending:   d.providers?.pending   || 0,
-        approved:  d.providers?.approved  || 0,
-        rejected:  d.providers?.rejected  || 0,
+        active:    d.providers?.active    || 0,
         suspended: d.providers?.suspended || 0,
+        inactive:  d.providers?.inactive  || 0,
       },
       services: {
         draft:          d.services?.draft          || 0,
@@ -62,13 +61,12 @@ export const adminService = {
 
   // ── Providers ──────────────────────────────────────────────────────────────
   providers: {
-    getAll:       (filters) => providerService.admin.getAll(filters),
-    getById:      (id)      => providerService.admin.getById(id),
-    approve:      (id)      => providerService.admin.approve(id),
-    reject:       (id, r)   => providerService.admin.reject(id, r),
-    suspend:      (id, r)   => providerService.admin.suspend(id, r),
-    reactivate:   (id)      => providerService.admin.reactivate(id),
-    countByStatus:()        => providerService.admin.countByStatus(),
+    getAll:       (filters)      => providerService.admin.getAll(filters),
+    getById:      (id)           => providerService.admin.getById(id),
+    create:       (data)         => providerService.admin.create(data),
+    update:       (id, data)     => providerService.admin.update(id, data),
+    updateStatus: (id, status, r)=> providerService.admin.updateStatus(id, status, r),
+    countByStatus:()             => providerService.admin.countByStatus(),
   },
 
   // ── Services ───────────────────────────────────────────────────────────────

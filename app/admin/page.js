@@ -3,14 +3,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useApp } from '@/lib/AppContext';
 import { adminDashboardService } from '@/services/adminDashboardService';
-import { adminService } from '@/services/adminService';
 import { AlertTriangle } from 'lucide-react';
 
 import AdminHero from '@/components/dashboard/admin/AdminHero';
 import AdminStats from '@/components/dashboard/admin/AdminStats';
 import PlatformStatus from '@/components/dashboard/admin/PlatformStatus';
 import AdminAlerts from '@/components/dashboard/admin/AdminAlerts';
-import PendingProviders from '@/components/dashboard/admin/PendingProviders';
+import RecentProviders from '@/components/dashboard/admin/RecentProviders';
 import RecentBookings from '@/components/dashboard/admin/RecentBookings';
 import RecentServices from '@/components/dashboard/admin/RecentServices';
 import ActivityTimeline from '@/components/dashboard/admin/ActivityTimeline';
@@ -18,7 +17,7 @@ import AdminCharts from '@/components/dashboard/admin/AdminCharts';
 import QuickActions from '@/components/dashboard/admin/QuickActions';
 
 export default function AdminOverviewPage() {
-  const { user, showToast } = useApp();
+  const { user } = useApp();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,18 +31,6 @@ export default function AdminOverviewPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
-
-  const handleApprove = async (p) => {
-    try { await adminService.providers.approve(p.id); showToast('Proveedor aprobado', 'success'); load(); }
-    catch (err) { showToast(err?.message || 'No se pudo aprobar', 'error'); }
-  };
-
-  const handleReject = async (p) => {
-    const reason = window.prompt(`Motivo del rechazo de "${p.businessName}":`);
-    if (reason === null) return;
-    try { await adminService.providers.reject(p.id, reason); showToast('Proveedor rechazado', 'info'); load(); }
-    catch (err) { showToast(err?.message || 'No se pudo rechazar', 'error'); }
-  };
 
   if (loading) {
     return (
@@ -80,7 +67,7 @@ export default function AdminOverviewPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
-          <PendingProviders providers={data.pendingProviders} onApprove={handleApprove} onReject={handleReject} />
+          <RecentProviders providers={data.recentProviders} />
         </div>
         <ActivityTimeline activity={data.activity} />
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Store, Clock, Users, Package, CalendarClock, DollarSign, Percent, Receipt, UserPlus } from 'lucide-react';
+import { Store, PauseCircle, Users, Package, CalendarClock, DollarSign, Percent, Receipt, UserPlus } from 'lucide-react';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
 
@@ -23,8 +23,8 @@ export default function AdminStats({ stats }) {
   const s = stats;
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-      <Card icon={Store} label="Proveedores" value={s.providers.total} sub={`${s.providers.approved} activos`} />
-      <Card icon={Clock} label="Pendientes de aprobación" value={s.providers.pending} highlight={s.providers.pending > 0} />
+      <Card icon={Store} label="Proveedores" value={s.providers.total} sub={`${s.providers.active} activos`} />
+      <Card icon={PauseCircle} label="Suspendidos" value={s.providers.suspended} highlight={s.providers.suspended > 0} />
       <Card icon={Users} label="Clientes registrados" value={s.users.clients} />
       <Card icon={Package} label="Servicios publicados" value={s.services.active} sub={`${s.services.pendingReview} en revisión`} />
       <Card icon={CalendarClock} label="Reservas activas" value={s.bookings.active} sub={`${s.bookings.total} totales`} />

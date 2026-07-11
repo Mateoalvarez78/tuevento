@@ -5,7 +5,7 @@ import { Store, Package, CalendarClock, Users, Tags, Settings } from 'lucide-rea
 
 // Launcher de acciones. Rutas existentes → Link; futuras → deshabilitadas con "Pronto".
 const ACTIONS = [
-  { label: 'Proveedores',  desc: 'Aprobar y gestionar',  icon: Store,         href: '/admin/proveedores' },
+  { label: 'Proveedores',  desc: 'Crear y gestionar',    icon: Store,         href: '/admin/proveedores' },
   { label: 'Servicios',    desc: 'Moderar publicaciones', icon: Package,        href: '/admin/servicios' },
   { label: 'Reservas',     desc: 'Ver todas',             icon: CalendarClock,  href: '/admin/reservas' },
   { label: 'Clientes',     desc: 'Gestionar usuarios',    icon: Users,          href: null },

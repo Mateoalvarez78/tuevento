@@ -143,11 +143,7 @@ export default function ProviderLoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 space-y-1.5 text-center text-sm">
-            <p className="text-gray-500">
-              ¿Todavía no sos proveedor?{' '}
-              <Link href="/proveedor/registro" className="text-primary font-semibold hover:underline">Registrá tu negocio</Link>
-            </p>
+          <div className="mt-6 text-center text-sm">
             <p className="text-gray-400 text-xs">
               ¿Buscás contratar servicios?{' '}
               <Link href="/login" className="text-gray-600 hover:underline">Ingreso de clientes</Link>

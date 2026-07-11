@@ -7,7 +7,7 @@ export default function PlatformStatus({ stats }) {
     { ok: true, label: 'Plataforma operativa' },
     { ok: true, label: 'Base de datos conectada' },
     { ok: true, label: 'API disponible' },
-    { ok: stats.providers.pending === 0, label: stats.providers.pending > 0 ? `${stats.providers.pending} proveedores pendientes` : 'Proveedores al día' },
+    { ok: stats.providers.suspended === 0, label: stats.providers.suspended > 0 ? `${stats.providers.suspended} proveedores suspendidos` : 'Proveedores al día' },
     { ok: true, label: `${stats.bookings.total} reservas registradas` },
     { ok: stats.services.active > 0, label: `${stats.services.active} servicios publicados` },
   ];

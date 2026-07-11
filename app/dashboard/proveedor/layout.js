@@ -114,20 +114,20 @@ export default function ProviderDashboardLayout({ children }) {
     );
   }
 
-  const accountStatus = providerData?.status || 'pending';
-  const isApproved = accountStatus === 'approved';
+  const accountStatus = providerData?.status || 'active';
+  const isAccountActive = accountStatus === 'active';
   const displayName = providerData?.name || 'Tu negocio';
   const ownerName = user?.name || 'Proveedor';
   const profileComplete = computeProfileCompleteness(providerData);
   const totalBookings = providerData?.totalBookings || 0;
-  const isActive = (item) => (item.exact ? pathname === item.href : pathname.startsWith(item.href));
+  const isNavActive = (item) => (item.exact ? pathname === item.href : pathname.startsWith(item.href));
   const pageTitle = TAB_TITLE[pathname] || 'Dashboard';
 
   const SidebarNav = () => (
     <nav className="flex-1 overflow-y-auto px-3 py-3">
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
-        const active = isActive(item);
+        const active = isNavActive(item);
         return (
           <Link
             key={item.href}
@@ -188,7 +188,7 @@ export default function ProviderDashboardLayout({ children }) {
   );
 
   return (
-    <ProviderDashboardContext.Provider value={{ providerData, user, reloadProviderData, isApproved, accountStatus }}>
+    <ProviderDashboardContext.Provider value={{ providerData, user, reloadProviderData, isAccountActive, accountStatus }}>
       <div className="flex min-h-screen bg-gray-50">
         {/* ─── SIDEBAR (desktop) ─── */}
         <aside className="hidden lg:flex w-72 bg-white border-r border-gray-100 flex-col fixed left-0 top-0 h-screen z-40">
@@ -264,7 +264,7 @@ export default function ProviderDashboardLayout({ children }) {
 
             <h1 className="hidden lg:block text-base font-bold text-gray-900 flex-1">{pageTitle}</h1>
 
-            {pendingCount > 0 && isApproved && (
+            {pendingCount > 0 && isAccountActive && (
               <button
                 onClick={() => router.push('/dashboard/proveedor/reservas')}
                 className="relative p-2 rounded-xl hover:bg-gray-100 transition-colors"
@@ -288,13 +288,13 @@ export default function ProviderDashboardLayout({ children }) {
               <div>
                 <p className="text-xs font-semibold text-gray-800 leading-tight">{ownerName}</p>
                 <p className="text-[10px] text-gray-400 flex items-center gap-1">
-                  <BadgeCheck size={10} className="text-primary" /> {isApproved ? 'Verificado' : 'Proveedor'}
+                  <BadgeCheck size={10} className="text-primary" /> {isAccountActive ? 'Verificado' : 'Proveedor'}
                 </p>
               </div>
             </div>
           </header>
 
-          {accountStatus !== 'approved' && <StatusBanner status={accountStatus} reason={providerData?.statusReason} />}
+          {accountStatus !== 'active' && <StatusBanner status={accountStatus} reason={providerData?.statusReason} />}
 
           <main className="flex-1 p-4 lg:p-6 pb-24 lg:pb-8">
             <div className="max-w-7xl mx-auto w-full">
@@ -318,7 +318,7 @@ export default function ProviderDashboardLayout({ children }) {
           <div className="flex items-center justify-around">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
-              const active = isActive(item);
+              const active = isNavActive(item);
               return (
                 <Link
                   key={item.href}
@@ -345,9 +345,8 @@ export default function ProviderDashboardLayout({ children }) {
 
 function StatusBanner({ status, reason }) {
   const configs = {
-    pending: { bg: 'bg-amber-50 border-amber-200', icon: '⏳', text: 'text-amber-800', msg: 'Tu cuenta está en revisión. El equipo de Eventonow la revisará en las próximas 24–48 hs.' },
-    rejected: { bg: 'bg-red-50 border-red-200', icon: '✕', text: 'text-red-800', msg: 'Tu cuenta fue rechazada.' },
-    suspended: { bg: 'bg-gray-100 border-gray-300', icon: '⊘', text: 'text-gray-700', msg: 'Tu cuenta está suspendida.' },
+    suspended: { bg: 'bg-amber-50 border-amber-200', icon: '⊘', text: 'text-amber-800', msg: 'Tu cuenta está suspendida temporalmente.' },
+    inactive: { bg: 'bg-gray-100 border-gray-300', icon: '✕', text: 'text-gray-700', msg: 'Tu cuenta fue desactivada por Eventonow.' },
   };
   const cfg = configs[status];
   if (!cfg) return null;

@@ -50,27 +50,12 @@ export function useAdminProviders(initialFilters = {}) {
 
   useEffect(() => { reload(); }, [reload]);
 
-  const approve = useCallback(async (id) => {
-    await adminService.providers.approve(id);
+  const updateStatus = useCallback(async (id, status, reason) => {
+    await adminService.providers.updateStatus(id, status, reason);
     reload();
   }, [reload]);
 
-  const reject = useCallback(async (id, reason) => {
-    await adminService.providers.reject(id, reason);
-    reload();
-  }, [reload]);
-
-  const suspend = useCallback(async (id, reason) => {
-    await adminService.providers.suspend(id, reason);
-    reload();
-  }, [reload]);
-
-  const reactivate = useCallback(async (id) => {
-    await adminService.providers.reactivate(id);
-    reload();
-  }, [reload]);
-
-  return { providers, loading, error, filters, setFilters, approve, reject, suspend, reactivate, reload };
+  return { providers, loading, error, filters, setFilters, updateStatus, reload };
 }
 
 export function useAdminServices(initialFilters = {}) {

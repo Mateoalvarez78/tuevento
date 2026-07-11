@@ -3,18 +3,8 @@
 // Used by ProviderStatusBadge, ServiceStatusBadge, admin tables, and dashboards.
 
 export const PROVIDER_STATUS = {
-  pending: {
-    label: 'Pendiente',
-    description: 'En revisión por el equipo de TuEvento',
-    color: 'amber',
-    bg: 'bg-amber-50',
-    text: 'text-amber-800',
-    border: 'border-amber-200',
-    dot: 'bg-amber-400',
-    icon: '⏳',
-  },
-  approved: {
-    label: 'Aprobado',
+  active: {
+    label: 'Activo',
     description: 'Visible públicamente en el catálogo',
     color: 'emerald',
     bg: 'bg-emerald-50',
@@ -23,25 +13,25 @@ export const PROVIDER_STATUS = {
     dot: 'bg-emerald-400',
     icon: '✓',
   },
-  rejected: {
-    label: 'Rechazado',
-    description: 'No cumple los requisitos de la plataforma',
-    color: 'red',
-    bg: 'bg-red-50',
-    text: 'text-red-800',
-    border: 'border-red-200',
-    dot: 'bg-red-400',
-    icon: '✕',
-  },
   suspended: {
     label: 'Suspendido',
-    description: 'Cuenta temporalmente inactiva',
+    description: 'Cuenta temporalmente pausada',
+    color: 'amber',
+    bg: 'bg-amber-50',
+    text: 'text-amber-800',
+    border: 'border-amber-200',
+    dot: 'bg-amber-400',
+    icon: '⊘',
+  },
+  inactive: {
+    label: 'Desactivado',
+    description: 'Cuenta desactivada por Eventonow',
     color: 'gray',
     bg: 'bg-gray-100',
     text: 'text-gray-700',
     border: 'border-gray-300',
     dot: 'bg-gray-400',
-    icon: '⊘',
+    icon: '✕',
   },
 };
 

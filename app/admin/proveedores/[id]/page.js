@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Check, X, Pause, RotateCcw, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Pencil, Pause, Ban, RotateCcw, AlertTriangle } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { assetUrl } from '@/services/api';
 import ProviderStatusBadge from '@/components/ProviderStatusBadge';
@@ -56,7 +56,7 @@ export default function AdminProviderDetailPage() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [modal, setModal] = useState(null); // { type: 'approve'|'reject'|'suspend'|'reactivate' }
+  const [modal, setModal] = useState(null); // 'suspend' | 'deactivate' | 'activate'
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -93,12 +93,11 @@ export default function AdminProviderDetailPage() {
 
   const displayName = provider.businessName || provider.name || 'Proveedor';
 
+  const STATUS_FOR_ACTION = { suspend: 'suspended', deactivate: 'inactive', activate: 'active' };
+
   const handleAction = async (type, reason) => {
     try {
-      if (type === 'approve') await adminService.providers.approve(id);
-      else if (type === 'reject') await adminService.providers.reject(id, reason);
-      else if (type === 'suspend') await adminService.providers.suspend(id, reason);
-      else if (type === 'reactivate') await adminService.providers.reactivate(id);
+      await adminService.providers.updateStatus(id, STATUS_FOR_ACTION[type], reason);
       setModal(null);
       await reload();
     } catch (e) {
@@ -108,10 +107,9 @@ export default function AdminProviderDetailPage() {
   };
 
   const MODAL_CONFIGS = {
-    approve:    { title: 'Aprobar proveedor',  description: `¿Confirmar aprobación de "${displayName}"? Aparecerá en el catálogo.`, confirmLabel: 'Aprobar', confirmClass: 'bg-emerald-600 hover:bg-emerald-700', requireReason: false },
-    reject:     { title: 'Rechazar proveedor', description: `Indicá el motivo del rechazo para "${displayName}".`, confirmLabel: 'Rechazar', confirmClass: 'bg-red-600 hover:bg-red-700', requireReason: true },
-    suspend:    { title: 'Suspender proveedor',description: `Indicá el motivo de suspensión de "${displayName}".`, confirmLabel: 'Suspender', confirmClass: 'bg-amber-600 hover:bg-amber-700', requireReason: true },
-    reactivate: { title: 'Reactivar proveedor',description: `¿Reactivar a "${displayName}"? Volverá a aparecer en el catálogo.`, confirmLabel: 'Reactivar', confirmClass: 'bg-emerald-600 hover:bg-emerald-700', requireReason: false },
+    suspend:    { title: 'Suspender proveedor', description: `Indicá el motivo de suspensión de "${displayName}".`, confirmLabel: 'Suspender', confirmClass: 'bg-amber-600 hover:bg-amber-700', requireReason: true },
+    deactivate: { title: 'Desactivar proveedor',description: `Indicá el motivo de desactivación de "${displayName}".`, confirmLabel: 'Desactivar', confirmClass: 'bg-red-600 hover:bg-red-700', requireReason: true },
+    activate:   { title: 'Activar proveedor',   description: `¿Activar a "${displayName}"? Volverá a aparecer en el catálogo.`, confirmLabel: 'Activar', confirmClass: 'bg-emerald-600 hover:bg-emerald-700', requireReason: false },
   };
 
   return (
@@ -147,24 +145,22 @@ export default function AdminProviderDetailPage() {
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2 mb-8">
-        {provider.status === 'pending' && (
+        <Link href={`/admin/proveedores/${id}/editar`} className="flex items-center gap-2 px-4 py-2.5 border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 rounded-xl text-sm font-semibold transition-colors">
+          <Pencil size={15} /> Editar
+        </Link>
+        {provider.status === 'active' && (
           <>
-            <button onClick={() => setModal('approve')} className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors">
-              <Check size={15} /> Aprobar
+            <button onClick={() => setModal('suspend')} className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-semibold transition-colors">
+              <Pause size={15} /> Suspender
             </button>
-            <button onClick={() => setModal('reject')} className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors">
-              <X size={15} /> Rechazar
+            <button onClick={() => setModal('deactivate')} className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors">
+              <Ban size={15} /> Desactivar
             </button>
           </>
         )}
-        {provider.status === 'approved' && (
-          <button onClick={() => setModal('suspend')} className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-semibold transition-colors">
-            <Pause size={15} /> Suspender
-          </button>
-        )}
-        {(provider.status === 'rejected' || provider.status === 'suspended') && (
-          <button onClick={() => setModal('reactivate')} className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors">
-            <RotateCcw size={15} /> Reactivar
+        {(provider.status === 'suspended' || provider.status === 'inactive') && (
+          <button onClick={() => setModal('activate')} className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors">
+            <RotateCcw size={15} /> Activar
           </button>
         )}
       </div>
@@ -172,10 +168,14 @@ export default function AdminProviderDetailPage() {
       {/* Info grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
         <InfoCard title="Información del negocio">
-          <InfoRow label="Razón social" value={displayName} />
+          <InfoRow label="Nombre comercial" value={displayName} />
+          <InfoRow label="Razón social" value={provider.legalName || '—'} />
+          <InfoRow label="RUT" value={provider.taxId || '—'} />
           <InfoRow label="Categoría" value={provider.categoryLabel} />
-          <InfoRow label="Zona" value={provider.zones?.join(', ') || provider.zone} />
-          <InfoRow label="Descripción" value={provider.description} />
+          <InfoRow label="Ciudad / Depto" value={[provider.city, provider.department].filter(Boolean).join(' / ') || '—'} />
+          <InfoRow label="Dirección" value={provider.address || '—'} />
+          <InfoRow label="Zonas" value={provider.zones?.join(', ') || '—'} />
+          <InfoRow label="Descripción" value={provider.description || '—'} />
         </InfoCard>
         <InfoCard title="Contacto">
           <InfoRow label="Responsable" value={provider.ownerName || provider.owner?.name || '—'} />
@@ -183,10 +183,15 @@ export default function AdminProviderDetailPage() {
           <InfoRow label="Teléfono" value={provider.phone || provider.owner?.phone || '—'} />
           <InfoRow label="WhatsApp" value={provider.whatsapp || '—'} />
         </InfoCard>
+        <InfoCard title="Comercial">
+          <InfoRow label="Comisión" value={provider.commissionRate != null ? `${(provider.commissionRate * 100).toFixed(1)}%` : 'Default de la plataforma'} />
+          <InfoRow label="Moneda" value={provider.currency || '—'} />
+          <InfoRow label="Método de cobro" value={provider.paymentMethod || '—'} />
+        </InfoCard>
         <InfoCard title="Plataforma">
           <InfoRow label="ID" value={provider.id} mono />
           <InfoRow label="Registrado" value={safeFormatDate(provider.createdAt, '—')} />
-          <InfoRow label="Aprobado" value={safeFormatDate(provider.approvedAt, '—')} />
+          <InfoRow label="Activo desde" value={safeFormatDate(provider.approvedAt, '—')} />
           <InfoRow label="Rating" value={provider.rating ? `${provider.rating} (${provider.reviewCount} reseñas)` : '—'} />
         </InfoCard>
         <InfoCard title="Estadísticas">
@@ -195,6 +200,11 @@ export default function AdminProviderDetailPage() {
           <InfoRow label="Verificado" value={provider.verified ? 'Sí' : 'No'} />
           <InfoRow label="Precio desde" value={provider.priceFrom ? `$${formatCurrency(provider.priceFrom)}` : '—'} />
         </InfoCard>
+        {provider.internalNotes && (
+          <InfoCard title="Notas internas">
+            <p className="text-sm text-gray-300 whitespace-pre-wrap">{provider.internalNotes}</p>
+          </InfoCard>
+        )}
       </div>
 
       {/* Services */}

@@ -50,9 +50,9 @@ function mapService(s) {
 
 // Feed de actividad compuesto de datos reales (proveedores/servicios/reservas
 // recientes). Preparado para reemplazar por GET /admin/activity (admin_logs).
-function buildActivity({ pendingProviders, recentServices, recentBookings }) {
+function buildActivity({ recentProviders, recentServices, recentBookings }) {
   const items = [];
-  pendingProviders.forEach((p) => items.push({ type: 'provider', icon: '🏪', text: `Nuevo proveedor: ${p.businessName}`, date: p.createdAt }));
+  recentProviders.forEach((p) => items.push({ type: 'provider', icon: '🏪', text: `Proveedor creado: ${p.businessName}`, date: p.createdAt }));
   recentServices.forEach((s) => items.push({ type: 'service', icon: '📦', text: `Servicio publicado: ${s.title}`, date: s.createdAt }));
   recentBookings.forEach((b) => items.push({ type: 'booking', icon: '📅', text: `Reserva ${b.requestNumber} · ${b.clientName}`, date: b.createdAt }));
   return items
@@ -63,7 +63,6 @@ function buildActivity({ pendingProviders, recentServices, recentBookings }) {
 
 function buildAlerts(stats, topCategories) {
   const alerts = [];
-  if (stats.providers.pending > 0) alerts.push({ tone: 'amber', text: `${stats.providers.pending} proveedor${stats.providers.pending !== 1 ? 'es' : ''} esperando aprobación.`, href: '/admin/proveedores' });
   if (stats.services.pendingReview > 0) alerts.push({ tone: 'blue', text: `${stats.services.pendingReview} servicio${stats.services.pendingReview !== 1 ? 's' : ''} pendiente${stats.services.pendingReview !== 1 ? 's' : ''} de revisión.`, href: '/admin/servicios' });
   if (stats.bookings.pending > 0) alerts.push({ tone: 'gray', text: `${stats.bookings.pending} reserva${stats.bookings.pending !== 1 ? 's' : ''} pendiente${stats.bookings.pending !== 1 ? 's' : ''} de respuesta del proveedor.`, href: '/admin/reservas?status=pending' });
   const emptyCats = (topCategories || []).filter((c) => parseInt(c.service_count) === 0);
@@ -73,9 +72,9 @@ function buildAlerts(stats, topCategories) {
 
 export const adminDashboardService = {
   async getDashboard() {
-    const [dash, pending, bookings, services, monthly] = await Promise.all([
+    const [dash, recent, bookings, services, monthly] = await Promise.all([
       api.get('/admin/dashboard'),
-      api.get(`/admin/providers${buildQuery({ status: 'pending', limit: 5 })}`).catch(() => ({ data: [] })),
+      api.get(`/admin/providers${buildQuery({ limit: 5 })}`).catch(() => ({ data: [] })),
       api.get(`/admin/bookings${buildQuery({ limit: 6 })}`).catch(() => ({ data: [] })),
       api.get(`/admin/services${buildQuery({ limit: 6 })}`).catch(() => ({ data: [] })),
       api.get('/admin/metrics/monthly').catch(() => ({ data: [] })),
@@ -84,7 +83,7 @@ export const adminDashboardService = {
 
     const stats = {
       users:     { total: d.users?.total || 0, clients: d.users?.clients || 0, providers: d.users?.providers || 0, newLast30: d.users?.newLast30 || 0 },
-      providers: { total: d.providers?.total || 0, pending: d.providers?.pending || 0, approved: d.providers?.approved || 0, rejected: d.providers?.rejected || 0, suspended: d.providers?.suspended || 0 },
+      providers: { total: d.providers?.total || 0, active: d.providers?.active || 0, suspended: d.providers?.suspended || 0, inactive: d.providers?.inactive || 0 },
       services:  { total: d.services?.total || 0, active: d.services?.active || 0, pendingReview: d.services?.pendingReview || 0, draft: d.services?.draft || 0 },
       bookings:  { total: d.bookings?.total || 0, pending: d.bookings?.pending || 0, accepted: d.bookings?.accepted || 0, completed: d.bookings?.completed || 0, rejected: d.bookings?.rejected || 0, cancelled: d.bookings?.cancelled || 0 },
       revenue:   { gmv: num(d.revenue?.gmv), totalCommission: num(d.revenue?.totalCommission) },
@@ -93,7 +92,7 @@ export const adminDashboardService = {
     stats.revenue.avgTicket = confirmed > 0 ? Math.round(stats.revenue.gmv / confirmed) : 0;
     stats.bookings.active = stats.bookings.pending + stats.bookings.accepted;
 
-    const pendingProviders = (pending.data || []).map(mapProvider);
+    const recentProviders = (recent.data || []).map(mapProvider);
     const recentBookings = (bookings.data || []).map(mapBooking);
     const recentServices = (services.data || []).map(mapService);
 
@@ -113,10 +112,10 @@ export const adminDashboardService = {
       topCategories: d.topCategories || [],
       monthlyNewUsers: d.monthlyNewUsers || [],
       monthlyMetrics,
-      pendingProviders,
+      recentProviders,
       recentBookings,
       recentServices,
-      activity: buildActivity({ pendingProviders, recentServices, recentBookings }),
+      activity: buildActivity({ recentProviders, recentServices, recentBookings }),
       alerts: buildAlerts(stats, d.topCategories),
     };
   },

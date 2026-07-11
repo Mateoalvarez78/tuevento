@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Search, ChevronRight } from 'lucide-react';
+import { Search, ChevronRight, Plus } from 'lucide-react';
 import { useAdminProviders } from '@/hooks/useAdmin';
 import ProviderStatusBadge from '@/components/ProviderStatusBadge';
 import { PROVIDER_STATUS } from '@/utils/constants';
@@ -10,10 +10,9 @@ import { safeFormatDate } from '@/lib/date';
 
 const STATUS_TABS = [
   { value: '', label: 'Todos' },
-  { value: 'pending', label: 'Pendientes' },
-  { value: 'approved', label: 'Aprobados' },
-  { value: 'rejected', label: 'Rechazados' },
+  { value: 'active', label: 'Activos' },
   { value: 'suspended', label: 'Suspendidos' },
+  { value: 'inactive', label: 'Desactivados' },
 ];
 
 export default function AdminProveedoresPage() {
@@ -40,6 +39,12 @@ export default function AdminProveedoresPage() {
           <h1 className="text-2xl font-bold text-white">Proveedores</h1>
           <p className="text-gray-400 text-sm mt-1">{providers.length} en total</p>
         </div>
+        <Link
+          href="/admin/proveedores/nuevo"
+          className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors shadow-sm"
+        >
+          <Plus size={16} /> Nuevo proveedor
+        </Link>
       </div>
 
       {/* Search */}

@@ -66,19 +66,18 @@ export default async function HomePage() {
   return (
     <>
       {/* ── HERO ───────────────────────────────────────────────────────── */}
-      <section className="relative min-h-[620px] sm:min-h-[700px] flex items-center overflow-hidden">
+      <section className="relative min-h-[620px] sm:min-h-[700px] flex items-center">
         {/* Background */}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 overflow-hidden">
           <img
             src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1600&q=80"
             alt="Evento"
             className="w-full h-full object-cover object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-gray-950/95 via-gray-900/75 to-gray-800/30" />
+          {/* Decorative glow */}
+          <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
         </div>
-
-        {/* Decorative glow */}
-        <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
           {/* Headline block — ancho restringido para legibilidad */}
@@ -299,16 +298,16 @@ export default async function HomePage() {
             ¿Ofrecés servicios para eventos?
           </h2>
           <p className="text-gray-400 mb-8 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
-            Unite a más de 500 proveedores verificados y conectá con miles de clientes que buscan
-            tus servicios. Sin suscripción mensual para empezar.
+            Eventonow es un marketplace curado: nuestro equipo evalúa y da de alta a cada
+            proveedor. Contanos sobre tu negocio y te contactamos.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
-            <Link
-              href="/proveedor/registro"
+            <a
+              href="mailto:hola@eventonow.com?subject=Quiero%20ser%20proveedor"
               className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold px-8 py-4 rounded-xl transition-colors text-sm sm:text-base shadow-lg shadow-primary/30"
             >
-              Publicar mi servicio gratis <ArrowRight size={18} />
-            </Link>
+              Quiero ser proveedor <ArrowRight size={18} />
+            </a>
             <Link
               href="/#como-funciona"
               className="inline-flex items-center justify-center gap-2 border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 font-semibold px-8 py-4 rounded-xl transition-colors text-sm sm:text-base"

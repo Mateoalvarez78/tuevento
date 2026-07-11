@@ -7,7 +7,7 @@ const COMPANY_LINKS = [
   { label: 'Nosotros',           href: '#' },
   { label: 'Blog',               href: '#' },
   { label: 'Cómo funciona',      href: '/#como-funciona' },
-  { label: 'Para proveedores',   href: '/proveedor/registro' },
+  { label: 'Para proveedores',   href: 'mailto:hola@eventonow.com?subject=Quiero%20ser%20proveedor' },
   { label: 'Términos y cond.',   href: '#' },
   { label: 'Privacidad',         href: '#' },
 ];
