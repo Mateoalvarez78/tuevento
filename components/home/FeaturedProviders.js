@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { Store } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
 import ServiceCard from '@/components/ServiceCard';
 import SkeletonCard from '@/components/SkeletonCard';
 import { providerService } from '@/services/providerService';
@@ -42,15 +43,13 @@ export default function FeaturedProviders() {
     return (
       <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
         <div className="w-12 h-12 rounded-2xl bg-primary-light flex items-center justify-center mx-auto mb-3">
-          <Store size={22} className="text-primary" />
+          <AppIcon icon={Store} size={22} className="text-primary" aria-hidden="true" />
         </div>
         <h3 className="font-bold text-gray-800">Muy pronto, proveedores destacados</h3>
         <p className="text-sm text-gray-500 mt-1 mb-5 max-w-sm mx-auto">
           Estamos sumando proveedores verificados en Uruguay. Mientras tanto, explorá el catálogo.
         </p>
-        <Link href="/catalogo" className="inline-block bg-primary text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-primary-dark transition-colors text-sm">
-          Explorar servicios
-        </Link>
+        <Button href="/catalogo">Explorar servicios</Button>
       </div>
     );
   }

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Plus, Pencil, Trash2, Eye, EyeOff, ArrowLeft, Clock } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, EyeOff, ArrowLeft, Clock } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import { serviceService } from '@/services/serviceService';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
+import Modal from '@/components/Modal';
 
 const SALON_SLUG = 'salon-de-fiestas';
 
@@ -135,26 +136,24 @@ export default function MenuManager({ service, onClose, onChanged }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !saving && onClose()} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg z-10 max-h-[90vh] flex flex-col">
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div className="min-w-0">
-            <h3 className="text-lg font-bold text-gray-900 truncate">{isSalon ? 'Paquetes del salón' : 'Menús / opciones'}</h3>
-            <p className="text-xs text-gray-500 truncate">{service.title}</p>
-          </div>
-          <Button iconOnly icon={X} variant="ghost" size="sm" aria-label="Cerrar" onClick={onClose} />
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* ── FORM VIEW ── */}
+    <Modal
+      open
+      onClose={() => !saving && onClose()}
+      title={isSalon ? 'Paquetes del salón' : 'Menús / opciones'}
+    >
+      <p className="text-xs text-gray-500 truncate -mt-4 mb-4">{service.title}</p>
+      {/* ── FORM VIEW ── */}
           {form ? (
             <div className="space-y-3">
-              <button onClick={() => { setForm(null); setEditingId(null); }} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-1">
-                <AppIcon icon={ArrowLeft} size={14} aria-hidden="true" /> Volver a la lista
-              </button>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={ArrowLeft}
+                className="!px-0 !py-1 text-gray-500 hover:text-gray-700 mb-1"
+                onClick={() => { setForm(null); setEditingId(null); }}
+              >
+                Volver a la lista
+              </Button>
               <h4 className="font-bold text-gray-900">
                 {editingId ? (isSalon ? 'Editar paquete' : 'Editar menú') : (isSalon ? 'Nuevo paquete' : 'Nuevo menú')}
               </h4>
@@ -330,8 +329,6 @@ export default function MenuManager({ service, onClose, onChanged }) {
               )}
             </>
           )}
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

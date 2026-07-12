@@ -11,6 +11,7 @@
 
 import { useEffect, useId, useRef } from 'react';
 import { MapPin } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
 import { useGoogleMapsScript } from '@/hooks/useGoogleMapsScript';
 import { ZONES } from '@/utils/constants';
 
@@ -107,7 +108,7 @@ export default function LocationAutocomplete({
       )}
       {status === 'no-key' && (
         <p className="absolute top-full left-0 mt-1 text-[10px] text-gray-400 flex items-center gap-1">
-          <MapPin size={9} /> Autocompletado de direcciones próximamente
+          <AppIcon icon={MapPin} size={9} aria-hidden="true" /> Autocompletado de direcciones próximamente
         </p>
       )}
     </div>

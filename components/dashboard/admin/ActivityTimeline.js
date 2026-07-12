@@ -1,6 +1,7 @@
 'use client';
 
 import { Store, Package, CalendarClock } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
 import { formatRelativeDate } from '@/lib/date';
 
 const TYPE_ICON = { provider: Store, service: Package, booking: CalendarClock };
@@ -22,7 +23,7 @@ export default function ActivityTimeline({ activity = [] }) {
             return (
               <li key={i} className="ml-4">
                 <span className="absolute -left-[9px] w-4 h-4 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center">
-                  <Icon size={9} className="text-gray-400" aria-hidden="true" />
+                  <AppIcon icon={Icon} size={9} className="text-gray-400" aria-hidden="true" />
                 </span>
                 <p className="text-sm text-gray-200 leading-tight">{a.text}</p>
                 <p className="text-[11px] text-gray-500 mt-0.5">{relative(a.date)}</p>

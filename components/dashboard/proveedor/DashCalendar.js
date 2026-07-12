@@ -1,20 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronLeft, ChevronRight, X, Phone, MessageCircle, Clock,
+  ChevronLeft, ChevronRight, Phone, MessageCircle,
   MapPin, Users, DollarSign, CalendarClock, FileText, CheckCircle2, AlertCircle,
 } from 'lucide-react';
 import { fmtFull } from '@/lib/commissionHelpers';
 import { parseApiDate } from '@/lib/date';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Drawer from '@/components/Drawer';
+import { CHART_COLORS } from '@/lib/chartTheme';
 
 const STATUS_STYLES = {
-  confirmed: { bg: 'bg-emerald-100',  text: 'text-emerald-700', dot: '#0BB885', label: 'Confirmada' },
-  pending:   { bg: 'bg-amber-100',    text: 'text-amber-700',   dot: '#F5A623', label: 'Pendiente'  },
-  completed: { bg: 'bg-blue-100',     text: 'text-blue-700',    dot: '#2563EB', label: 'Finalizada' },
-  cancelled: { bg: 'bg-red-100',      text: 'text-red-500',     dot: '#E84D2C', label: 'Cancelada'  },
-  rejected:  { bg: 'bg-red-100',      text: 'text-red-500',     dot: '#E84D2C', label: 'Rechazada'  },
+  confirmed: { bg: 'bg-emerald-100',  text: 'text-emerald-700', dot: CHART_COLORS.success, label: 'Confirmada' },
+  pending:   { bg: 'bg-amber-100',    text: 'text-amber-700',   dot: CHART_COLORS.warning, label: 'Pendiente'  },
+  completed: { bg: 'bg-blue-100',     text: 'text-blue-700',    dot: CHART_COLORS.info,    label: 'Finalizada' },
+  cancelled: { bg: 'bg-red-100',      text: 'text-red-500',     dot: CHART_COLORS.primary, label: 'Cancelada'  },
+  rejected:  { bg: 'bg-red-100',      text: 'text-red-500',     dot: CHART_COLORS.primary, label: 'Rechazada'  },
 };
 
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -37,162 +40,57 @@ function EventPill({ booking, onClick }) {
   );
 }
 
-// Widget compacto (no usado actualmente en ninguna pantalla, se mantiene por si se reutiliza).
-export function ProviderCalendar({ bookings = [], onTabChange }) {
-  const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
-  const [selected, setSelected] = useState(null);
-  const TODAY = todayStr();
-
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDay = new Date(year, month, 1).getDay();
-
-  const prevMonth = () => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); };
-  const nextMonth = () => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); };
-
-  const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
-  const monthBookings = bookings.filter((b) => b.date?.startsWith(monthStr));
-
-  const getDay = (d) => `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <div>
-          <h3 className="font-semibold text-gray-900 text-sm">Calendario</h3>
-          <p className="text-xs text-gray-400">{monthBookings.length} evento{monthBookings.length !== 1 ? 's' : ''} este mes</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={prevMonth} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors">
-            <ChevronLeft size={16} className="text-gray-500" />
-          </button>
-          <span className="text-sm font-semibold text-gray-800 w-28 text-center">
-            {MONTHS_ES[month]} {year}
-          </span>
-          <button onClick={nextMonth} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors">
-            <ChevronRight size={16} className="text-gray-500" />
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-100">
-        {DAYS.map((d) => (
-          <div key={d} className="text-center text-[11px] font-semibold text-gray-400 py-2">{d}</div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7 divide-x divide-y divide-gray-100">
-        {Array.from({ length: firstDay }).map((_, i) => (
-          <div key={`e${i}`} className="min-h-[80px] bg-gray-50/50" />
-        ))}
-        {Array.from({ length: daysInMonth }).map((_, i) => {
-          const day = i + 1;
-          const dateStr = getDay(day);
-          const dayBookings = bookings.filter((b) => b.date === dateStr);
-          const isToday = dateStr === TODAY;
-          const isPast = dateStr < TODAY;
-          return (
-            <div
-              key={day}
-              className={`min-h-[80px] p-1.5 relative transition-colors ${isPast && !isToday ? 'bg-gray-50/30' : 'hover:bg-gray-50/70'}`}
-            >
-              <div className={`inline-flex w-6 h-6 items-center justify-center rounded-full text-xs font-semibold mb-0.5 ${isToday ? 'bg-primary text-white' : 'text-gray-600'}`}>
-                {day}
-              </div>
-              {dayBookings.map((b) => (
-                <EventPill key={b.id} booking={b} onClick={setSelected} />
-              ))}
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="px-5 py-3 border-t border-gray-100 flex items-center gap-4 flex-wrap">
-        {Object.entries(STATUS_STYLES).map(([k, s]) => (
-          <div key={k} className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full" style={{ background: s.dot }} />
-            <span className="text-[11px] text-gray-500">{s.label}</span>
-          </div>
-        ))}
-        <button onClick={() => onTabChange?.('calendario')} className="ml-auto text-xs font-semibold text-primary hover:underline">
-          Vista completa →
-        </button>
-      </div>
-
-      <CalendarDrawer booking={selected} onClose={() => setSelected(null)} />
-    </div>
-  );
-}
-
 export function CalendarDrawer({ booking, onClose }) {
-  if (!booking) return null;
-  const s = STATUS_STYLES[booking.status] || STATUS_STYLES.pending;
-  const dateObj = parseApiDate(booking.date);
+  const dateObj = booking ? parseApiDate(booking.date) : null;
   const dateLabel = dateObj
     ? dateObj.toLocaleDateString('es-UY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
     : 'Fecha no disponible';
-  const gross = booking.totalEstimated || 0;
-  const commission = booking.commissionAmount || 0;
-  const net = booking.providerNet || 0;
+  const gross = booking?.totalEstimated || 0;
+  const commission = booking?.commissionAmount || 0;
+  const net = booking?.providerNet || 0;
+  const s = booking ? (STATUS_STYLES[booking.status] || STATUS_STYLES.pending) : null;
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex justify-end">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-          onClick={onClose}
-        />
-        <motion.div
-          initial={{ x: '100%' }}
-          animate={{ x: 0 }}
-          exit={{ x: '100%' }}
-          transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-          className="relative w-full max-w-sm bg-white shadow-2xl overflow-y-auto flex flex-col"
-        >
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
-            <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${s.bg} ${s.text}`}>
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.dot }} />
-              {s.label}
-            </span>
-            <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
-              <X size={16} />
-            </button>
-          </div>
-
-          <div className="px-5 pt-5 pb-4 border-b border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-lg font-bold text-gray-500 shrink-0">
-                {(booking.clientName || '?').charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <p className="font-bold text-gray-900">{booking.clientName}</p>
-                <p className="text-xs text-gray-500">{booking.eventType}</p>
-              </div>
+    <Drawer
+      open={!!booking}
+      onClose={onClose}
+      title={booking && (
+        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${s.bg} ${s.text}`}>
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.dot }} />
+          {s.label}
+        </span>
+      )}
+    >
+      {booking && (
+        <>
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-4">
+            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-lg font-bold text-gray-500 shrink-0">
+              {(booking.clientName || '?').charAt(0).toUpperCase()}
             </div>
-            {booking.clientPhone && (
-              <div className="flex gap-2 mt-3">
-                <a href={`tel:${booking.clientPhone}`} className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors">
-                  <Phone size={13} /> Llamar
-                </a>
-                <a href={`https://wa.me/${booking.clientPhone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-xl hover:bg-emerald-100 transition-colors">
-                  <MessageCircle size={13} /> WhatsApp
-                </a>
-              </div>
-            )}
+            <div>
+              <p className="font-bold text-gray-900">{booking.clientName}</p>
+              <p className="text-xs text-gray-500">{booking.eventType}</p>
+            </div>
           </div>
+          {booking.clientPhone && (
+            <div className="flex gap-2 mb-4">
+              <a href={`tel:${booking.clientPhone}`} className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors">
+                <AppIcon icon={Phone} size={13} aria-hidden="true" /> Llamar
+              </a>
+              <a href={`https://wa.me/${booking.clientPhone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-xl hover:bg-emerald-100 transition-colors">
+                <AppIcon icon={MessageCircle} size={13} aria-hidden="true" /> WhatsApp
+              </a>
+            </div>
+          )}
 
-          <div className="px-5 py-4 space-y-3 border-b border-gray-100">
-            <DetailRow icon={<CalendarClock size={15} className="text-primary" />} label="Fecha y hora" value={`${dateLabel}${booking.time ? `, ${booking.time}` : ''}`} />
-            <DetailRow icon={<MapPin size={15} className="text-primary" />} label="Ubicación" value={booking.location || '—'} />
-            <DetailRow icon={<Users size={15} className="text-primary" />} label="Invitados" value={`${booking.guests} personas`} />
-            <DetailRow icon={<DollarSign size={15} className="text-primary" />} label="Monto" value={fmtFull(gross)} sub={booking.depositPaid ? 'Seña pagada' : 'Seña pendiente'} subIcon={booking.depositPaid ? CheckCircle2 : AlertCircle} subColor={booking.depositPaid ? 'text-emerald-600' : 'text-amber-500'} />
-            <DetailRow icon={<FileText size={15} className="text-primary" />} label="Servicio" value={booking.serviceTitle || '—'} />
+          <div className="space-y-3 pb-4 border-b border-gray-100 mb-4">
+            <DetailRow icon={CalendarClock} label="Fecha y hora" value={`${dateLabel}${booking.time ? `, ${booking.time}` : ''}`} />
+            <DetailRow icon={MapPin} label="Ubicación" value={booking.location || '—'} />
+            <DetailRow icon={Users} label="Invitados" value={`${booking.guests} personas`} />
+            <DetailRow icon={DollarSign} label="Monto" value={fmtFull(gross)} sub={booking.depositPaid ? 'Seña pagada' : 'Seña pendiente'} subIcon={booking.depositPaid ? CheckCircle2 : AlertCircle} subColor={booking.depositPaid ? 'text-emerald-600' : 'text-amber-500'} />
+            <DetailRow icon={FileText} label="Servicio" value={booking.serviceTitle || '—'} />
             {booking.message && (
-              <DetailRow icon={<FileText size={15} className="text-gray-400" />} label="Mensaje del cliente" value={booking.message} />
+              <DetailRow icon={FileText} label="Mensaje del cliente" iconClassName="text-gray-400" value={booking.message} />
             )}
             <div className="flex items-center justify-between pt-1">
               <span className="text-xs text-gray-400">Ref:</span>
@@ -201,7 +99,7 @@ export function CalendarDrawer({ booking, onClose }) {
           </div>
 
           {gross > 0 && (
-            <div className="px-5 py-4 border-b border-gray-100">
+            <div>
               <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-3">Desglose financiero</p>
               <div className="bg-gray-50 rounded-2xl p-4 space-y-2.5">
                 <div className="flex items-center justify-between">
@@ -219,22 +117,24 @@ export function CalendarDrawer({ booking, onClose }) {
               </div>
             </div>
           )}
-        </motion.div>
-      </div>
-    </AnimatePresence>
+        </>
+      )}
+    </Drawer>
   );
 }
 
-function DetailRow({ icon, label, value, sub, subIcon: SubIcon, subColor = 'text-gray-400' }) {
+function DetailRow({ icon, label, value, sub, subIcon, subColor = 'text-gray-400', iconClassName = 'text-primary' }) {
   return (
     <div className="flex items-start gap-2.5">
-      <div className="w-5 shrink-0 mt-0.5">{icon}</div>
+      <div className="w-5 shrink-0 mt-0.5">
+        <AppIcon icon={icon} size={15} className={iconClassName} aria-hidden="true" />
+      </div>
       <div className="flex-1 min-w-0">
         <p className="text-[11px] text-gray-400 font-medium">{label}</p>
         <p className="text-sm text-gray-800 font-medium leading-snug">{value}</p>
         {sub && (
           <p className={`flex items-center gap-1 text-[11px] font-medium ${subColor} mt-0.5`}>
-            {SubIcon && <SubIcon size={11} aria-hidden="true" />}
+            {subIcon && <AppIcon icon={subIcon} size={11} aria-hidden="true" />}
             {sub}
           </p>
         )}
@@ -259,47 +159,47 @@ export function FullCalendarView({ bookings = [] }) {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Calendario</h2>
           <p className="text-sm text-gray-400">Gestión de reservas y disponibilidad</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={prevMonth} className="w-9 h-9 rounded-xl border border-gray-200 hover:bg-gray-50 flex items-center justify-center transition-colors">
-            <ChevronLeft size={16} />
-          </button>
+          <Button iconOnly icon={ChevronLeft} variant="outline" size="sm" aria-label="Mes anterior" onClick={prevMonth} />
           <span className="text-base font-bold text-gray-900 w-36 text-center">{MONTHS_ES[month]} {year}</span>
-          <button onClick={nextMonth} className="w-9 h-9 rounded-xl border border-gray-200 hover:bg-gray-50 flex items-center justify-center transition-colors">
-            <ChevronRight size={16} />
-          </button>
+          <Button iconOnly icon={ChevronRight} variant="outline" size="sm" aria-label="Mes siguiente" onClick={nextMonth} />
         </div>
       </div>
 
-      <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-100">
-        {DAYS.map((d) => (
-          <div key={d} className="text-center text-xs font-semibold text-gray-500 py-3">{d}</div>
-        ))}
-      </div>
+      <div className="overflow-x-auto">
+        <div className="min-w-[640px]">
+          <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-100">
+            {DAYS.map((d) => (
+              <div key={d} className="text-center text-xs font-semibold text-gray-500 py-3">{d}</div>
+            ))}
+          </div>
 
-      <div className="grid grid-cols-7 divide-x divide-y divide-gray-100">
-        {Array.from({ length: firstDay }).map((_, i) => <div key={`e${i}`} className="min-h-[110px] bg-gray-50/30" />)}
-        {Array.from({ length: daysInMonth }).map((_, i) => {
-          const day = i + 1;
-          const dateStr = getDay(day);
-          const dayBookings = bookings.filter((b) => b.date === dateStr);
-          const isToday = dateStr === TODAY;
-          const isPast = dateStr < TODAY;
-          const total = dayBookings.reduce((s, b) => s + (b.totalEstimated || 0), 0);
-          return (
-            <div key={day} className={`min-h-[110px] p-2 relative ${isPast && !isToday ? 'bg-gray-50/30' : 'hover:bg-blue-50/20 transition-colors'}`}>
-              <div className={`inline-flex w-7 h-7 items-center justify-center rounded-full text-sm font-bold mb-1 ${isToday ? 'bg-primary text-white' : isPast ? 'text-gray-400' : 'text-gray-700'}`}>
-                {day}
-              </div>
-              {dayBookings.map((b) => <EventPill key={b.id} booking={b} onClick={setSelected} />)}
-              {total > 0 && <div className="text-[9px] text-gray-400 mt-1 font-medium">${(total / 1000).toFixed(0)}K</div>}
-            </div>
-          );
-        })}
+          <div className="grid grid-cols-7 divide-x divide-y divide-gray-100">
+            {Array.from({ length: firstDay }).map((_, i) => <div key={`e${i}`} className="min-h-[110px] bg-gray-50/30" />)}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const dateStr = getDay(day);
+              const dayBookings = bookings.filter((b) => b.date === dateStr);
+              const isToday = dateStr === TODAY;
+              const isPast = dateStr < TODAY;
+              const total = dayBookings.reduce((s, b) => s + (b.totalEstimated || 0), 0);
+              return (
+                <div key={day} className={`min-h-[110px] p-2 relative ${isPast && !isToday ? 'bg-gray-50/30' : 'hover:bg-blue-50/20 transition-colors'}`}>
+                  <div className={`inline-flex w-7 h-7 items-center justify-center rounded-full text-sm font-bold mb-1 ${isToday ? 'bg-primary text-white' : isPast ? 'text-gray-400' : 'text-gray-700'}`}>
+                    {day}
+                  </div>
+                  {dayBookings.map((b) => <EventPill key={b.id} booking={b} onClick={setSelected} />)}
+                  {total > 0 && <div className="text-[9px] text-gray-400 mt-1 font-medium">${(total / 1000).toFixed(0)}K</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       <div className="px-6 py-3 border-t border-gray-100 flex items-center gap-5 flex-wrap">

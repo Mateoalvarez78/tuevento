@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ExternalLink, Package } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
 import ServiceStatusBadge from '@/components/ServiceStatusBadge';
 import { safeFormatDate } from '@/lib/date';
 
@@ -21,15 +22,15 @@ export default function RecentServices({ services = [] }) {
           {services.map((s) => (
             <div key={s.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-950 border border-gray-800">
               <span className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
-                <Package size={16} className="text-gray-500" aria-hidden="true" />
+                <AppIcon icon={Package} size={16} className="text-gray-500" aria-hidden="true" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-gray-100 truncate">{s.title}</p>
                 <p className="text-xs text-gray-500 truncate">{s.providerName} · {s.category} · {fmtDate(s.createdAt)}</p>
               </div>
               <ServiceStatusBadge status={s.status} />
-              <Link href={`/proveedor/${s.id}`} target="_blank" className="p-1.5 text-gray-500 hover:text-primary transition-colors shrink-0" title="Ver">
-                <ExternalLink size={15} />
+              <Link href={`/proveedor/${s.id}`} target="_blank" className="p-1.5 text-gray-500 hover:text-primary transition-colors shrink-0" aria-label="Ver">
+                <AppIcon icon={ExternalLink} size={15} aria-hidden="true" />
               </Link>
             </div>
           ))}

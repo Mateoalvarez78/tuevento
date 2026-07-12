@@ -3,6 +3,8 @@ import { ArrowRight, Star, Search, Users, CalendarCheck, Store, CheckCircle2 } f
 import SearchBar from '@/components/SearchBar';
 import CategoryCard from '@/components/CategoryCard';
 import FeaturedProviders from '@/components/home/FeaturedProviders';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
 import { categoryService } from '@/services/categoryService';
 
 export const metadata = {
@@ -110,7 +112,7 @@ export default async function HomePage() {
                 href={`/catalogo?categories=${cat.id}`}
                 className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-white/70 border border-white/20 hover:border-white/60 hover:bg-white/10 hover:text-white px-3.5 py-1.5 rounded-full transition-all"
               >
-                <cat.icon size={14} aria-hidden="true" />
+                <AppIcon icon={cat.icon} size={14} aria-hidden="true" />
                 {cat.label}
               </Link>
             ))}
@@ -144,7 +146,7 @@ export default async function HomePage() {
               href="/catalogo"
               className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-dark transition-colors"
             >
-              Ver todos <ArrowRight size={14} />
+              Ver todos <AppIcon icon={ArrowRight} size={14} aria-hidden="true" />
             </Link>
           </div>
           <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 gap-2.5 sm:gap-3">
@@ -153,12 +155,7 @@ export default async function HomePage() {
             ))}
           </div>
           <div className="flex justify-center mt-6 sm:hidden">
-            <Link
-              href="/catalogo"
-              className="text-sm font-semibold text-primary border border-primary/30 px-5 py-2.5 rounded-xl hover:bg-primary-light transition-colors"
-            >
-              Ver todas las categorías
-            </Link>
+            <Button variant="outline" href="/catalogo">Ver todas las categorías</Button>
           </div>
         </div>
       </section>
@@ -176,19 +173,16 @@ export default async function HomePage() {
               href="/catalogo"
               className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-dark transition-colors"
             >
-              Ver todos <ArrowRight size={14} />
+              Ver todos <AppIcon icon={ArrowRight} size={14} aria-hidden="true" />
             </Link>
           </div>
 
           <FeaturedProviders />
 
           <div className="flex justify-center mt-10">
-            <Link
-              href="/catalogo"
-              className="inline-flex items-center gap-2 border-2 border-primary text-primary font-semibold px-7 py-3 rounded-xl hover:bg-primary hover:text-white transition-colors text-sm"
-            >
-              Ver todos los proveedores <ArrowRight size={15} />
-            </Link>
+            <Button variant="outline" href="/catalogo">
+              Ver todos los proveedores <AppIcon icon={ArrowRight} size="button" aria-hidden="true" />
+            </Button>
           </div>
         </div>
       </section>
@@ -220,7 +214,7 @@ export default async function HomePage() {
                 {/* Circle + step number */}
                 <div className="relative mb-5">
                   <div className="w-20 h-20 rounded-full bg-primary shadow-lg shadow-primary/30 flex items-center justify-center">
-                    <Icon size={28} className="text-white" strokeWidth={2} />
+                    <AppIcon icon={Icon} size={28} className="text-white" strokeWidth={2} aria-hidden="true" />
                   </div>
                   <div className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-white border-2 border-primary rounded-full flex items-center justify-center shadow-sm">
                     <span className="text-[10px] font-extrabold text-primary leading-none">{i + 1}</span>
@@ -254,7 +248,7 @@ export default async function HomePage() {
                 {/* Stars */}
                 <div className="flex gap-0.5 mb-4">
                   {[1, 2, 3, 4, 5].map((s) => (
-                    <Star key={s} size={14} className="text-yellow-400 fill-current" />
+                    <AppIcon key={s} icon={Star} size={14} className="text-yellow-400 fill-current" aria-hidden="true" />
                   ))}
                 </div>
                 {/* Quote */}
@@ -295,7 +289,7 @@ export default async function HomePage() {
       <section className="py-16 sm:py-20 bg-gray-950">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-5">
-            <Store size={32} strokeWidth={1.5} className="text-primary" aria-hidden="true" />
+            <AppIcon icon={Store} size={32} strokeWidth={1.5} className="text-primary" aria-hidden="true" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
             ¿Ofrecés servicios para eventos?
@@ -305,23 +299,17 @@ export default async function HomePage() {
             proveedor. Contanos sobre tu negocio y te contactamos.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
-            <a
-              href="mailto:hola@eventonow.com?subject=Quiero%20ser%20proveedor"
-              className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold px-8 py-4 rounded-xl transition-colors text-sm sm:text-base shadow-lg shadow-primary/30"
-            >
-              Quiero ser proveedor <ArrowRight size={18} />
-            </a>
-            <Link
-              href="/#como-funciona"
-              className="inline-flex items-center justify-center gap-2 border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 font-semibold px-8 py-4 rounded-xl transition-colors text-sm sm:text-base"
-            >
+            <Button size="lg" className="shadow-lg shadow-primary/30" href="mailto:hola@eventonow.com?subject=Quiero%20ser%20proveedor">
+              Quiero ser proveedor <AppIcon icon={ArrowRight} size="button" aria-hidden="true" />
+            </Button>
+            <Button variant="outline" theme="dark" size="lg" href="/#como-funciona">
               Cómo funciona
-            </Link>
+            </Button>
           </div>
           <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-8">
             {['Gratis para empezar', 'Panel de gestión incluido', 'Soporte en español'].map((text) => (
               <div key={text} className="flex items-center justify-center gap-1.5 text-sm text-gray-500">
-                <CheckCircle2 size={15} className="text-green-500" aria-hidden="true" />
+                <AppIcon icon={CheckCircle2} size={15} className="text-green-500" aria-hidden="true" />
                 {text}
               </div>
             ))}

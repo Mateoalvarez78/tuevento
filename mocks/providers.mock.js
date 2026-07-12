@@ -1,6 +1,6 @@
 // ─── PROVIDER MOCK DATA ───────────────────────────────────────────────────────
 // PROVIDER_OVERRIDES: additional fields for the 8 approved providers
-// that live in lib/mockData.js (status, contact info, social media, etc.)
+// (status, contact info, social media, etc.)
 // providerService.js merges these with the base provider data.
 //
 // NEW_PROVIDERS: full data for providers in non-approved states.

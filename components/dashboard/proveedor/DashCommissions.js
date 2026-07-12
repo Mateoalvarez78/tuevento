@@ -7,15 +7,20 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import {
-  DollarSign, Percent, Info,
+  DollarSign, Percent,
   BarChart3, Calendar, AlertTriangle, ArrowUpRight,
 } from 'lucide-react';
 import {
   COMMISSION_LABEL, COMMISSION_DESCRIPTION, fmtUYU, fmtFull, trendPct,
 } from '@/lib/commissionHelpers';
+import { CHART_AXIS, CHART_GRID_LIGHT, CHART_COLORS } from '@/lib/chartTheme';
 import { providerDashboardService } from '@/services/providerDashboardService';
 import { safeFormatDate } from '@/lib/date';
 import MetricCard from '@/components/MetricCard';
+import InfoTooltip from '@/components/Tooltip';
+import Card from '@/components/Card';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } } };
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
@@ -29,23 +34,14 @@ const STATUS_PILL = {
 };
 const STATUS_LABEL = { accepted: 'Confirmada', pending: 'Pendiente', completed: 'Finalizada', cancelled: 'Cancelada', rejected: 'Rechazada' };
 
-function InfoTooltip({ text }) {
-  return (
-    <div className="group relative inline-flex">
-      <Info size={13} className="text-gray-300 hover:text-gray-400 cursor-default transition-colors" />
-      <div className="absolute bottom-full right-0 mb-2 w-64 bg-gray-900 text-white text-xs leading-relaxed px-3 py-2.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-        {text}
-        <div className="absolute top-full right-3 border-4 border-transparent border-t-gray-900" />
-      </div>
-    </div>
-  );
-}
-
+// Tooltip claro (misma superficie que el resto del dashboard de proveedor —
+// antes este archivo tenía su propia versión oscura, inconsistente con
+// ProviderOverview.js, que usa un tooltip claro para los mismos gráficos).
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-gray-900 text-white text-xs px-3.5 py-2.5 rounded-xl shadow-xl border border-gray-700">
-      <p className="font-semibold text-gray-300 mb-1.5">{label}</p>
+    <div className="bg-white text-gray-900 text-xs px-3.5 py-2.5 rounded-xl shadow-xl border border-gray-100">
+      <p className="font-semibold text-gray-500 mb-1.5">{label}</p>
       {payload.map((p) => (
         <div key={p.name} className="flex items-center justify-between gap-4 mb-0.5">
           <span style={{ color: p.fill || p.color }}>{p.name}</span>
@@ -56,19 +52,21 @@ function ChartTooltip({ active, payload, label }) {
   );
 }
 
-function Card({ title, subtitle, action, children, className = '' }) {
+function ChartCard({ title, subtitle, action, children, className = '' }) {
   return (
-    <motion.div variants={fadeUp} initial="hidden" animate="show" className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-5 ${className}`}>
-      {(title || action) && (
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-            {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+    <motion.div variants={fadeUp} initial="hidden" animate="show">
+      <Card padding="md" className={className}>
+        {(title || action) && (
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+              {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+            </div>
+            {action}
           </div>
-          {action}
-        </div>
-      )}
-      {children}
+        )}
+        {children}
+      </Card>
     </motion.div>
   );
 }
@@ -136,7 +134,7 @@ function SummaryCards({ byMonth, summary }) {
 
 function GrossVsNetChart({ byMonth }) {
   return (
-    <Card
+    <ChartCard
       title="Bruto vs. Neto por mes"
       subtitle="Últimos meses con actividad"
       action={
@@ -149,16 +147,16 @@ function GrossVsNetChart({ byMonth }) {
       <div style={{ width: '100%', height: 240 }}>
         <ResponsiveContainer>
           <BarChart data={byMonth} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_LIGHT} vertical={false} />
+            <XAxis dataKey="label" tick={CHART_AXIS} axisLine={false} tickLine={false} />
+            <YAxis tick={CHART_AXIS} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
             <Tooltip content={<ChartTooltip />} cursor={{ fill: '#f9fafb' }} />
-            <Bar dataKey="net"        name="Neto proveedor"    stackId="s" fill="#0BB885" radius={[0, 0, 4, 4]} maxBarSize={28} />
-            <Bar dataKey="commission" name="Comisión Eventonow" stackId="s" fill="#F97316" radius={[4, 4, 0, 0]} maxBarSize={28} />
+            <Bar dataKey="net"        name="Neto proveedor"    stackId="s" fill={CHART_COLORS.success} radius={[0, 0, 4, 4]} maxBarSize={28} />
+            <Bar dataKey="commission" name="Comisión Eventonow" stackId="s" fill={CHART_COLORS.commission} radius={[4, 4, 0, 0]} maxBarSize={28} />
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </Card>
+    </ChartCard>
   );
 }
 
@@ -167,11 +165,11 @@ function MoneyDistributionPie({ byMonth }) {
   const annualCommission = byMonth.reduce((s, m) => s + m.commission, 0);
   const annualNet        = byMonth.reduce((s, m) => s + m.net, 0);
   const pieData = [
-    { name: 'Ingreso neto',        value: annualNet,        color: '#0BB885' },
-    { name: 'Comisión Eventonow',  value: annualCommission, color: '#F97316' },
+    { name: 'Ingreso neto',        value: annualNet,        color: CHART_COLORS.success },
+    { name: 'Comisión Eventonow',  value: annualCommission, color: CHART_COLORS.commission },
   ];
   return (
-    <Card title="Distribución del dinero" subtitle="Períodos con actividad">
+    <ChartCard title="Distribución del dinero" subtitle="Períodos con actividad">
       <div className="flex items-center gap-4">
         <div style={{ width: 150, height: 150, flexShrink: 0 }}>
           <ResponsiveContainer>
@@ -213,13 +211,13 @@ function MoneyDistributionPie({ byMonth }) {
           </div>
         </div>
       </div>
-    </Card>
+    </ChartCard>
   );
 }
 
 function CommissionEvolutionChart({ byMonth }) {
   return (
-    <Card
+    <ChartCard
       title="Evolución de comisiones"
       subtitle="Comisión mensual descontada por Eventonow"
       action={<span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">{COMMISSION_LABEL} fijo</span>}
@@ -227,21 +225,21 @@ function CommissionEvolutionChart({ byMonth }) {
       <div style={{ width: '100%', height: 200 }}>
         <ResponsiveContainer>
           <LineChart data={byMonth} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_LIGHT} />
+            <XAxis dataKey="label" tick={CHART_AXIS} axisLine={false} tickLine={false} />
+            <YAxis tick={CHART_AXIS} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
             <Tooltip content={<ChartTooltip />} />
-            <Line type="monotone" dataKey="commission" name="Comisión Eventonow" stroke="#F97316" strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: '#F97316' }} />
+            <Line type="monotone" dataKey="commission" name="Comisión Eventonow" stroke={CHART_COLORS.commission} strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: CHART_COLORS.commission }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
-    </Card>
+    </ChartCard>
   );
 }
 
 function TransactionsTable({ transactions, summary }) {
   return (
-    <Card title="Detalle por reserva" subtitle="Desglose bruto · comisión · neto (últimas 50)">
+    <ChartCard title="Detalle por reserva" subtitle="Desglose bruto · comisión · neto (últimas 50)">
       <div className="overflow-x-auto -mx-5">
         <table className="w-full">
           <thead>
@@ -301,7 +299,7 @@ function TransactionsTable({ transactions, summary }) {
           <strong className="text-emerald-600 text-sm">{fmtFull(summary.net)}</strong>
         </div>
       </div>
-    </Card>
+    </ChartCard>
   );
 }
 
@@ -309,7 +307,7 @@ function TransparencyBanner() {
   return (
     <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-5 flex items-center gap-5">
       <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center shrink-0">
-        <Percent size={22} className="text-white" />
+        <AppIcon icon={Percent} size={22} className="text-white" aria-hidden="true" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-white font-bold text-sm mb-0.5">Comisión de plataforma</p>
@@ -353,12 +351,10 @@ export default function DashCommissions() {
   if (error) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
-        <AlertTriangle size={32} className="mx-auto text-amber-500 mb-3" />
+        <AppIcon icon={AlertTriangle} size={32} className="mx-auto text-amber-500 mb-3" aria-hidden="true" />
         <p className="text-gray-700 font-medium mb-1">No pudimos cargar tus finanzas</p>
         <p className="text-sm text-gray-500 mb-5">{error}</p>
-        <button onClick={load} className="px-5 py-2.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors text-sm">
-          Reintentar
-        </button>
+        <Button onClick={load}>Reintentar</Button>
       </div>
     );
   }

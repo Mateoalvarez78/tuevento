@@ -1,29 +1,37 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, SlidersHorizontal, ChevronDown, Check, Star } from 'lucide-react';
+import { useState, useEffect, useId } from 'react';
+import { SlidersHorizontal, ChevronDown, Check, Star } from 'lucide-react';
 import { categoryService } from '@/services/categoryService';
 import { ZONES } from '@/utils/constants';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Drawer from '@/components/Drawer';
 
 const RATINGS = [5, 4, 3];
 
 function Section({ title, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
+  const contentId = useId();
   return (
     <div>
       <button
         onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={contentId}
         className="flex items-center justify-between w-full py-3.5 group"
       >
         <span className="text-sm font-semibold text-gray-800 group-hover:text-primary transition-colors">
           {title}
         </span>
-        <ChevronDown
+        <AppIcon
+          icon={ChevronDown}
           size={15}
           className={`text-gray-400 transition-transform duration-200 ${open ? '' : '-rotate-90'}`}
+          aria-hidden="true"
         />
       </button>
-      {open && <div className="pb-4">{children}</div>}
+      {open && <div id={contentId} className="pb-4">{children}</div>}
     </div>
   );
 }
@@ -32,6 +40,8 @@ function CheckRow({ active, onClick, children, count }) {
   return (
     <button
       onClick={onClick}
+      role="checkbox"
+      aria-checked={active}
       className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-colors text-left group ${
         active ? 'bg-primary-light' : 'hover:bg-gray-50'
       }`}
@@ -41,7 +51,7 @@ function CheckRow({ active, onClick, children, count }) {
           active ? 'bg-primary border-primary' : 'border-gray-300 group-hover:border-primary/50'
         }`}
       >
-        {active && <Check size={10} className="text-white" />}
+        {active && <AppIcon icon={Check} size={10} className="text-white" aria-hidden="true" />}
       </div>
       <span className={`text-sm flex-1 min-w-0 truncate ${active ? 'text-primary font-semibold' : 'text-gray-600'}`}>
         {children}
@@ -128,7 +138,7 @@ export default function FilterSidebar({ filters, onChange, mobileOpen, onMobileC
               onClick={() => toggleCategory(cat.id)}
             >
               <span className="flex items-center gap-2">
-                <cat.icon size={16} aria-hidden="true" className="text-gray-500" />
+                <AppIcon icon={cat.icon} size={16} className="text-gray-500" aria-hidden="true" />
                 <span>{cat.label}</span>
               </span>
             </CheckRow>
@@ -151,10 +161,12 @@ export default function FilterSidebar({ filters, onChange, mobileOpen, onMobileC
               <span className="flex items-center gap-2">
                 <span className="flex gap-0.5">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <Star
+                    <AppIcon
                       key={i}
+                      icon={Star}
                       size={12}
                       className={i <= r ? 'text-yellow-400 fill-current' : 'text-gray-200'}
+                      aria-hidden="true"
                     />
                   ))}
                 </span>
@@ -172,23 +184,27 @@ export default function FilterSidebar({ filters, onChange, mobileOpen, onMobileC
         <div className="space-y-0.5">
           <button
             onClick={() => update('zone', '')}
+            role="checkbox"
+            aria-checked={!filters.zone}
             className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-sm transition-colors ${
               !filters.zone ? 'bg-primary-light text-primary font-semibold' : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
             <span>Todas las zonas</span>
-            {!filters.zone && <Check size={13} className="text-primary shrink-0" />}
+            {!filters.zone && <AppIcon icon={Check} size={13} className="text-primary shrink-0" aria-hidden="true" />}
           </button>
           {ZONES.map((z) => (
             <button
               key={z}
               onClick={() => update('zone', filters.zone === z ? '' : z)}
+              role="checkbox"
+              aria-checked={filters.zone === z}
               className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-sm transition-colors ${
                 filters.zone === z ? 'bg-primary-light text-primary font-semibold' : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
               <span>{z}</span>
-              {filters.zone === z && <Check size={13} className="text-primary shrink-0" />}
+              {filters.zone === z && <AppIcon icon={Check} size={13} className="text-primary shrink-0" aria-hidden="true" />}
             </button>
           ))}
         </div>
@@ -240,47 +256,34 @@ export default function FilterSidebar({ filters, onChange, mobileOpen, onMobileC
 
   /* ── MOBILE DRAWER ── */
   if (typeof mobileOpen !== 'undefined') {
-    return mobileOpen ? (
-      <div className="fixed inset-0 z-50 flex">
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onMobileClose} />
-        <div className="relative w-80 max-w-[90vw] bg-white shadow-2xl flex flex-col h-full">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal size={16} className="text-primary" />
-              <span className="font-semibold text-gray-900 text-sm">Filtros</span>
-              {activeCount > 0 && (
-                <span className="bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                  {activeCount}
-                </span>
-              )}
-            </div>
-            <button
-              onClick={onMobileClose}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto px-5 py-1">{content}</div>
-          <div className="px-5 py-4 border-t border-gray-100 flex gap-2">
+    return (
+      <Drawer
+        open={mobileOpen}
+        onClose={onMobileClose}
+        width="max-w-[90vw] w-80"
+        title={
+          <span className="flex items-center gap-2">
+            <AppIcon icon={SlidersHorizontal} size={16} className="text-primary" aria-hidden="true" />
+            Filtros
             {activeCount > 0 && (
-              <button
-                onClick={clearAll}
-                className="flex-1 py-3 border border-gray-200 text-gray-600 font-medium rounded-xl hover:bg-gray-50 text-sm transition-colors"
-              >
-                Limpiar
-              </button>
+              <span className="bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                {activeCount}
+              </span>
             )}
-            <button
-              onClick={onMobileClose}
-              className="flex-1 bg-primary text-white font-semibold py-3 rounded-xl hover:bg-primary-dark transition-colors text-sm"
-            >
-              Ver resultados
-            </button>
-          </div>
-        </div>
-      </div>
-    ) : null;
+          </span>
+        }
+        footer={
+          <>
+            {activeCount > 0 && (
+              <Button variant="outline" className="flex-1" onClick={clearAll}>Limpiar</Button>
+            )}
+            <Button className="flex-1" onClick={onMobileClose}>Ver resultados</Button>
+          </>
+        }
+      >
+        {content}
+      </Drawer>
+    );
   }
 
   /* ── DESKTOP SIDEBAR ── */
@@ -288,7 +291,7 @@ export default function FilterSidebar({ filters, onChange, mobileOpen, onMobileC
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <SlidersHorizontal size={15} className="text-primary" />
+          <AppIcon icon={SlidersHorizontal} size={15} className="text-primary" aria-hidden="true" />
           <span className="font-semibold text-gray-900 text-sm">Filtros</span>
           {activeCount > 0 && (
             <span className="bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
@@ -297,12 +300,9 @@ export default function FilterSidebar({ filters, onChange, mobileOpen, onMobileC
           )}
         </div>
         {activeCount > 0 && (
-          <button
-            onClick={clearAll}
-            className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
-          >
+          <Button variant="ghost" size="sm" className="!text-red-500 hover:!text-red-700" onClick={clearAll}>
             Limpiar
-          </button>
+          </Button>
         )}
       </div>
       <div className="px-4">{content}</div>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Star } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
 
 /**
  * Estrellas de calificación reutilizables.
@@ -16,7 +17,7 @@ export default function RatingStars({ rating = 0, size = 14, interactive = false
     return (
       <div className={`flex items-center gap-0.5 ${className}`}>
         {[1, 2, 3, 4, 5].map((i) => (
-          <Star key={i} size={size} className={i <= Math.round(rating) ? 'star-filled fill-current' : 'star-empty'} />
+          <AppIcon key={i} icon={Star} size={size} aria-hidden="true" className={i <= Math.round(rating) ? 'star-filled fill-current' : 'star-empty'} />
         ))}
       </div>
     );
@@ -34,7 +35,7 @@ export default function RatingStars({ rating = 0, size = 14, interactive = false
           className="p-0.5 transition-transform hover:scale-110"
           aria-label={`${i} estrellas`}
         >
-          <Star size={size} className={i <= active ? 'text-yellow-400 fill-current' : 'text-gray-200'} />
+          <AppIcon icon={Star} size={size} aria-hidden="true" className={i <= active ? 'text-yellow-400 fill-current' : 'text-gray-200'} />
         </button>
       ))}
     </div>

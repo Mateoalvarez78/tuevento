@@ -11,6 +11,8 @@ import PackageSelector from '@/components/PackageSelector';
 import ReviewCard from '@/components/ReviewCard';
 import RatingStars from '@/components/RatingStars';
 import EmptyState from '@/components/EmptyState';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
 import { BADGE_CONFIG } from '@/components/ServiceCard';
 
 const REVIEWS_PAGE_SIZE = 6;
@@ -23,7 +25,7 @@ function RatingDistribution({ distribution, total }) {
         const pct = total > 0 ? Math.round((count / total) * 100) : 0;
         return (
           <div key={star} className="flex items-center gap-2 text-xs">
-            <span className="w-10 flex items-center gap-0.5 text-gray-500 font-medium shrink-0">{star} <Star size={11} aria-hidden="true" /></span>
+            <span className="w-10 flex items-center gap-0.5 text-gray-500 font-medium shrink-0">{star} <AppIcon icon={Star} size={11} aria-hidden="true" /></span>
             <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
               <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${pct}%` }} />
             </div>
@@ -167,10 +169,9 @@ export default function ProviderDetailPage({ params }) {
                   {(provider.badges || []).map((b) => {
                     const cfg = BADGE_CONFIG[b];
                     if (!cfg) return null;
-                    const Icon = cfg.icon;
                     return (
                       <span key={b} className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.className}`}>
-                        <Icon size={12} aria-hidden="true" /> {cfg.label}
+                        <AppIcon icon={cfg.icon} size={12} aria-hidden="true" /> {cfg.label}
                       </span>
                     );
                   })}
@@ -178,13 +179,22 @@ export default function ProviderDetailPage({ params }) {
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">{provider.name}</h1>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <button onClick={handleFav} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-all ${fav ? 'border-primary bg-primary-light text-primary' : 'border-gray-200 text-gray-600 hover:border-primary/40'}`}>
-                  <Heart size={16} className={fav ? 'fill-primary' : ''} />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={Heart}
+                  className={fav ? '!border-primary !bg-primary-light !text-primary' : ''}
+                  onClick={handleFav}
+                >
                   <span className="hidden sm:inline">{fav ? 'Guardado' : 'Guardar'}</span>
-                </button>
-                <button onClick={() => { navigator.share?.({ title: provider.name, url: window.location.href }) || showToast('Enlace copiado', 'success'); }} className="p-2 rounded-xl border border-gray-200 text-gray-600 hover:border-primary/40 transition-all">
-                  <Share2 size={16} />
-                </button>
+                </Button>
+                <Button
+                  iconOnly
+                  variant="outline"
+                  icon={Share2}
+                  aria-label="Compartir"
+                  onClick={() => { navigator.share?.({ title: provider.name, url: window.location.href }) || showToast('Enlace copiado', 'success'); }}
+                />
               </div>
             </div>
 
@@ -197,16 +207,16 @@ export default function ProviderDetailPage({ params }) {
               </div>
               {provider.zone && (
                 <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                  <MapPin size={14} />
+                  <AppIcon icon={MapPin} size={14} aria-hidden="true" />
                   {provider.zone}
                 </div>
               )}
               <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                <Clock size={14} />
+                <AppIcon icon={Clock} size={14} aria-hidden="true" />
                 {provider.responseTime}
               </div>
               <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                <CalendarDays size={14} />
+                <AppIcon icon={CalendarDays} size={14} aria-hidden="true" />
                 {provider.totalBookings}+ eventos realizados
               </div>
             </div>
@@ -220,9 +230,10 @@ export default function ProviderDetailPage({ params }) {
               {provider.longDescription && provider.longDescription !== provider.description && (
                 <button
                   onClick={() => setDescExpanded((v) => !v)}
+                  aria-expanded={descExpanded}
                   className="mt-2 text-sm text-primary font-medium flex items-center gap-1 hover:underline"
                 >
-                  {descExpanded ? <><ChevronUp size={14} /> Ver menos</> : <><ChevronDown size={14} /> Leer más</>}
+                  {descExpanded ? <><AppIcon icon={ChevronUp} size={14} aria-hidden="true" /> Ver menos</> : <><AppIcon icon={ChevronDown} size={14} aria-hidden="true" /> Leer más</>}
                 </button>
               )}
             </div>
@@ -261,7 +272,7 @@ export default function ProviderDetailPage({ params }) {
                 <div className="flex flex-wrap gap-2">
                   {provider.zones.map((z) => (
                     <span key={z} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-full">
-                      <MapPin size={12} /> {z}
+                      <AppIcon icon={MapPin} size={12} aria-hidden="true" /> {z}
                     </span>
                   ))}
                 </div>
@@ -295,10 +306,11 @@ export default function ProviderDetailPage({ params }) {
                     <div key={i} className="border border-gray-100 rounded-2xl overflow-hidden">
                       <button
                         onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                        aria-expanded={openFaq === i}
                         className="w-full flex items-center justify-between px-5 py-4 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-colors text-left"
                       >
                         {item.q}
-                        {openFaq === i ? <ChevronUp size={16} className="text-primary shrink-0" /> : <ChevronDown size={16} className="text-gray-400 shrink-0" />}
+                        <AppIcon icon={openFaq === i ? ChevronUp : ChevronDown} size={16} className={openFaq === i ? 'text-primary shrink-0' : 'text-gray-400 shrink-0'} aria-hidden="true" />
                       </button>
                       {openFaq === i && (
                         <div className="px-5 pb-4 text-sm text-gray-600 leading-relaxed border-t border-gray-100">
@@ -338,13 +350,9 @@ export default function ProviderDetailPage({ params }) {
                   </div>
                   {reviewsPagination?.hasNext && (
                     <div className="flex justify-center mt-5">
-                      <button
-                        onClick={() => setReviewsPage((p) => p + 1)}
-                        disabled={reviewsLoading}
-                        className="text-sm font-semibold text-primary border border-primary/30 px-5 py-2.5 rounded-xl hover:bg-primary-light transition-colors disabled:opacity-50"
-                      >
+                      <Button variant="outline" loading={reviewsLoading} onClick={() => setReviewsPage((p) => p + 1)}>
                         {reviewsLoading ? 'Cargando...' : 'Ver más reseñas'}
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </>
@@ -373,27 +381,25 @@ export default function ProviderDetailPage({ params }) {
                 </div>
               )}
 
-              <button
-                onClick={handleConsultar}
-                className="w-full bg-primary text-white font-bold py-3.5 rounded-xl hover:bg-primary-dark transition-colors mb-3 text-sm"
-              >
+              <Button className="w-full mb-3" size="lg" onClick={handleConsultar}>
                 Consultar disponibilidad
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
+                className={`w-full ${fav ? '!border-primary !bg-primary-light !text-primary' : ''}`}
+                icon={Heart}
                 onClick={handleFav}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-semibold transition-all ${fav ? 'border-primary bg-primary-light text-primary' : 'border-gray-200 text-gray-600 hover:border-primary/40'}`}
               >
-                <Heart size={16} className={fav ? 'fill-primary' : ''} />
                 {fav ? 'Guardado en favoritos' : 'Guardar en favoritos'}
-              </button>
+              </Button>
 
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                  <CheckCircle size={14} className="text-green-500" />
+                  <AppIcon icon={CheckCircle} size={14} className="text-green-500" aria-hidden="true" />
                   Sin cobros hasta que el proveedor confirme
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <CheckCircle size={14} className="text-green-500" />
+                  <AppIcon icon={CheckCircle} size={14} className="text-green-500" aria-hidden="true" />
                   {provider.responseTime}
                 </div>
               </div>
@@ -408,15 +414,17 @@ export default function ProviderDetailPage({ params }) {
           <div className="text-xs text-gray-400">desde</div>
           <div className="font-extrabold text-gray-900">${(selectedPkg?.price || provider.priceFrom || 0).toLocaleString('es-UY')}</div>
         </div>
-        <button
-          onClick={() => router.push(`/reservar?providerId=${provider.id}&packageId=${selectedPackageId || ''}`)}
-          className="flex-1 bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary-dark transition-colors text-sm"
-        >
+        <Button className="flex-1" onClick={() => router.push(`/reservar?providerId=${provider.id}&packageId=${selectedPackageId || ''}`)}>
           Consultar disponibilidad
-        </button>
-        <button onClick={handleFav} className="p-3 rounded-xl border border-gray-200">
-          <Heart size={18} className={fav ? 'fill-primary text-primary' : 'text-gray-500'} />
-        </button>
+        </Button>
+        <Button
+          iconOnly
+          variant="outline"
+          icon={Heart}
+          aria-label={fav ? 'Guardado en favoritos' : 'Guardar en favoritos'}
+          className={fav ? '!text-primary' : '!text-gray-500'}
+          onClick={handleFav}
+        />
       </div>
       <div className="lg:hidden h-20" />
     </div>

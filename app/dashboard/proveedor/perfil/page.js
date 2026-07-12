@@ -1,6 +1,7 @@
 'use client';
 
 import ProviderStatusBadge from '@/components/ProviderStatusBadge';
+import Button from '@/components/Button';
 import { useProviderDashboard } from '../layout';
 
 export default function ProviderProfilePage() {
@@ -46,9 +47,7 @@ export default function ProviderProfilePage() {
           {providerData.description}
         </div>
       </div>
-      <button className="mt-5 w-full sm:w-auto px-5 py-2.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors text-sm">
-        Guardar cambios
-      </button>
+      <Button className="mt-5 w-full sm:w-auto">Guardar cambios</Button>
     </div>
   );
 }

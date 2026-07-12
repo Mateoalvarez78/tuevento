@@ -6,6 +6,9 @@ import { Star, Send, AlertTriangle } from 'lucide-react';
 import { reviewService } from '@/services/reviewService';
 import EmptyState from '@/components/EmptyState';
 import RatingStars from '@/components/RatingStars';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Chip from '@/components/Chip';
 import { safeFormatDate } from '@/lib/date';
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
@@ -66,7 +69,7 @@ export function ReviewsSection({ provider }) {
         </div>
         {provider?.rating > 0 && (
           <div className="flex items-center gap-1 bg-yellow-50 text-yellow-600 text-xs font-bold px-2.5 py-1 rounded-xl">
-            <Star size={12} className="fill-current" /> {provider.rating.toFixed(1)}
+            <AppIcon icon={Star} size={12} className="fill-current" aria-hidden="true" /> {provider.rating.toFixed(1)}
           </div>
         )}
       </div>
@@ -86,15 +89,9 @@ export function ReviewsSection({ provider }) {
 
       <div className="flex gap-1.5 overflow-x-auto">
         {RATING_FILTERS.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setRatingFilter(f.value)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-              ratingFilter === f.value ? 'bg-primary text-white' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
-            }`}
-          >
+          <Chip key={f.value} selected={ratingFilter === f.value} onClick={() => setRatingFilter(f.value)}>
             {f.label}
-          </button>
+          </Chip>
         ))}
       </div>
     </div>
@@ -114,12 +111,10 @@ export function ReviewsSection({ provider }) {
   if (error) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
-        <AlertTriangle size={28} className="mx-auto text-amber-500 mb-3" />
+        <AppIcon icon={AlertTriangle} size={28} className="mx-auto text-amber-500 mb-3" aria-hidden="true" />
         <p className="text-gray-700 font-medium mb-1">No pudimos cargar tus reseñas</p>
         <p className="text-sm text-gray-500 mb-5">{error}</p>
-        <button onClick={load} className="px-5 py-2.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors text-sm">
-          Reintentar
-        </button>
+        <Button onClick={load}>Reintentar</Button>
       </div>
     );
   }
@@ -174,14 +169,10 @@ export function ReviewsSection({ provider }) {
                         onChange={(e) => setReply(e.target.value)}
                       />
                       <div className="flex gap-2 mt-1.5">
-                        <button
-                          onClick={() => handleReply(r.id)}
-                          disabled={sending || !reply.trim()}
-                          className="flex items-center gap-1 text-xs font-bold text-white bg-primary px-3 py-1.5 rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50"
-                        >
-                          <Send size={10} /> {sending ? 'Enviando...' : 'Responder'}
-                        </button>
-                        <button onClick={() => { setReplyOpen(null); setReply(''); }} className="text-xs text-gray-400 hover:text-gray-600">Cancelar</button>
+                        <Button size="sm" icon={Send} loading={sending} disabled={!reply.trim()} onClick={() => handleReply(r.id)}>
+                          Responder
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => { setReplyOpen(null); setReply(''); }}>Cancelar</Button>
                       </div>
                     </div>
                   ) : (

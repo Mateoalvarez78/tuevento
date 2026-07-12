@@ -5,6 +5,12 @@ import { Search, Eye, EyeOff, AlertTriangle, Flag, Star } from 'lucide-react';
 import { useAdminReviews } from '@/hooks/useAdmin';
 import RatingStars from '@/components/RatingStars';
 import { safeFormatDate } from '@/lib/date';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
+import Badge from '@/components/Badge';
+import PageHeader from '@/components/PageHeader';
+import EmptyState from '@/components/EmptyState';
 
 const STATUS_TABS = [
   { value: '',         label: 'Todas' },
@@ -14,10 +20,10 @@ const STATUS_TABS = [
 ];
 
 const STATUS_STYLES = {
-  visible:  { label: 'Visible',   cls: 'bg-emerald-500/10 text-emerald-400' },
-  hidden:   { label: 'Oculta',    cls: 'bg-gray-700 text-gray-300' },
-  reported: { label: 'Reportada', cls: 'bg-red-500/10 text-red-400' },
-  deleted:  { label: 'Eliminada', cls: 'bg-gray-800 text-gray-500' },
+  visible:  { label: 'Visible',   bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-transparent' },
+  hidden:   { label: 'Oculta',    bg: 'bg-gray-700',        text: 'text-gray-300',    border: 'border-transparent' },
+  reported: { label: 'Reportada', bg: 'bg-red-500/10',      text: 'text-red-400',     border: 'border-transparent', icon: Flag },
+  deleted:  { label: 'Eliminada', bg: 'bg-gray-800',        text: 'text-gray-500',    border: 'border-transparent' },
 };
 
 export default function AdminResenasPage() {
@@ -37,24 +43,17 @@ export default function AdminResenasPage() {
 
   return (
     <div className="p-4 sm:p-8">
-      <div className="flex items-center justify-between mb-5 sm:mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Reseñas</h1>
-          <p className="text-gray-400 text-sm mt-1">{reviews.length} en total</p>
-        </div>
-      </div>
+      <PageHeader theme="dark" title="Reseñas" subtitle={`${reviews.length} en total`} className="mb-5 sm:mb-6" />
 
       {/* Search */}
-      <div className="relative mb-5">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-        <input
-          type="text"
-          placeholder="Buscar por cliente, servicio o proveedor…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-sm bg-gray-900 border border-gray-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-primary/60"
-        />
-      </div>
+      <Input
+        variant="dark"
+        icon={Search}
+        wrapperClassName="max-w-sm mb-5"
+        placeholder="Buscar por cliente, servicio o proveedor…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto">
@@ -75,22 +74,21 @@ export default function AdminResenasPage() {
 
       <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-gray-500 text-sm">Cargando…</div>
+          <div className="p-5 space-y-3">
+            {[...Array(5)].map((_, i) => <div key={i} className="skeleton h-20 w-full rounded-lg bg-gray-800" />)}
+          </div>
         ) : error ? (
           <div className="p-12 text-center">
-            <AlertTriangle size={28} className="mx-auto text-amber-400 mb-3" />
+            <AppIcon icon={AlertTriangle} size={28} className="mx-auto text-amber-400 mb-3" aria-hidden="true" />
             <p className="text-gray-300 text-sm mb-4">{error?.message || 'No pudimos cargar las reseñas'}</p>
-            <button onClick={reload} className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors">Reintentar</button>
+            <Button onClick={reload}>Reintentar</Button>
           </div>
         ) : displayed.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="w-11 h-11 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-3">
-              <Star size={20} strokeWidth={1.5} className="text-gray-500" aria-hidden="true" />
-            </div>
-            <p className="text-gray-500 text-sm">
-              {reviews.length === 0 ? 'Todavía no hay reseñas en la plataforma.' : 'No hay reseñas con este filtro.'}
-            </p>
-          </div>
+          <EmptyState
+            icon={Star}
+            title={reviews.length === 0 ? 'Todavía no hay reseñas' : 'Sin resultados'}
+            description={reviews.length === 0 ? 'Todavía no hay reseñas en la plataforma.' : 'No hay reseñas con este filtro.'}
+          />
         ) : (
           <div className="divide-y divide-gray-800">
             {displayed.map((r) => {
@@ -101,10 +99,7 @@ export default function AdminResenasPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <RatingStars rating={r.rating} size={13} />
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusCfg.cls}`}>
-                          {r.status === 'reported' && <Flag size={9} className="inline mr-1 -mt-0.5" />}
-                          {statusCfg.label}
-                        </span>
+                        <Badge bg={statusCfg.bg} text={statusCfg.text} border={statusCfg.border} icon={statusCfg.icon} label={statusCfg.label} />
                       </div>
                       <p className="text-sm text-gray-200 font-medium truncate">
                         {r.clientName} <span className="text-gray-500 font-normal">→ {r.providerName}</span>
@@ -113,19 +108,9 @@ export default function AdminResenasPage() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {r.status === 'hidden' ? (
-                        <button
-                          onClick={() => restore(r.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-colors"
-                        >
-                          <Eye size={12} /> Restaurar
-                        </button>
+                        <Button variant="success" size="sm" icon={Eye} onClick={() => restore(r.id)}>Restaurar</Button>
                       ) : (
-                        <button
-                          onClick={() => hide(r.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition-colors"
-                        >
-                          <EyeOff size={12} /> Ocultar
-                        </button>
+                        <Button variant="danger" size="sm" icon={EyeOff} onClick={() => hide(r.id)}>Ocultar</Button>
                       )}
                     </div>
                   </div>

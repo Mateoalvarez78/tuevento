@@ -1,7 +1,8 @@
 'use client';
 
-import { Info, TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
+import Tooltip from '@/components/Tooltip';
 
 const TONE_LIGHT = {
   gray:    'text-gray-500 bg-gray-100',
@@ -15,8 +16,11 @@ const TONE_LIGHT = {
 };
 
 const TONE_DARK = {
-  gray:  'text-gray-400 bg-gray-800',
-  amber: 'text-amber-400 bg-amber-500/15',
+  gray:    'text-gray-400 bg-gray-800',
+  amber:   'text-amber-400 bg-amber-500/15',
+  emerald: 'text-emerald-400 bg-emerald-500/10',
+  blue:    'text-blue-400 bg-blue-500/10',
+  red:     'text-red-400 bg-red-500/10',
 };
 
 function TrendBadge({ pct, inverse = false }) {
@@ -27,19 +31,6 @@ function TrendBadge({ pct, inverse = false }) {
       <AppIcon icon={up ? TrendingUp : TrendingDown} size={10} aria-hidden="true" />
       {up ? '+' : ''}{Math.abs(pct).toFixed(1)}%
     </span>
-  );
-}
-
-function InfoTooltip({ text }) {
-  if (!text) return null;
-  return (
-    <div className="group relative inline-flex">
-      <AppIcon icon={Info} size={13} className="text-gray-300 hover:text-gray-400 cursor-default transition-colors" aria-hidden="true" />
-      <div role="tooltip" className="absolute bottom-full right-0 mb-2 w-64 bg-gray-900 text-white text-xs leading-relaxed px-3 py-2.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none z-50">
-        {text}
-        <div className="absolute top-full right-3 border-4 border-transparent border-t-gray-900" />
-      </div>
-    </div>
   );
 }
 
@@ -93,7 +84,7 @@ export default function MetricCard({
           )}
           <span className={`${labelCls} truncate`}>{label}</span>
         </div>
-        {trend != null ? <TrendBadge pct={trend} inverse={trendInverse} /> : (tooltip ? <InfoTooltip text={tooltip} /> : null)}
+        {trend != null ? <TrendBadge pct={trend} inverse={trendInverse} /> : (tooltip ? <Tooltip text={tooltip} /> : null)}
       </div>
       {error ? (
         <p className="text-xs text-danger">{error}</p>

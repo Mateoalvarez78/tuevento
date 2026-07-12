@@ -6,6 +6,9 @@ import { useApp } from '@/lib/AppContext';
 import { bookingService } from '@/services/bookingService';
 import { Check, CalendarDays, MapPin, Users, Package, User, ClipboardList, CheckCircle } from 'lucide-react';
 import PackageSelector from './PackageSelector';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
 import { safeFormatDate, addHoursToTime } from '@/lib/date';
 
 const EVENT_TYPES = ['Cumpleaños', 'Casamiento', 'Empresarial', 'Infantil', 'Fiesta privada', 'Otro'];
@@ -121,7 +124,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
     return (
       <div className="flex flex-col items-center text-center py-12 px-6">
         <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-5">
-          <CheckCircle size={40} className="text-green-500" />
+          <AppIcon icon={CheckCircle} size={40} className="text-green-500" aria-hidden="true" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Consulta enviada</h2>
         <p className="text-gray-500 mb-2">Tu número de solicitud es:</p>
@@ -134,18 +137,8 @@ export default function BookingWizard({ provider, initialPackageId }) {
           No se realizará ningún cobro hasta que el proveedor confirme tu reserva.
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            onClick={() => router.push('/dashboard/cliente/reservas')}
-            className="px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors"
-          >
-            Ver mis reservas
-          </button>
-          <button
-            onClick={() => router.push('/catalogo')}
-            className="px-6 py-3 border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
-          >
-            Seguir explorando
-          </button>
+          <Button onClick={() => router.push('/dashboard/cliente/reservas')}>Ver mis reservas</Button>
+          <Button variant="outline" onClick={() => router.push('/catalogo')}>Seguir explorando</Button>
         </div>
       </div>
     );
@@ -156,13 +149,12 @@ export default function BookingWizard({ provider, initialPackageId }) {
       {/* Step indicator */}
       <div className="flex items-center mb-8">
         {STEPS.map((s, i) => {
-          const Icon = s.icon;
           const state = i < step ? 'done' : i === step ? 'active' : 'inactive';
           return (
             <div key={i} className="flex items-center flex-1">
               <div className={`flex flex-col items-center ${i === STEPS.length - 1 ? '' : 'flex-1'}`}>
                 <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center mb-1 transition-all step-${state}`}>
-                  {state === 'done' ? <Check size={16} /> : <Icon size={16} />}
+                  <AppIcon icon={state === 'done' ? Check : s.icon} size={16} aria-hidden="true" />
                 </div>
                 <span className={`text-xs font-medium hidden sm:block ${state === 'active' ? 'text-primary' : state === 'done' ? 'text-green-600' : 'text-gray-400'}`}>
                   {s.label}
@@ -192,10 +184,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Ubicación del evento *</label>
-            <div className="relative">
-              <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Ej: Salón Crystal, Av. 18 de Julio, Montevideo" value={eventData.location} onChange={(e) => setEventData({ ...eventData, location: e.target.value })} />
-            </div>
+            <Input icon={MapPin} placeholder="Ej: Salón Crystal, Av. 18 de Julio, Montevideo" value={eventData.location} onChange={(e) => setEventData({ ...eventData, location: e.target.value })} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipo de evento *</label>
@@ -207,17 +196,11 @@ export default function BookingWizard({ provider, initialPackageId }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Adultos *</label>
-              <div className="relative">
-                <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="number" min="1" className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Cantidad de adultos" value={eventData.adults} onChange={(e) => setEventData({ ...eventData, adults: e.target.value })} />
-              </div>
+              <Input type="number" min="1" icon={Users} placeholder="Cantidad de adultos" value={eventData.adults} onChange={(e) => setEventData({ ...eventData, adults: e.target.value })} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Niños <span className="text-gray-400 font-normal">(opcional)</span></label>
-              <div className="relative">
-                <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="number" min="0" className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Cantidad de niños" value={eventData.children} onChange={(e) => setEventData({ ...eventData, children: e.target.value })} />
-              </div>
+              <Input type="number" min="0" icon={Users} placeholder="Cantidad de niños" value={eventData.children} onChange={(e) => setEventData({ ...eventData, children: e.target.value })} />
             </div>
           </div>
         </div>
@@ -243,6 +226,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
                     type="button"
                     onClick={() => setPackageData({ ...packageData, extraHours: Math.max(0, extraHoursN - 1) })}
                     disabled={extraHoursN === 0}
+                    aria-label="Restar hora extra"
                     className="w-8 h-8 rounded-full border border-gray-300 text-gray-600 font-bold hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
                     −
@@ -252,6 +236,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
                     type="button"
                     onClick={() => setPackageData({ ...packageData, extraHours: Math.min(maxExtraHours, extraHoursN + 1) })}
                     disabled={extraHoursN >= maxExtraHours}
+                    aria-label="Sumar hora extra"
                     className="w-8 h-8 rounded-full border border-gray-300 text-gray-600 font-bold hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
                     +
@@ -291,16 +276,16 @@ export default function BookingWizard({ provider, initialPackageId }) {
           <h3 className="text-lg font-bold text-gray-900 mb-4">Tus datos de contacto</h3>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre completo *</label>
-            <input className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Tu nombre completo" value={contactData.name} onChange={(e) => setContactData({ ...contactData, name: e.target.value })} />
+            <Input placeholder="Tu nombre completo" value={contactData.name} onChange={(e) => setContactData({ ...contactData, name: e.target.value })} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Teléfono *</label>
-              <input type="tel" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="+598 9..." value={contactData.phone} onChange={(e) => setContactData({ ...contactData, phone: e.target.value })} />
+              <Input type="tel" placeholder="+598 9..." value={contactData.phone} onChange={(e) => setContactData({ ...contactData, phone: e.target.value })} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Email *</label>
-              <input type="email" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="tu@email.com" value={contactData.email} onChange={(e) => setContactData({ ...contactData, email: e.target.value })} />
+              <Input type="email" placeholder="tu@email.com" value={contactData.email} onChange={(e) => setContactData({ ...contactData, email: e.target.value })} />
             </div>
           </div>
           <div>
@@ -419,29 +404,17 @@ export default function BookingWizard({ provider, initialPackageId }) {
 
       {/* Navigation */}
       <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
-        <button
-          onClick={() => setStep((s) => s - 1)}
-          disabled={step === 0}
-          className="px-5 py-2.5 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
+        <Button variant="outline" disabled={step === 0} onClick={() => setStep((s) => s - 1)}>
           Anterior
-        </button>
+        </Button>
         {step < 3 ? (
-          <button
-            onClick={() => setStep((s) => s + 1)}
-            disabled={!stepValid()}
-            className="px-6 py-2.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
+          <Button disabled={!stepValid()} onClick={() => setStep((s) => s + 1)}>
             Siguiente
-          </button>
+          </Button>
         ) : (
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-          >
+          <Button loading={submitting} onClick={handleSubmit}>
             {submitting ? 'Enviando...' : 'Enviar solicitud'}
-          </button>
+          </Button>
         )}
       </div>
     </div>

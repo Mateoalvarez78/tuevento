@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
 import { homePathForRole, isAdminRole } from '@/lib/roles';
 import { Eye, EyeOff, Mail, Lock, ShieldCheck } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -42,7 +45,7 @@ export default function AdminLoginPage() {
         {/* Brand */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center mb-3">
-            <ShieldCheck size={20} className="text-white" />
+            <AppIcon icon={ShieldCheck} size={20} className="text-white" aria-hidden="true" />
           </div>
           <h1 className="text-lg font-semibold text-white">Panel interno Eventonow</h1>
           <p className="text-xs text-gray-500 mt-1">Acceso restringido a administradores</p>
@@ -52,25 +55,28 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1.5">Email</label>
-              <div className="relative">
-                <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
-                <input type="email" required autoComplete="email"
-                  className="w-full bg-gray-950 border border-gray-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-primary/60"
-                  placeholder="admin@eventonow.com" value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              </div>
+              <Input
+                variant="dark" type="email" required autoComplete="email" icon={Mail}
+                placeholder="admin@eventonow.com" value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1.5">Contraseña</label>
               <div className="relative">
-                <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
-                <input type={showPass ? 'text' : 'password'} required autoComplete="current-password"
-                  className="w-full bg-gray-950 border border-gray-800 rounded-xl pl-9 pr-10 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-primary/60"
+                <Input
+                  variant="dark" type={showPass ? 'text' : 'password'} required autoComplete="current-password" icon={Lock}
+                  className="pr-10"
                   placeholder="••••••••" value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })} />
-                <button type="button" onClick={() => setShowPass((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400">
-                  {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                />
+                <Button
+                  type="button" iconOnly size="sm" variant="ghost" theme="dark"
+                  icon={showPass ? EyeOff : Eye}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 !text-gray-600 hover:!text-gray-400"
+                  aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  onClick={() => setShowPass((v) => !v)}
+                />
               </div>
             </div>
 
@@ -78,10 +84,9 @@ export default function AdminLoginPage() {
               <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-2.5">{error}</div>
             )}
 
-            <button type="submit" disabled={loading}
-              className="w-full bg-primary text-white font-semibold py-2.5 rounded-xl hover:bg-primary-dark disabled:opacity-60 transition-colors text-sm">
+            <Button type="submit" className="w-full" loading={loading}>
               {loading ? 'Verificando…' : 'Ingresar'}
-            </button>
+            </Button>
           </form>
         </div>
 

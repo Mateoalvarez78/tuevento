@@ -17,6 +17,8 @@ import EventOrganizer from '@/components/dashboard/cliente/EventOrganizer';
 import CategoryGrid from '@/components/dashboard/cliente/CategoryGrid';
 import SmartBuilderCTA from '@/components/dashboard/cliente/SmartBuilderCTA';
 import { CalendarPlus, ArrowRight, Lock, CalendarX, HeartOff } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
 import { safeFormatDate } from '@/lib/date';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
@@ -73,11 +75,11 @@ export default function ClienteDashboard() {
       <div className="min-h-screen bg-surface flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
           <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-4">
-            <Lock size={28} strokeWidth={1.5} className="text-gray-400" aria-hidden="true" />
+            <AppIcon icon={Lock} size={28} strokeWidth={1.5} className="text-gray-400" aria-hidden="true" />
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Necesitás iniciar sesión</h2>
           <p className="text-gray-500 text-sm mb-6">Ingresá a tu cuenta para organizar tu evento.</p>
-          <Link href="/login" className="inline-block bg-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-primary-dark transition-colors">Ingresar</Link>
+          <Button href="/login">Ingresar</Button>
         </div>
       </div>
     );
@@ -104,13 +106,11 @@ export default function ClienteDashboard() {
           ) : (
             <div className="bg-white rounded-3xl border border-dashed border-gray-200 p-8 text-center">
               <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-3">
-                <CalendarX size={24} strokeWidth={1.5} className="text-gray-400" aria-hidden="true" />
+                <AppIcon icon={CalendarX} size={24} strokeWidth={1.5} className="text-gray-400" aria-hidden="true" />
               </div>
               <h3 className="font-bold text-gray-800 mb-1">Aún no reservaste ningún servicio</h3>
               <p className="text-sm text-gray-500 mb-5">Comenzá explorando nuestro catálogo y armá tu evento ideal.</p>
-              <Link href="/catalogo" className="inline-flex items-center gap-2 bg-primary text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-primary-dark transition-colors text-sm">
-                <CalendarPlus size={16} /> Explorar servicios
-              </Link>
+              <Button icon={CalendarPlus} href="/catalogo">Explorar servicios</Button>
             </div>
           )}
         </section>
@@ -170,7 +170,7 @@ export default function ClienteDashboard() {
                   <ReservationStatusBadge status={b.displayStatus || b.status} />
                   <span className="text-sm font-semibold text-gray-800 hidden sm:block w-20 text-right">{money(b.totalEstimated)}</span>
                   <span className="text-gray-300 group-hover:text-primary transition-colors shrink-0" title="Ver detalle">
-                    <ArrowRight size={16} />
+                    <AppIcon icon={ArrowRight} size={16} aria-hidden="true" />
                   </span>
                 </Link>
               ))}

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Store, Package, CalendarClock, Users, Tags, Settings } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
 
 // Launcher de acciones. Rutas existentes → Link; futuras → deshabilitadas con "Pronto".
 const ACTIONS = [
@@ -23,7 +24,7 @@ export default function QuickActions() {
           const inner = (
             <>
               <span className="w-9 h-9 rounded-xl bg-gray-800 text-gray-300 flex items-center justify-center mb-2 group-hover:bg-primary/15 group-hover:text-primary transition-colors">
-                <Icon size={17} />
+                <AppIcon icon={Icon} size={17} aria-hidden="true" />
               </span>
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-semibold text-gray-100">{a.label}</span>

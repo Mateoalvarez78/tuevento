@@ -11,6 +11,11 @@ import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import EmptyState from '@/components/EmptyState';
 import { CalendarDrawer } from '@/components/dashboard/proveedor/DashCalendar';
 import { safeFormatDate } from '@/lib/date';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
+import Modal from '@/components/Modal';
+import Avatar from '@/components/Avatar';
 
 const STATUS_FILTERS = [
   { id: 'all',       label: 'Todas' },
@@ -103,15 +108,13 @@ export default function ProviderReservationsPage() {
       )}
 
         <div className="flex flex-wrap items-center gap-2.5 mb-5">
-          <div className="relative flex-1 min-w-[180px] max-w-xs">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              className="w-full pl-8 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              placeholder="Buscar por cliente o servicio..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+          <Input
+            icon={Search}
+            wrapperClassName="flex-1 min-w-[180px] max-w-xs"
+            placeholder="Buscar por cliente o servicio..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
           <select
             className="text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:border-primary"
             value={statusFilter}
@@ -132,12 +135,10 @@ export default function ProviderReservationsPage() {
 
         {!loading && error && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
-            <AlertTriangle size={32} className="mx-auto text-amber-500 mb-3" />
+            <AppIcon icon={AlertTriangle} size={32} className="mx-auto text-amber-500 mb-3" aria-hidden="true" />
             <p className="text-gray-700 font-medium mb-1">No pudimos cargar tus reservas</p>
             <p className="text-sm text-gray-500 mb-5">{error}</p>
-            <button onClick={reload} className="px-5 py-2.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors text-sm">
-              Reintentar
-            </button>
+            <Button onClick={reload}>Reintentar</Button>
           </div>
         )}
 
@@ -159,13 +160,7 @@ export default function ProviderReservationsPage() {
               <div key={b.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex items-center gap-3">
-                    {b.clientAvatar ? (
-                      <img src={b.clientAvatar} alt={b.clientName} className="w-10 h-10 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-500 shrink-0">
-                        {(b.clientName || '?').charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <Avatar src={b.clientAvatar} name={b.clientName} size="sm" />
                     <div>
                       <div className="font-bold text-gray-900">{b.clientName}</div>
                       <div className="text-xs text-gray-500">#{b.requestNumber} · {b.serviceTitle}{b.packageName ? ` · ${b.packageName}` : ''}</div>
@@ -201,42 +196,21 @@ export default function ProviderReservationsPage() {
                   </div>
                 </div>
                 <div className="text-xs text-gray-500 flex items-center gap-1 mb-3">
-                  <MapPin size={11} /> {b.location}
+                  <AppIcon icon={MapPin} size={11} aria-hidden="true" /> {b.location}
                 </div>
 
                 <div className="flex items-center justify-end gap-2 flex-wrap">
-                  <button
-                    onClick={() => setSelected(b)}
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
-                  >
-                    <Eye size={13} /> Ver detalle
-                  </button>
+                  <Button variant="outline" size="sm" icon={Eye} onClick={() => setSelected(b)}>Ver detalle</Button>
                   {b.status === 'pending' && (
                     <>
-                      <button
-                        disabled={busyId === b.id}
-                        onClick={() => setRejectModal(b)}
-                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-colors disabled:opacity-50"
-                      >
-                        <X size={14} /> Rechazar
-                      </button>
-                      <button
-                        disabled={busyId === b.id}
-                        onClick={() => handleAccept(b)}
-                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50"
-                      >
-                        <Check size={14} /> Aceptar
-                      </button>
+                      <Button variant="danger" size="sm" icon={X} disabled={busyId === b.id} onClick={() => setRejectModal(b)}>Rechazar</Button>
+                      <Button variant="success" size="sm" icon={Check} disabled={busyId === b.id} onClick={() => handleAccept(b)}>Aceptar</Button>
                     </>
                   )}
                   {b.status === 'confirmed' && (
-                    <button
-                      disabled={busyId === b.id}
-                      onClick={() => handleComplete(b)}
-                      className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-blue-600 border border-blue-200 rounded-xl hover:bg-blue-50 transition-colors disabled:opacity-50"
-                    >
-                      <CheckCircle2 size={13} /> Marcar completada
-                    </button>
+                    <Button variant="outline" size="sm" icon={CheckCircle2} className="!text-blue-600 !border-blue-200 hover:!bg-blue-50" disabled={busyId === b.id} onClick={() => handleComplete(b)}>
+                      Marcar completada
+                    </Button>
                   )}
                 </div>
               </div>
@@ -247,28 +221,27 @@ export default function ProviderReservationsPage() {
       <CalendarDrawer booking={selected} onClose={() => setSelected(null)} />
 
       {rejectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setRejectModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm z-10">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Rechazar reserva</h3>
-            <p className="text-sm text-gray-500 mb-4">Indicá el motivo del rechazo para que el cliente lo sepa.</p>
-            <textarea
-              rows={3}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary resize-none mb-4"
-              placeholder="Ej: No tengo disponibilidad para esa fecha."
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-            />
-            <div className="flex gap-2">
-              <button onClick={() => setRejectModal(null)} className="flex-1 py-2.5 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 text-sm transition-colors">
-                Cancelar
-              </button>
-              <button onClick={handleReject} disabled={busyId === rejectModal.id} className="flex-1 py-2.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 text-sm transition-colors disabled:opacity-50">
-                Rechazar
-              </button>
-            </div>
-          </div>
-        </div>
+        <Modal
+          open
+          onClose={() => setRejectModal(null)}
+          title="Rechazar reserva"
+          size="sm"
+          footer={
+            <>
+              <Button variant="outline" className="flex-1" onClick={() => setRejectModal(null)}>Cancelar</Button>
+              <Button variant="danger" className="flex-1" loading={busyId === rejectModal.id} onClick={handleReject}>Rechazar</Button>
+            </>
+          }
+        >
+          <p className="text-sm text-gray-500 mb-4">Indicá el motivo del rechazo para que el cliente lo sepa.</p>
+          <textarea
+            rows={3}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary resize-none"
+            placeholder="Ej: No tengo disponibilidad para esa fecha."
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+          />
+        </Modal>
       )}
     </>
   );

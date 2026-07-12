@@ -1,7 +1,7 @@
 import Link from 'next/link';
+import AppIcon from '@/components/AppIcon';
 
 export default function CategoryCard({ category, active = false }) {
-  const Icon = category.icon;
   return (
     <Link
       href={`/catalogo?categoria=${category.id}`}
@@ -11,8 +11,9 @@ export default function CategoryCard({ category, active = false }) {
           : 'border-gray-100 bg-white hover:border-primary hover:shadow-lg hover:-translate-y-0.5'
         }`}
     >
-      {Icon && (
-        <Icon
+      {category.icon && (
+        <AppIcon
+          icon={category.icon}
           size={32}
           strokeWidth={1.75}
           aria-hidden="true"

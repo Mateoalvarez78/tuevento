@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { providerService } from '@/services/providerService';
 import BookingWizard from '@/components/BookingWizard';
 import EmptyState from '@/components/EmptyState';
+import AppIcon from '@/components/AppIcon';
 import { Star, MapPin, PackageX } from 'lucide-react';
 
 export default function ReservarPage() {
@@ -70,8 +71,8 @@ function ReservarContent() {
             <div className="text-xs font-medium text-primary mb-0.5">{provider.categoryLabel}</div>
             <div className="font-bold text-gray-900 truncate">{provider.name}</div>
             <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-              <span className="flex items-center gap-1"><Star size={11} className="star-filled fill-current" /> {(provider.rating || 0).toFixed(1)}</span>
-              {provider.zone && <span className="flex items-center gap-1"><MapPin size={11} /> {provider.zone}</span>}
+              <span className="flex items-center gap-1"><AppIcon icon={Star} size={11} className="star-filled fill-current" aria-hidden="true" /> {(provider.rating || 0).toFixed(1)}</span>
+              {provider.zone && <span className="flex items-center gap-1"><AppIcon icon={MapPin} size={11} aria-hidden="true" /> {provider.zone}</span>}
             </div>
           </div>
           <a href={`/proveedor/${provider.id}`} className="text-xs text-primary hover:underline shrink-0">Ver perfil</a>

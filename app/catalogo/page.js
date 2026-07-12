@@ -12,6 +12,10 @@ import FilterSidebar from '@/components/FilterSidebar';
 import ServiceCard from '@/components/ServiceCard';
 import SkeletonCard from '@/components/SkeletonCard';
 import EmptyState from '@/components/EmptyState';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
+import Chip from '@/components/Chip';
 import { providerService } from '@/services/providerService';
 import { categoryService } from '@/services/categoryService';
 import { safeFormatDate } from '@/lib/date';
@@ -150,21 +154,21 @@ function CatalogoContent() {
             </nav>
             <div className="hidden sm:block w-px h-4 bg-gray-200 shrink-0" />
             {/* Search input */}
-            <div className="flex-1 relative">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              <input
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:bg-white transition-all"
+            <div className="relative flex-1">
+              <Input
+                icon={Search}
+                className="bg-gray-50 focus:bg-white pr-9"
                 placeholder="Buscar proveedores, servicios..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange({ ...filters, search: e.target.value })}
               />
               {filters.search && (
-                <button
+                <Button
+                  iconOnly icon={X} variant="ghost" size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 !text-gray-400 hover:!text-gray-600"
+                  aria-label="Limpiar búsqueda"
                   onClick={() => handleFilterChange({ ...filters, search: '' })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X size={14} />
-                </button>
+                />
               )}
             </div>
           </div>
@@ -189,7 +193,7 @@ function CatalogoContent() {
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2 leading-tight">
                   {activeCategory && (
-                    <activeCategory.icon size={24} className="text-gray-500" aria-hidden="true" />
+                    <AppIcon icon={activeCategory.icon} size={24} className="text-gray-500" aria-hidden="true" />
                   )}
                   {pageTitle}
                 </h1>
@@ -211,18 +215,19 @@ function CatalogoContent() {
               {/* Toolbar */}
               <div className="flex items-center gap-2 flex-wrap">
                 {/* Mobile filter button */}
-                <button
+                <Button
+                  variant="outline"
+                  className="lg:hidden !bg-white shadow-sm"
+                  icon={SlidersHorizontal}
                   onClick={() => setMobileFiltersOpen(true)}
-                  className="lg:hidden flex items-center gap-2 px-3.5 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:border-primary/40 hover:bg-white bg-white transition-colors shadow-sm"
                 >
-                  <SlidersHorizontal size={15} />
                   Filtros
                   {activeFilterCount > 0 && (
                     <span className="bg-primary text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
                       {activeFilterCount}
                     </span>
                   )}
-                </button>
+                </Button>
 
                 {/* Sort */}
                 <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-sm">
@@ -237,7 +242,7 @@ function CatalogoContent() {
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </select>
-                    <ChevronDown size={13} className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <AppIcon icon={ChevronDown} size={13} className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" aria-hidden="true" />
                   </div>
                 </div>
 
@@ -246,16 +251,20 @@ function CatalogoContent() {
                   <button
                     onClick={() => setLayout('grid')}
                     title="Cuadrícula"
+                    aria-pressed={layout === 'grid'}
+                    aria-label="Ver en cuadrícula"
                     className={`p-2 transition-colors ${layout === 'grid' ? 'bg-primary text-white' : 'bg-white text-gray-400 hover:bg-gray-50'}`}
                   >
-                    <LayoutGrid size={15} />
+                    <AppIcon icon={LayoutGrid} size={15} aria-hidden="true" />
                   </button>
                   <button
                     onClick={() => setLayout('list')}
                     title="Lista"
+                    aria-pressed={layout === 'list'}
+                    aria-label="Ver en lista"
                     className={`p-2 transition-colors ${layout === 'list' ? 'bg-primary text-white' : 'bg-white text-gray-400 hover:bg-gray-50'}`}
                   >
-                    <List size={15} />
+                    <AppIcon icon={List} size={15} aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -263,46 +272,41 @@ function CatalogoContent() {
 
             {/* Active filter chips */}
             {activeFilterCount > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex flex-wrap gap-2 mb-4 items-center">
                 {selectedCategories.map((cat) => (
-                  <Chip
-                    key={cat.id}
-                    icon={cat.icon}
-                    label={cat.label}
-                    onRemove={() => toggleCategory(cat.id)}
-                  />
+                  <Chip key={cat.id} icon={cat.icon} onRemove={() => toggleCategory(cat.id)}>{cat.label}</Chip>
                 ))}
                 {filters.zone && (
-                  <Chip icon={MapPin} label={filters.zone} onRemove={() => handleFilterChange({ ...filters, zone: '' })} />
+                  <Chip icon={MapPin} onRemove={() => handleFilterChange({ ...filters, zone: '' })}>{filters.zone}</Chip>
                 )}
                 {filters.location && (
-                  <Chip icon={Map} label={filters.location} onRemove={() => handleFilterChange({ ...filters, location: '', placeId: '', lat: '', lng: '' })} />
+                  <Chip icon={Map} onRemove={() => handleFilterChange({ ...filters, location: '', placeId: '', lat: '', lng: '' })}>{filters.location}</Chip>
                 )}
                 {filters.date && (
-                  <Chip icon={CalendarDays} label={safeFormatDate(filters.date)} onRemove={() => handleFilterChange({ ...filters, date: '' })} />
+                  <Chip icon={CalendarDays} onRemove={() => handleFilterChange({ ...filters, date: '' })}>{safeFormatDate(filters.date)}</Chip>
                 )}
                 {filters.eventType && (
-                  <Chip icon={PartyPopper} label={filters.eventType} onRemove={() => handleFilterChange({ ...filters, eventType: '' })} />
+                  <Chip icon={PartyPopper} onRemove={() => handleFilterChange({ ...filters, eventType: '' })}>{filters.eventType}</Chip>
                 )}
                 {filters.minRating > 0 && (
-                  <Chip icon={Star} label={`${filters.minRating}.0+`} onRemove={() => handleFilterChange({ ...filters, minRating: 0 })} />
+                  <Chip icon={Star} onRemove={() => handleFilterChange({ ...filters, minRating: 0 })}>{`${filters.minRating}.0+`}</Chip>
                 )}
                 {filters.verified && (
-                  <Chip icon={CheckCircle2} label="Verificados" onRemove={() => handleFilterChange({ ...filters, verified: false })} />
+                  <Chip icon={CheckCircle2} onRemove={() => handleFilterChange({ ...filters, verified: false })}>Verificados</Chip>
                 )}
                 {filters.maxPrice < 200000 && (
-                  <Chip
-                    icon={DollarSign}
-                    label={`hasta $${(filters.maxPrice / 1000).toFixed(0)}k`}
-                    onRemove={() => handleFilterChange({ ...filters, maxPrice: 200000 })}
-                  />
+                  <Chip icon={DollarSign} onRemove={() => handleFilterChange({ ...filters, maxPrice: 200000 })}>
+                    {`hasta $${(filters.maxPrice / 1000).toFixed(0)}k`}
+                  </Chip>
                 )}
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="!text-gray-400 hover:!text-red-500"
                   onClick={() => handleFilterChange({ category: '', zone: '', date: '', location: '', placeId: '', lat: '', lng: '', minRating: 0, maxPrice: 200000, eventType: '', verified: false, search: filters.search })}
-                  className="text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1.5 font-medium"
                 >
                   Limpiar todos
-                </button>
+                </Button>
               </div>
             )}
 
@@ -317,14 +321,9 @@ function CatalogoContent() {
             {selectedCategories.length === 0 && !loading && (
               <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-5">
                 {categories.slice(0, 10).map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => toggleCategory(cat.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-600 hover:border-primary/40 hover:text-primary hover:bg-primary-light transition-all whitespace-nowrap shrink-0 shadow-sm"
-                  >
-                    <cat.icon size={14} aria-hidden="true" />
+                  <Chip key={cat.id} icon={cat.icon} onClick={() => toggleCategory(cat.id)} className="shadow-sm shrink-0">
                     {cat.label}
-                  </button>
+                  </Chip>
                 ))}
               </div>
             )}
@@ -361,13 +360,12 @@ function CatalogoContent() {
                 {/* ── PAGINATION ── */}
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-1.5 mt-10 pt-6 border-t border-gray-200">
-                    <button
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    <Button
+                      iconOnly icon={ChevronLeft} variant="outline" size="sm"
+                      aria-label="Página anterior"
                       disabled={page === 1}
-                      className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:border-primary/40 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    />
 
                     {pageRange(page, totalPages).map((p, i) =>
                       p === '…' ? (
@@ -378,6 +376,7 @@ function CatalogoContent() {
                         <button
                           key={p}
                           onClick={() => setPage(p)}
+                          aria-current={page === p ? 'page' : undefined}
                           className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-colors ${
                             page === p
                               ? 'bg-primary text-white shadow-sm shadow-primary/30'
@@ -389,13 +388,12 @@ function CatalogoContent() {
                       )
                     )}
 
-                    <button
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    <Button
+                      iconOnly icon={ChevronRight} variant="outline" size="sm"
+                      aria-label="Página siguiente"
                       disabled={page === totalPages}
-                      className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:border-primary/40 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    />
                   </div>
                 )}
               </>
@@ -412,21 +410,6 @@ function CatalogoContent() {
         onMobileClose={() => setMobileFiltersOpen(false)}
       />
     </div>
-  );
-}
-
-function Chip({ label, icon: Icon, onRemove }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 bg-primary-light text-primary text-xs font-medium rounded-full border border-primary/20">
-      {Icon && <Icon size={12} aria-hidden="true" />}
-      {label}
-      <button
-        onClick={onRemove}
-        className="w-4 h-4 rounded-full hover:bg-primary/20 flex items-center justify-center transition-colors"
-      >
-        <X size={9} strokeWidth={2.5} />
-      </button>
-    </span>
   );
 }
 

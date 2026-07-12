@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, User, Building2, Landmark, ClipboardList,
   Check, Copy, ArrowRight,
@@ -10,6 +9,10 @@ import {
 import { adminService } from '@/services/adminService';
 import { categoryService } from '@/services/categoryService';
 import { ZONES } from '@/utils/constants';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
+import Chip from '@/components/Chip';
 
 const STEPS = [
   { label: 'Responsable', icon: User },
@@ -32,10 +35,9 @@ function Field({ label, children, required }) {
   );
 }
 
-const inputCls = 'w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-primary/60 transition-colors';
+const selectCls = 'w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-primary/60 transition-colors';
 
 export default function NuevoProveedorPage() {
-  const router = useRouter();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -127,7 +129,7 @@ export default function NuevoProveedorPage() {
       <div className="p-4 sm:p-8 max-w-lg mx-auto">
         <div className="rounded-2xl border border-gray-800 bg-gray-900 p-8 text-center">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center mx-auto mb-4">
-            <Check size={26} />
+            <AppIcon icon={Check} size={26} aria-hidden="true" />
           </div>
           <h1 className="text-xl font-bold text-white mb-1">Proveedor creado</h1>
           <p className="text-gray-400 text-sm mb-6">
@@ -143,9 +145,7 @@ export default function NuevoProveedorPage() {
               <p className="text-xs text-gray-500 mb-1">Contraseña temporal</p>
               <div className="flex items-center gap-2">
                 <p className="text-sm text-gray-200 font-mono flex-1">{result.temporaryPassword}</p>
-                <button onClick={copyPassword} className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors" title="Copiar">
-                  <Copy size={14} />
-                </button>
+                <Button iconOnly icon={Copy} variant="ghost" theme="dark" size="sm" aria-label="Copiar" title="Copiar" onClick={copyPassword} />
               </div>
               {copied && <p className="text-xs text-emerald-400 mt-1">Copiado</p>}
             </div>
@@ -156,12 +156,8 @@ export default function NuevoProveedorPage() {
           </p>
 
           <div className="flex gap-2 justify-center">
-            <Link href="/admin/proveedores" className="px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-semibold rounded-xl text-sm transition-colors">
-              Volver a proveedores
-            </Link>
-            <Link href={`/admin/proveedores/${result.provider?.id}`} className="px-5 py-2.5 border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 font-semibold rounded-xl text-sm transition-colors">
-              Ver perfil
-            </Link>
+            <Button href="/admin/proveedores">Volver a proveedores</Button>
+            <Button variant="outline" theme="dark" href={`/admin/proveedores/${result.provider?.id}`}>Ver perfil</Button>
           </div>
         </div>
       </div>
@@ -171,7 +167,7 @@ export default function NuevoProveedorPage() {
   return (
     <div className="p-4 sm:p-8 max-w-2xl">
       <Link href="/admin/proveedores" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 mb-6 transition-colors">
-        <ArrowLeft size={15} /> Proveedores
+        <AppIcon icon={ArrowLeft} size={15} aria-hidden="true" /> Proveedores
       </Link>
 
       <h1 className="text-2xl font-bold text-white mb-1">Nuevo proveedor</h1>
@@ -180,7 +176,6 @@ export default function NuevoProveedorPage() {
       {/* Steps */}
       <div className="flex items-center gap-1 mb-8">
         {STEPS.map((s, i) => {
-          const Icon = s.icon;
           const active = i === step;
           const complete = i < step;
           return (
@@ -189,7 +184,7 @@ export default function NuevoProveedorPage() {
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-colors ${
                   complete ? 'bg-primary border-primary text-white' : active ? 'border-primary text-primary' : 'border-gray-700 text-gray-600'
                 }`}>
-                  {complete ? <Check size={15} /> : <Icon size={15} />}
+                  <AppIcon icon={complete ? Check : s.icon} size={15} aria-hidden="true" />
                 </div>
                 <span className={`text-[11px] font-medium ${active || complete ? 'text-gray-200' : 'text-gray-600'}`}>{s.label}</span>
               </div>
@@ -204,13 +199,13 @@ export default function NuevoProveedorPage() {
         {step === 0 && (
           <>
             <Field label="Nombre del responsable" required>
-              <input className={inputCls} value={account.ownerName} onChange={(e) => setAccount({ ...account, ownerName: e.target.value })} placeholder="Nombre y apellido" />
+              <Input variant="dark" value={account.ownerName} onChange={(e) => setAccount({ ...account, ownerName: e.target.value })} placeholder="Nombre y apellido" />
             </Field>
             <Field label="Email" required>
-              <input type="email" className={inputCls} value={account.email} onChange={(e) => setAccount({ ...account, email: e.target.value })} placeholder="responsable@negocio.com" />
+              <Input variant="dark" type="email" value={account.email} onChange={(e) => setAccount({ ...account, email: e.target.value })} placeholder="responsable@negocio.com" />
             </Field>
             <Field label="Teléfono">
-              <input type="tel" className={inputCls} value={account.phone} onChange={(e) => setAccount({ ...account, phone: e.target.value })} placeholder="+598 9..." />
+              <Input variant="dark" type="tel" value={account.phone} onChange={(e) => setAccount({ ...account, phone: e.target.value })} placeholder="+598 9..." />
             </Field>
           </>
         )}
@@ -220,49 +215,40 @@ export default function NuevoProveedorPage() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Nombre comercial" required>
-                <input className={inputCls} value={business.businessName} onChange={(e) => setBusiness({ ...business, businessName: e.target.value })} placeholder="Ej: Delicias del Sur Catering" />
+                <Input variant="dark" value={business.businessName} onChange={(e) => setBusiness({ ...business, businessName: e.target.value })} placeholder="Ej: Delicias del Sur Catering" />
               </Field>
               <Field label="Razón social">
-                <input className={inputCls} value={business.legalName} onChange={(e) => setBusiness({ ...business, legalName: e.target.value })} />
+                <Input variant="dark" value={business.legalName} onChange={(e) => setBusiness({ ...business, legalName: e.target.value })} />
               </Field>
               <Field label="RUT">
-                <input className={inputCls} value={business.taxId} onChange={(e) => setBusiness({ ...business, taxId: e.target.value })} />
+                <Input variant="dark" value={business.taxId} onChange={(e) => setBusiness({ ...business, taxId: e.target.value })} />
               </Field>
               <Field label="Categoría">
-                <select className={inputCls} value={business.categoryId} onChange={(e) => setBusiness({ ...business, categoryId: e.target.value })}>
+                <select className={selectCls} value={business.categoryId} onChange={(e) => setBusiness({ ...business, categoryId: e.target.value })}>
                   <option value="">Sin categoría</option>
                   {categories.map((c) => <option key={c.categoryId} value={c.categoryId}>{c.label}</option>)}
                 </select>
               </Field>
               <Field label="Ciudad">
-                <input className={inputCls} value={business.city} onChange={(e) => setBusiness({ ...business, city: e.target.value })} />
+                <Input variant="dark" value={business.city} onChange={(e) => setBusiness({ ...business, city: e.target.value })} />
               </Field>
               <Field label="Departamento">
-                <select className={inputCls} value={business.department} onChange={(e) => setBusiness({ ...business, department: e.target.value })}>
+                <select className={selectCls} value={business.department} onChange={(e) => setBusiness({ ...business, department: e.target.value })}>
                   <option value="">Seleccionar…</option>
                   {ZONES.map((z) => <option key={z} value={z}>{z}</option>)}
                 </select>
               </Field>
             </div>
             <Field label="Dirección">
-              <input className={inputCls} value={business.address} onChange={(e) => setBusiness({ ...business, address: e.target.value })} />
+              <Input variant="dark" value={business.address} onChange={(e) => setBusiness({ ...business, address: e.target.value })} />
             </Field>
             <Field label="Descripción">
-              <textarea rows={3} className={`${inputCls} resize-none`} value={business.description} onChange={(e) => setBusiness({ ...business, description: e.target.value })} />
+              <textarea rows={3} className={`${selectCls} resize-none`} value={business.description} onChange={(e) => setBusiness({ ...business, description: e.target.value })} />
             </Field>
             <Field label="Zonas donde trabaja">
               <div className="flex flex-wrap gap-2">
                 {ZONES.map((z) => (
-                  <button
-                    key={z}
-                    type="button"
-                    onClick={() => toggleZone(z)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                      business.zones.includes(z) ? 'bg-primary/15 border-primary/40 text-primary' : 'border-gray-700 text-gray-400 hover:border-gray-600'
-                    }`}
-                  >
-                    {z}
-                  </button>
+                  <Chip key={z} selected={business.zones.includes(z)} onClick={() => toggleZone(z)}>{z}</Chip>
                 ))}
               </div>
             </Field>
@@ -274,17 +260,17 @@ export default function NuevoProveedorPage() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Comisión Eventonow (%)">
-                <input type="number" min="0" max="100" step="0.1" className={inputCls} value={commercial.commissionRate}
+                <Input variant="dark" type="number" min="0" max="100" step="0.1" value={commercial.commissionRate}
                   onChange={(e) => setCommercial({ ...commercial, commissionRate: e.target.value })}
                   placeholder="Default de la plataforma" />
               </Field>
               <Field label="Moneda">
-                <select className={inputCls} value={commercial.currency} onChange={(e) => setCommercial({ ...commercial, currency: e.target.value })}>
+                <select className={selectCls} value={commercial.currency} onChange={(e) => setCommercial({ ...commercial, currency: e.target.value })}>
                   {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </Field>
               <Field label="Método de cobro">
-                <select className={inputCls} value={commercial.paymentMethod} onChange={(e) => setCommercial({ ...commercial, paymentMethod: e.target.value })}>
+                <select className={selectCls} value={commercial.paymentMethod} onChange={(e) => setCommercial({ ...commercial, paymentMethod: e.target.value })}>
                   <option value="">Sin definir</option>
                   {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
@@ -293,16 +279,16 @@ export default function NuevoProveedorPage() {
             <p className="text-xs text-gray-500 pt-2 border-t border-gray-800">Cuenta bancaria (opcional, para liquidaciones)</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Banco">
-                <input className={inputCls} value={commercial.bankName} onChange={(e) => setCommercial({ ...commercial, bankName: e.target.value })} />
+                <Input variant="dark" value={commercial.bankName} onChange={(e) => setCommercial({ ...commercial, bankName: e.target.value })} />
               </Field>
               <Field label="Tipo de cuenta">
-                <input className={inputCls} value={commercial.accountType} onChange={(e) => setCommercial({ ...commercial, accountType: e.target.value })} placeholder="Caja de ahorro / Cuenta corriente" />
+                <Input variant="dark" value={commercial.accountType} onChange={(e) => setCommercial({ ...commercial, accountType: e.target.value })} placeholder="Caja de ahorro / Cuenta corriente" />
               </Field>
               <Field label="Número de cuenta">
-                <input className={inputCls} value={commercial.accountNumber} onChange={(e) => setCommercial({ ...commercial, accountNumber: e.target.value })} />
+                <Input variant="dark" value={commercial.accountNumber} onChange={(e) => setCommercial({ ...commercial, accountNumber: e.target.value })} />
               </Field>
               <Field label="Titular">
-                <input className={inputCls} value={commercial.accountHolder} onChange={(e) => setCommercial({ ...commercial, accountHolder: e.target.value })} />
+                <Input variant="dark" value={commercial.accountHolder} onChange={(e) => setCommercial({ ...commercial, accountHolder: e.target.value })} />
               </Field>
             </div>
           </>
@@ -312,7 +298,7 @@ export default function NuevoProveedorPage() {
         {step === 3 && (
           <>
             <Field label="Notas internas">
-              <textarea rows={3} className={`${inputCls} resize-none`} value={internalNotes} onChange={(e) => setInternalNotes(e.target.value)} placeholder="Solo visibles para el equipo de Eventonow" />
+              <textarea rows={3} className={`${selectCls} resize-none`} value={internalNotes} onChange={(e) => setInternalNotes(e.target.value)} placeholder="Solo visibles para el equipo de Eventonow" />
             </Field>
             <div className="bg-gray-950 border border-gray-800 rounded-xl p-4 space-y-2 text-sm">
               <p className="text-gray-200 font-semibold mb-2">Resumen</p>
@@ -329,29 +315,22 @@ export default function NuevoProveedorPage() {
 
         {/* Nav buttons */}
         <div className="flex justify-between pt-4">
-          <button
+          <Button
+            variant="ghost"
+            theme="dark"
+            className={step === 0 ? 'opacity-0 pointer-events-none' : ''}
             onClick={() => setStep((s) => Math.max(0, s - 1))}
-            disabled={step === 0}
-            className="px-4 py-2.5 text-sm font-medium text-gray-400 hover:text-gray-200 disabled:opacity-0 transition-colors"
           >
             Atrás
-          </button>
+          </Button>
           {step < STEPS.length - 1 ? (
-            <button
-              onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
-              disabled={!stepValid()}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-dark disabled:opacity-40 text-white font-semibold rounded-xl text-sm transition-colors"
-            >
-              Siguiente <ArrowRight size={15} />
-            </button>
+            <Button icon={ArrowRight} iconPosition="right" disabled={!stepValid()} onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}>
+              Siguiente
+            </Button>
           ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="px-5 py-2.5 bg-primary hover:bg-primary-dark disabled:opacity-60 text-white font-semibold rounded-xl text-sm transition-colors"
-            >
+            <Button loading={submitting} onClick={handleSubmit}>
               {submitting ? 'Creando…' : 'Crear proveedor'}
-            </button>
+            </Button>
           )}
         </div>
       </div>

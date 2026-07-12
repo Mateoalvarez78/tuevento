@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useApp } from '@/lib/AppContext';
 import { adminDashboardService } from '@/services/adminDashboardService';
 import { AlertTriangle } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
 
 import AdminHero from '@/components/dashboard/admin/AdminHero';
 import AdminStats from '@/components/dashboard/admin/AdminStats';
@@ -46,10 +48,10 @@ export default function AdminOverviewPage() {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="rounded-2xl border border-gray-800 bg-gray-900 p-10 text-center">
-          <AlertTriangle size={30} className="mx-auto text-amber-400 mb-3" />
+          <AppIcon icon={AlertTriangle} size={30} className="mx-auto text-amber-400 mb-3" aria-hidden="true" />
           <p className="text-gray-200 font-medium mb-1">No pudimos cargar el panel</p>
           <p className="text-sm text-gray-500 mb-5">{error}</p>
-          <button onClick={load} className="px-5 py-2.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors text-sm">Reintentar</button>
+          <Button onClick={load}>Reintentar</Button>
         </div>
       </div>
     );

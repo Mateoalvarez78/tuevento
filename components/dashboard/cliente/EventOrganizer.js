@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Check, ArrowRight } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
 
 export default function EventOrganizer({ categories = [] }) {
   const done = categories.filter((c) => c.done).length;
@@ -38,7 +39,7 @@ export default function EventOrganizer({ categories = [] }) {
             }`}
           >
             <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${c.done ? 'bg-emerald-500 text-white' : 'bg-gray-100'}`}>
-              {c.done ? <Check size={15} /> : <c.icon size={15} className="text-gray-500" aria-hidden="true" />}
+              {c.done ? <AppIcon icon={Check} size={15} aria-hidden="true" /> : <AppIcon icon={c.icon} size={15} className="text-gray-500" aria-hidden="true" />}
             </span>
             <span className={`text-sm font-medium truncate ${c.done ? 'text-emerald-700' : 'text-gray-700'}`}>{c.label}</span>
           </Link>
@@ -46,7 +47,7 @@ export default function EventOrganizer({ categories = [] }) {
       </div>
 
       <Link href="/catalogo" className="inline-flex items-center gap-1.5 mt-5 text-sm font-semibold text-primary hover:underline">
-        Seguir organizando <ArrowRight size={15} />
+        Seguir organizando <AppIcon icon={ArrowRight} size={15} aria-hidden="true" />
       </Link>
     </div>
   );

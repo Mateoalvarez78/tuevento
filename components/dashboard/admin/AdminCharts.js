@@ -4,14 +4,11 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
+import { CHART_COLORS, CHART_AXIS, CHART_GRID_DARK, CHART_TOOLTIP_DARK } from '@/lib/chartTheme';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
 const shortMonth = (label) => (label || '').split(' ')[0]; // "Ene 2026" → "Ene"
 const kFmt = (v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : v);
-
-const AXIS = { fontSize: 11, fill: '#9CA3AF' };
-const GRID = '#1f2937';
-const TOOLTIP_STYLE = { background: '#111827', border: '1px solid #374151', borderRadius: 12, fontSize: 12, color: '#fff' };
 
 function Panel({ title, subtitle, children }) {
   return (
@@ -32,11 +29,11 @@ export default function AdminCharts({ monthly = [], stats }) {
   const hasMonthly = data.length > 0;
 
   const bookingStatus = [
-    { name: 'Pendientes', value: stats.bookings.pending, color: '#F59E0B' },
-    { name: 'Aceptadas', value: stats.bookings.accepted, color: '#0BB885' },
-    { name: 'Completadas', value: stats.bookings.completed, color: '#3B82F6' },
-    { name: 'Rechazadas', value: stats.bookings.rejected, color: '#EF4444' },
-    { name: 'Canceladas', value: stats.bookings.cancelled, color: '#6B7280' },
+    { name: 'Pendientes', value: stats.bookings.pending, color: CHART_COLORS.chartAmber },
+    { name: 'Aceptadas', value: stats.bookings.accepted, color: CHART_COLORS.success },
+    { name: 'Completadas', value: stats.bookings.completed, color: CHART_COLORS.chartBlue },
+    { name: 'Rechazadas', value: stats.bookings.rejected, color: CHART_COLORS.chartRed },
+    { name: 'Canceladas', value: stats.bookings.cancelled, color: CHART_COLORS.chartGray },
   ].filter((s) => s.value > 0);
 
   return (
@@ -49,15 +46,15 @@ export default function AdminCharts({ monthly = [], stats }) {
               <AreaChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: -12 }}>
                 <defs>
                   <linearGradient id="admGmv" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0BB885" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#0BB885" stopOpacity={0} />
+                    <stop offset="5%" stopColor={CHART_COLORS.success} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={CHART_COLORS.success} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-                <XAxis dataKey="m" tick={AXIS} axisLine={false} tickLine={false} />
-                <YAxis tick={AXIS} axisLine={false} tickLine={false} tickFormatter={kFmt} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [money(v), 'Vendido']} />
-                <Area type="monotone" dataKey="grossAmount" name="Vendido" stroke="#0BB885" strokeWidth={2} fill="url(#admGmv)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_DARK} />
+                <XAxis dataKey="m" tick={CHART_AXIS} axisLine={false} tickLine={false} />
+                <YAxis tick={CHART_AXIS} axisLine={false} tickLine={false} tickFormatter={kFmt} />
+                <Tooltip contentStyle={CHART_TOOLTIP_DARK} formatter={(v) => [money(v), 'Vendido']} />
+                <Area type="monotone" dataKey="grossAmount" name="Vendido" stroke={CHART_COLORS.success} strokeWidth={2} fill="url(#admGmv)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -70,11 +67,11 @@ export default function AdminCharts({ monthly = [], stats }) {
           <div style={{ width: '100%', height: 210 }}>
             <ResponsiveContainer>
               <BarChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
-                <XAxis dataKey="m" tick={AXIS} axisLine={false} tickLine={false} />
-                <YAxis tick={AXIS} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: '#ffffff08' }} formatter={(v) => [v, 'Reservas']} />
-                <Bar dataKey="bookingsCount" name="Reservas" fill="#3B82F6" radius={[6, 6, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_DARK} vertical={false} />
+                <XAxis dataKey="m" tick={CHART_AXIS} axisLine={false} tickLine={false} />
+                <YAxis tick={CHART_AXIS} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip contentStyle={CHART_TOOLTIP_DARK} cursor={{ fill: '#ffffff08' }} formatter={(v) => [v, 'Reservas']} />
+                <Bar dataKey="bookingsCount" name="Reservas" fill={CHART_COLORS.chartBlue} radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -89,15 +86,15 @@ export default function AdminCharts({ monthly = [], stats }) {
               <AreaChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: -12 }}>
                 <defs>
                   <linearGradient id="admComm" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
+                    <stop offset="5%" stopColor={CHART_COLORS.chartAmber} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={CHART_COLORS.chartAmber} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
-                <XAxis dataKey="m" tick={AXIS} axisLine={false} tickLine={false} />
-                <YAxis tick={AXIS} axisLine={false} tickLine={false} tickFormatter={kFmt} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [money(v), 'Comisión']} />
-                <Area type="monotone" dataKey="commissionAmount" name="Comisión" stroke="#F59E0B" strokeWidth={2} fill="url(#admComm)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_DARK} />
+                <XAxis dataKey="m" tick={CHART_AXIS} axisLine={false} tickLine={false} />
+                <YAxis tick={CHART_AXIS} axisLine={false} tickLine={false} tickFormatter={kFmt} />
+                <Tooltip contentStyle={CHART_TOOLTIP_DARK} formatter={(v) => [money(v), 'Comisión']} />
+                <Area type="monotone" dataKey="commissionAmount" name="Comisión" stroke={CHART_COLORS.chartAmber} strokeWidth={2} fill="url(#admComm)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -113,7 +110,7 @@ export default function AdminCharts({ monthly = [], stats }) {
                 <Pie data={bookingStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={48} outerRadius={78} paddingAngle={2}>
                   {bookingStatus.map((e, i) => <Cell key={i} fill={e.color} />)}
                 </Pie>
-                <Tooltip contentStyle={TOOLTIP_STYLE} />
+                <Tooltip contentStyle={CHART_TOOLTIP_DARK} />
               </PieChart>
             </ResponsiveContainer>
           </div>

@@ -3,6 +3,9 @@
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import { Eye, Copy, ChevronLeft, ChevronRight, CalendarX } from 'lucide-react';
 import { safeFormatDate } from '@/lib/date';
+import Button from '@/components/Button';
+import EmptyState from '@/components/EmptyState';
+import { TABLE_HEAD_CLS, TABLE_ROW_HOVER_CLS } from '@/components/Table';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
 const fmtDate = safeFormatDate;
@@ -18,12 +21,12 @@ export default function BookingsTable({ bookings = [], loading, pagination, onPa
   }
   if (!bookings.length) {
     return (
-      <div className="rounded-2xl border border-gray-800 bg-gray-900 p-16 text-center">
-        <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-3">
-          <CalendarX size={24} strokeWidth={1.5} className="text-gray-500" aria-hidden="true" />
-        </div>
-        <p className="text-gray-300 font-medium">No hay reservas</p>
-        <p className="text-sm text-gray-500 mt-1">Probá ajustar los filtros o esperá a que lleguen nuevas reservas.</p>
+      <div className="rounded-2xl border border-gray-800 bg-gray-900">
+        <EmptyState
+          icon={CalendarX}
+          title="No hay reservas"
+          description="Probá ajustar los filtros o esperá a que lleguen nuevas reservas."
+        />
       </div>
     );
   }
@@ -33,7 +36,7 @@ export default function BookingsTable({ bookings = [], loading, pagination, onPa
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[900px]">
           <thead>
-            <tr className="text-left text-[11px] uppercase tracking-wide text-gray-500 border-b border-gray-800">
+            <tr className={TABLE_HEAD_CLS.dark}>
               <th className="px-4 py-3 font-medium">Reserva</th>
               <th className="px-4 py-3 font-medium">Cliente</th>
               <th className="px-4 py-3 font-medium">Proveedor</th>
@@ -48,7 +51,14 @@ export default function BookingsTable({ bookings = [], loading, pagination, onPa
           </thead>
           <tbody className="divide-y divide-gray-800/60">
             {bookings.map((b) => (
-              <tr key={b.id} className="hover:bg-gray-800/40 transition-colors cursor-pointer" onClick={() => onRowClick(b)}>
+              <tr
+                key={b.id}
+                role="button"
+                tabIndex={0}
+                className={`${TABLE_ROW_HOVER_CLS.dark} cursor-pointer`}
+                onClick={() => onRowClick(b)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRowClick(b); } }}
+              >
                 <td className="px-4 py-3">
                   <div className="font-medium text-gray-100">{b.requestNumber}</div>
                   <div className="text-[11px] text-gray-500">{fmtCreated(b.createdAt)}</div>
@@ -66,8 +76,8 @@ export default function BookingsTable({ bookings = [], loading, pagination, onPa
                 <td className="px-4 py-3 text-right text-emerald-400 whitespace-nowrap">{money(b.providerNet)}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => onRowClick(b)} title="Ver detalle" className="p-1.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-800 transition-colors"><Eye size={15} /></button>
-                    <button onClick={() => onCopy(b.requestNumber)} title="Copiar número" className="p-1.5 rounded-lg text-gray-500 hover:text-gray-200 hover:bg-gray-800 transition-colors"><Copy size={15} /></button>
+                    <Button iconOnly icon={Eye} variant="ghost" theme="dark" size="sm" aria-label="Ver detalle" title="Ver detalle" onClick={() => onRowClick(b)} />
+                    <Button iconOnly icon={Copy} variant="ghost" theme="dark" size="sm" aria-label="Copiar número" title="Copiar número" onClick={() => onCopy(b.requestNumber)} />
                   </div>
                 </td>
               </tr>
@@ -81,8 +91,8 @@ export default function BookingsTable({ bookings = [], loading, pagination, onPa
         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-800">
           <span className="text-xs text-gray-500">Página {pagination.page} de {pagination.totalPages} · {pagination.total} reservas</span>
           <div className="flex items-center gap-1.5">
-            <button disabled={pagination.page <= 1} onClick={() => onPage(pagination.page - 1)} className="p-1.5 rounded-lg border border-gray-800 text-gray-400 hover:border-primary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><ChevronLeft size={15} /></button>
-            <button disabled={pagination.page >= pagination.totalPages} onClick={() => onPage(pagination.page + 1)} className="p-1.5 rounded-lg border border-gray-800 text-gray-400 hover:border-primary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><ChevronRight size={15} /></button>
+            <Button iconOnly icon={ChevronLeft} variant="outline" theme="dark" size="sm" aria-label="Página anterior" disabled={pagination.page <= 1} onClick={() => onPage(pagination.page - 1)} />
+            <Button iconOnly icon={ChevronRight} variant="outline" theme="dark" size="sm" aria-label="Página siguiente" disabled={pagination.page >= pagination.totalPages} onClick={() => onPage(pagination.page + 1)} />
           </div>
         </div>
       )}

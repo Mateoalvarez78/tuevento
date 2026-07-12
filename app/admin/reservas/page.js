@@ -10,6 +10,9 @@ import BookingFilters from '@/components/dashboard/admin/reservas/BookingFilters
 import BookingsTable from '@/components/dashboard/admin/reservas/BookingsTable';
 import BookingDetailDrawer from '@/components/dashboard/admin/reservas/BookingDetailDrawer';
 import { buildCsv, downloadCsv, datedFilename } from '@/lib/csvExport';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import PageHeader from '@/components/PageHeader';
 
 const DEFAULT_FILTERS = { status: '', category: '', dateFrom: '', dateTo: '', search: '', sort: 'recent', page: 1, limit: 20 };
 
@@ -88,22 +91,21 @@ export default function AdminReservasPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Reservas</h1>
-          <p className="text-sm text-gray-400 mt-1">
+      <PageHeader
+        theme="dark"
+        title="Reservas"
+        subtitle={
+          <>
             Administrá todas las reservas realizadas en Eventonow.
             {result.stats != null && <span className="text-gray-500"> · {result.stats.total} encontrada{result.stats.total !== 1 ? 's' : ''}</span>}
-          </p>
-        </div>
-        <button
-          onClick={handleExport}
-          disabled={exporting}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-gray-200 bg-gray-800 border border-gray-700 px-4 py-2.5 rounded-xl hover:border-primary/50 transition-colors self-start disabled:opacity-50"
-        >
-          <Download size={15} /> {exporting ? 'Exportando…' : 'Exportar CSV'}
-        </button>
-      </div>
+          </>
+        }
+        action={
+          <Button variant="outline" theme="dark" icon={Download} loading={exporting} onClick={handleExport}>
+            {exporting ? 'Exportando…' : 'Exportar CSV'}
+          </Button>
+        }
+      />
 
       {/* KPIs */}
       <BookingKpis stats={result.stats} />
@@ -119,10 +121,10 @@ export default function AdminReservasPage() {
       {/* Tabla / estados */}
       {error ? (
         <div className="rounded-2xl border border-gray-800 bg-gray-900 p-10 text-center">
-          <AlertTriangle size={28} className="mx-auto text-amber-400 mb-3" />
+          <AppIcon icon={AlertTriangle} size={28} className="mx-auto text-amber-400 mb-3" aria-hidden="true" />
           <p className="text-gray-200 font-medium mb-1">No pudimos cargar las reservas</p>
           <p className="text-sm text-gray-500 mb-5">{error}</p>
-          <button onClick={() => setFilters({ ...filters })} className="px-5 py-2.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors text-sm">Reintentar</button>
+          <Button onClick={() => setFilters({ ...filters })}>Reintentar</Button>
         </div>
       ) : (
         <BookingsTable

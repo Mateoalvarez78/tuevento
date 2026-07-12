@@ -16,6 +16,9 @@ import {
   Menu,
   X,
 } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Drawer from '@/components/Drawer';
 
 const NAV_ITEMS = [
   { href: '/admin',            label: 'Overview',    icon: LayoutDashboard, exact: true },
@@ -41,12 +44,6 @@ export default function AdminLayout({ children }) {
 
   // Close drawer on route change
   useEffect(() => { setOpen(false); }, [pathname]);
-
-  // Lock body scroll when drawer is open
-  useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [open]);
 
   // Login del admin: se renderiza sin sidebar ni guard (chicken-and-egg).
   // (Va después de todos los hooks para no romper las reglas de hooks.)
@@ -74,7 +71,7 @@ export default function AdminLayout({ children }) {
           <span className="text-white font-semibold text-sm">Eventonow</span>
         </Link>
         <div className="mt-3 flex items-center gap-2">
-          <ShieldCheck size={13} className="text-primary" />
+          <AppIcon icon={ShieldCheck} size={13} className="text-primary" aria-hidden="true" />
           <span className="text-xs font-medium text-primary tracking-wide uppercase">Admin Panel</span>
         </div>
       </div>
@@ -82,7 +79,6 @@ export default function AdminLayout({ children }) {
       {/* Nav */}
       <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
           const active = isActive(item);
           return (
             <Link
@@ -94,9 +90,9 @@ export default function AdminLayout({ children }) {
                   : 'text-gray-400 hover:text-gray-100 hover:bg-gray-800'
               }`}
             >
-              <Icon size={16} className={active ? 'text-primary' : 'text-gray-500 group-hover:text-gray-300'} />
+              <AppIcon icon={item.icon} size={16} className={active ? 'text-primary' : 'text-gray-500 group-hover:text-gray-300'} aria-hidden="true" />
               {item.label}
-              {active && <ChevronRight size={13} className="ml-auto text-primary/60" />}
+              {active && <AppIcon icon={ChevronRight} size={13} className="ml-auto text-primary/60" aria-hidden="true" />}
             </Link>
           );
         })}
@@ -111,13 +107,15 @@ export default function AdminLayout({ children }) {
             <p className="text-xs text-gray-500 truncate">{user.email}</p>
           </div>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          theme="dark"
+          icon={LogOut}
+          className="w-full !justify-start !text-gray-400 hover:!text-red-400 hover:!bg-red-400/10"
           onClick={() => { logout(); router.push('/'); }}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400 hover:bg-red-400/10 transition-all"
         >
-          <LogOut size={15} />
           Cerrar sesión
-        </button>
+        </Button>
       </div>
     </>
   );
@@ -130,26 +128,19 @@ export default function AdminLayout({ children }) {
       </aside>
 
       {/* ── Mobile drawer overlay ── */}
-      {open && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60"
-            onClick={() => setOpen(false)}
-          />
-          {/* Drawer */}
-          <aside className="relative w-64 bg-gray-900 border-r border-gray-800 flex flex-col h-full z-10">
-            <button
-              onClick={() => setOpen(false)}
-              className="absolute top-3 right-3 p-1.5 text-gray-500 hover:text-gray-300 rounded-lg hover:bg-gray-800 transition-colors z-10"
+      <div className="lg:hidden">
+        <Drawer open={open} onClose={() => setOpen(false)} theme="dark" side="left" width="max-w-64" bodyClassName="flex-1 flex flex-col overflow-y-auto">
+          <div className="relative flex-1 flex flex-col">
+            <Button
+              iconOnly icon={X} variant="ghost" theme="dark" size="sm"
+              className="absolute top-3 right-3 z-10"
               aria-label="Cerrar menú"
-            >
-              <X size={18} />
-            </button>
+              onClick={() => setOpen(false)}
+            />
             <SidebarContent />
-          </aside>
-        </div>
-      )}
+          </div>
+        </Drawer>
+      </div>
 
       {/* ── Main area ── */}
       <div className="flex-1 flex flex-col min-w-0">
@@ -164,19 +155,16 @@ export default function AdminLayout({ children }) {
               <span className="text-primary text-xs font-medium ml-1.5">Admin</span>
             </div>
           </div>
-          <button
-            onClick={() => setOpen(true)}
-            className="p-2 text-gray-400 hover:text-gray-200 rounded-lg hover:bg-gray-800 transition-colors"
+          <Button
+            iconOnly icon={Menu} variant="ghost" theme="dark"
             aria-label="Abrir menú"
-          >
-            <Menu size={20} />
-          </button>
+            onClick={() => setOpen(true)}
+          />
         </header>
 
         {/* Mobile bottom tab bar */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-gray-900 border-t border-gray-800 flex">
           {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
             const active = isActive(item);
             return (
               <Link
@@ -186,7 +174,7 @@ export default function AdminLayout({ children }) {
                   active ? 'text-primary' : 'text-gray-500'
                 }`}
               >
-                <Icon size={20} />
+                <AppIcon icon={item.icon} size={20} aria-hidden="true" />
                 <span className="text-[10px]">{item.label}</span>
               </Link>
             );

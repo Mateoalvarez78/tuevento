@@ -1,6 +1,7 @@
 'use client';
 
 import { Check } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
 
 export default function PackageSelector({ packages, selectedId, onSelect }) {
   return (
@@ -31,7 +32,7 @@ export default function PackageSelector({ packages, selectedId, onSelect }) {
               </h4>
               {selected && (
                 <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0">
-                  <Check size={14} className="text-white" />
+                  <AppIcon icon={Check} size={14} className="text-white" aria-hidden="true" />
                 </div>
               )}
             </div>
@@ -65,7 +66,7 @@ export default function PackageSelector({ packages, selectedId, onSelect }) {
             <ul className="space-y-1.5">
               {pkg.includes.map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
-                  <Check size={13} className="text-primary shrink-0 mt-0.5" />
+                  <AppIcon icon={Check} size={13} className="text-primary shrink-0 mt-0.5" aria-hidden="true" />
                   {item}
                 </li>
               ))}

@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
 import { homePathForRole } from '@/lib/roles';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -81,27 +83,24 @@ export default function LoginPage() {
           {/* Demo (solo cliente) */}
           <div className="bg-primary-light border border-primary/20 rounded-2xl p-4 mb-6">
             <p className="text-xs font-semibold text-primary mb-2">Demo rápida:</p>
-            <button onClick={fillDemo} className="w-full text-xs font-medium text-primary border border-primary/30 py-2 rounded-xl hover:bg-primary hover:text-white transition-colors">
+            <Button variant="outline" size="sm" className="w-full" onClick={fillDemo}>
               Completar cuenta de cliente demo
-            </button>
+            </Button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="email"
-                  className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                  placeholder="tu@email.com"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  required
-                  autoComplete="email"
-                />
-              </div>
+              <Input
+                type="email"
+                icon={Mail}
+                placeholder="tu@email.com"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                required
+                autoComplete="email"
+              />
             </div>
 
             {/* Password */}
@@ -111,19 +110,23 @@ export default function LoginPage() {
                 <a href="#" className="text-xs text-primary hover:underline">¿La olvidaste?</a>
               </div>
               <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
+                <Input
                   type={showPass ? 'text' : 'password'}
-                  className="w-full border border-gray-200 rounded-xl pl-9 pr-10 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                  icon={Lock}
+                  className="pr-10"
                   placeholder="Tu contraseña"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   required
                   autoComplete="current-password"
                 />
-                <button type="button" onClick={() => setShowPass((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
+                <Button
+                  type="button" iconOnly size="sm" variant="ghost"
+                  icon={showPass ? EyeOff : Eye}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 !text-gray-400 hover:!text-gray-600"
+                  aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  onClick={() => setShowPass((v) => !v)}
+                />
               </div>
             </div>
 
@@ -133,13 +136,9 @@ export default function LoginPage() {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary text-white font-bold py-3.5 rounded-xl hover:bg-primary-dark disabled:opacity-60 transition-colors shadow-sm"
-            >
+            <Button type="submit" className="w-full" size="lg" loading={loading}>
               {loading ? 'Ingresando...' : 'Ingresar'}
-            </button>
+            </Button>
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-6">

@@ -1,57 +1,55 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Pencil, Pause, Ban, RotateCcw, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Pencil, Pause, Ban, RotateCcw } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { assetUrl } from '@/services/api';
 import ProviderStatusBadge from '@/components/ProviderStatusBadge';
 import ServiceStatusBadge from '@/components/ServiceStatusBadge';
 import { formatCurrency } from '@/utils/formatters';
 import { safeFormatDate } from '@/lib/date';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Modal from '@/components/Modal';
+import Avatar from '@/components/Avatar';
+import { TABLE_HEAD_CLS, TABLE_ROW_HOVER_CLS } from '@/components/Table';
 
-function ConfirmModal({ title, description, confirmLabel, confirmClass, onConfirm, onCancel, requireReason }) {
+function ConfirmModal({ title, description, confirmLabel, confirmVariant, onConfirm, onCancel, requireReason }) {
   const [reason, setReason] = useState('');
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md mx-4">
-        <div className="flex items-start gap-3 mb-4">
-          <AlertTriangle size={20} className="text-amber-400 mt-0.5 shrink-0" />
-          <div>
-            <h3 className="text-white font-semibold">{title}</h3>
-            <p className="text-gray-400 text-sm mt-1">{description}</p>
-          </div>
-        </div>
-        {requireReason && (
-          <textarea
-            placeholder="Motivo (requerido)…"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={3}
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-primary/60 resize-none mb-4"
-          />
-        )}
-        <div className="flex gap-2 justify-end">
-          <button onClick={onCancel} className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-gray-200 transition-colors">
-            Cancelar
-          </button>
-          <button
-            onClick={() => onConfirm(reason)}
-            disabled={requireReason && !reason.trim()}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-40 ${confirmClass}`}
-          >
+    <Modal
+      open
+      onClose={onCancel}
+      theme="dark"
+      size="sm"
+      title={title}
+      footer={
+        <>
+          <Button variant="ghost" theme="dark" className="ml-auto" onClick={onCancel}>Cancelar</Button>
+          <Button variant={confirmVariant} disabled={requireReason && !reason.trim()} onClick={() => onConfirm(reason)}>
             {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </>
+      }
+    >
+      <p className="text-gray-400 text-sm mb-4">{description}</p>
+      {requireReason && (
+        <textarea
+          placeholder="Motivo (requerido)…"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          rows={3}
+          className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-primary/60 resize-none"
+        />
+      )}
+    </Modal>
   );
 }
 
 export default function AdminProviderDetailPage() {
   const { id } = useParams();
-  const router = useRouter();
   const [provider, setProvider] = useState(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +81,9 @@ export default function AdminProviderDetailPage() {
   if (error || !provider) {
     return (
       <div className="p-8">
-        <Link href="/admin/proveedores" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 mb-4"><ArrowLeft size={15} /> Proveedores</Link>
+        <Link href="/admin/proveedores" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 mb-4">
+          <AppIcon icon={ArrowLeft} size={15} aria-hidden="true" /> Proveedores
+        </Link>
         <div className="rounded-2xl border border-gray-800 bg-gray-900 p-8 text-center text-gray-400 text-sm">
           {error || 'Proveedor no encontrado.'}
         </div>
@@ -107,28 +107,22 @@ export default function AdminProviderDetailPage() {
   };
 
   const MODAL_CONFIGS = {
-    suspend:    { title: 'Suspender proveedor', description: `Indicá el motivo de suspensión de "${displayName}".`, confirmLabel: 'Suspender', confirmClass: 'bg-amber-600 hover:bg-amber-700', requireReason: true },
-    deactivate: { title: 'Desactivar proveedor',description: `Indicá el motivo de desactivación de "${displayName}".`, confirmLabel: 'Desactivar', confirmClass: 'bg-red-600 hover:bg-red-700', requireReason: true },
-    activate:   { title: 'Activar proveedor',   description: `¿Activar a "${displayName}"? Volverá a aparecer en el catálogo.`, confirmLabel: 'Activar', confirmClass: 'bg-emerald-600 hover:bg-emerald-700', requireReason: false },
+    suspend:    { title: 'Suspender proveedor', description: `Indicá el motivo de suspensión de "${displayName}".`, confirmLabel: 'Suspender', confirmVariant: 'warning', requireReason: true },
+    deactivate: { title: 'Desactivar proveedor',description: `Indicá el motivo de desactivación de "${displayName}".`, confirmLabel: 'Desactivar', confirmVariant: 'danger', requireReason: true },
+    activate:   { title: 'Activar proveedor',   description: `¿Activar a "${displayName}"? Volverá a aparecer en el catálogo.`, confirmLabel: 'Activar', confirmVariant: 'success', requireReason: false },
   };
 
   return (
     <div className="p-4 sm:p-8 max-w-4xl">
       {/* Back */}
       <Link href="/admin/proveedores" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 mb-6 transition-colors">
-        <ArrowLeft size={15} />
+        <AppIcon icon={ArrowLeft} size={15} aria-hidden="true" />
         Proveedores
       </Link>
 
       {/* Header */}
       <div className="flex items-start gap-4 mb-8">
-        <div className="w-16 h-16 rounded-2xl bg-gray-800 border border-gray-700 overflow-hidden shrink-0 flex items-center justify-center">
-          {provider.logo_url ? (
-            <img src={assetUrl(provider.logo_url)} alt={displayName} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-          ) : (
-            <span className="text-2xl text-gray-500">{displayName.charAt(0).toUpperCase()}</span>
-          )}
-        </div>
+        <Avatar src={provider.logo_url ? assetUrl(provider.logo_url) : null} name={displayName} size="lg" shape="square" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold text-white">{displayName}</h1>
@@ -145,23 +139,15 @@ export default function AdminProviderDetailPage() {
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2 mb-8">
-        <Link href={`/admin/proveedores/${id}/editar`} className="flex items-center gap-2 px-4 py-2.5 border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 rounded-xl text-sm font-semibold transition-colors">
-          <Pencil size={15} /> Editar
-        </Link>
+        <Button variant="outline" theme="dark" icon={Pencil} href={`/admin/proveedores/${id}/editar`}>Editar</Button>
         {provider.status === 'active' && (
           <>
-            <button onClick={() => setModal('suspend')} className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-semibold transition-colors">
-              <Pause size={15} /> Suspender
-            </button>
-            <button onClick={() => setModal('deactivate')} className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors">
-              <Ban size={15} /> Desactivar
-            </button>
+            <Button variant="warning" icon={Pause} onClick={() => setModal('suspend')}>Suspender</Button>
+            <Button variant="danger" icon={Ban} onClick={() => setModal('deactivate')}>Desactivar</Button>
           </>
         )}
         {(provider.status === 'suspended' || provider.status === 'inactive') && (
-          <button onClick={() => setModal('activate')} className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors">
-            <RotateCcw size={15} /> Activar
-          </button>
+          <Button variant="success" icon={RotateCcw} onClick={() => setModal('activate')}>Activar</Button>
         )}
       </div>
 
@@ -218,15 +204,15 @@ export default function AdminProviderDetailPage() {
           <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[400px]">
             <thead>
-              <tr className="border-b border-gray-800">
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Servicio</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">Precio desde</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Estado</th>
+              <tr className={TABLE_HEAD_CLS.dark}>
+                <th className="text-left px-5 py-3 font-medium">Servicio</th>
+                <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Precio desde</th>
+                <th className="text-left px-4 py-3 font-medium">Estado</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
               {services.map((s) => (
-                <tr key={s.id} className="hover:bg-gray-800/50 transition-colors">
+                <tr key={s.id} className={TABLE_ROW_HOVER_CLS.dark}>
                   <td className="px-5 py-3.5">
                     <p className="text-gray-200 font-medium">{s.title}</p>
                     <p className="text-gray-500 text-xs">{s.category}</p>

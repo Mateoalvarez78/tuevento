@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
 import { homePathForRole } from '@/lib/roles';
 import { Eye, EyeOff, Mail, Lock, Phone, UserCircle, Check } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
 
 // Alta de cuenta de CLIENTE únicamente. Eventonow es un marketplace curado:
 // los proveedores no se autoregistran, se dan de alta desde el panel de admin.
@@ -57,7 +60,7 @@ export default function RegistroPage() {
             ].map((text) => (
               <div key={text} className="flex items-center gap-3 text-white">
                 <span className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center shrink-0">
-                  <Check size={13} strokeWidth={3} aria-hidden="true" />
+                  <AppIcon icon={Check} size={13} strokeWidth={3} aria-hidden="true" />
                 </span>
                 <span className="text-sm">{text}</span>
               </div>
@@ -86,33 +89,31 @@ export default function RegistroPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nombre completo</label>
-              <div className="relative">
-                <UserCircle size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Tu nombre completo" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-              </div>
+              <Input icon={UserCircle} placeholder="Tu nombre completo" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="email" className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="tu@email.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required autoComplete="email" />
-              </div>
+              <Input type="email" icon={Mail} placeholder="tu@email.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required autoComplete="email" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Teléfono</label>
-              <div className="relative">
-                <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="tel" className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="+598 9..." value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-              </div>
+              <Input type="tel" icon={Phone} placeholder="+598 9..." value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Contraseña</label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type={showPass ? 'text' : 'password'} className="w-full border border-gray-200 rounded-xl pl-9 pr-10 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="Mínimo 6 caracteres" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required autoComplete="new-password" />
-                <button type="button" onClick={() => setShowPass((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
+                <Input
+                  type={showPass ? 'text' : 'password'} icon={Lock} className="pr-10"
+                  placeholder="Mínimo 6 caracteres" value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })} required autoComplete="new-password"
+                />
+                <Button
+                  type="button" iconOnly size="sm" variant="ghost"
+                  icon={showPass ? EyeOff : Eye}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 !text-gray-400 hover:!text-gray-600"
+                  aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  onClick={() => setShowPass((v) => !v)}
+                />
               </div>
             </div>
 
@@ -123,13 +124,9 @@ export default function RegistroPage() {
               <a href="#" className="text-primary hover:underline">Política de privacidad</a>.
             </p>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary text-white font-bold py-3.5 rounded-xl hover:bg-primary-dark disabled:opacity-60 transition-colors shadow-sm"
-            >
+            <Button type="submit" className="w-full" size="lg" loading={loading}>
               {loading ? 'Creando cuenta...' : 'Crear cuenta gratis'}
-            </button>
+            </Button>
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-6">

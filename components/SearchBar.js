@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Search, MapPin, CalendarDays, Check, ChevronDown } from 'lucide-react';
 import { categoryService } from '@/services/categoryService';
 import LocationAutocomplete from '@/components/LocationAutocomplete';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
 
 export default function SearchBar({ className = '' }) {
   const router = useRouter();
@@ -63,9 +66,11 @@ export default function SearchBar({ className = '' }) {
         <button
           type="button"
           onClick={() => setCatOpen((v) => !v)}
+          aria-expanded={catOpen}
+          aria-haspopup="listbox"
           className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl transition-colors text-left"
         >
-          <Search size={18} className="text-primary shrink-0" />
+          <AppIcon icon={Search} size={18} className="text-primary shrink-0" aria-hidden="true" />
           <div className="flex-1 min-w-0">
             <label className="block text-xs font-semibold text-gray-500 mb-0.5">¿Qué servicio necesitás?</label>
             {selectedCategories.length === 0 ? (
@@ -74,7 +79,7 @@ export default function SearchBar({ className = '' }) {
               <div className="flex flex-wrap gap-1">
                 {selectedCategories.slice(0, 3).map((c) => (
                   <span key={c.id} className="inline-flex items-center gap-1 text-xs font-medium bg-primary-light text-primary px-2 py-0.5 rounded-full">
-                    <c.icon size={12} aria-hidden="true" /> {c.label}
+                    <AppIcon icon={c.icon} size={12} aria-hidden="true" /> {c.label}
                   </span>
                 ))}
                 {selectedCategories.length > 3 && (
@@ -83,22 +88,20 @@ export default function SearchBar({ className = '' }) {
               </div>
             )}
           </div>
-          <ChevronDown size={14} className={`text-gray-400 shrink-0 transition-transform ${catOpen ? 'rotate-180' : ''}`} />
+          <AppIcon icon={ChevronDown} size={14} className={`text-gray-400 shrink-0 transition-transform ${catOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
         </button>
 
         {catOpen && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden">
             <div className="p-3 border-b border-gray-100">
-              <div className="relative">
-                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  autoFocus
-                  className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-primary bg-gray-50"
-                  placeholder="Buscar categoría..."
-                  value={catQuery}
-                  onChange={(e) => setCatQuery(e.target.value)}
-                />
-              </div>
+              <Input
+                autoFocus
+                icon={Search}
+                placeholder="Buscar categoría..."
+                className="bg-gray-50"
+                value={catQuery}
+                onChange={(e) => setCatQuery(e.target.value)}
+              />
             </div>
             <div className="max-h-64 overflow-y-auto py-1">
               {filteredCategories.length === 0 ? (
@@ -110,13 +113,15 @@ export default function SearchBar({ className = '' }) {
                     <button
                       key={c.id}
                       type="button"
+                      role="checkbox"
+                      aria-checked={active}
                       onClick={() => toggleCategory(c.id)}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${active ? 'bg-primary-light' : 'hover:bg-gray-50'}`}
                     >
                       <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${active ? 'bg-primary border-primary' : 'border-gray-300'}`}>
-                        {active && <Check size={11} className="text-white" />}
+                        {active && <AppIcon icon={Check} size={11} className="text-white" aria-hidden="true" />}
                       </div>
-                      <c.icon size={16} aria-hidden="true" className={active ? 'text-primary' : 'text-gray-500'} />
+                      <AppIcon icon={c.icon} size={16} className={active ? 'text-primary' : 'text-gray-500'} aria-hidden="true" />
                       <span className={`text-sm ${active ? 'text-primary font-semibold' : 'text-gray-700'}`}>{c.label}</span>
                     </button>
                   );
@@ -125,12 +130,12 @@ export default function SearchBar({ className = '' }) {
             </div>
             {selectedIds.length > 0 && (
               <div className="p-2.5 border-t border-gray-100 flex items-center justify-between">
-                <button type="button" onClick={() => setSelectedIds([])} className="text-xs text-gray-400 hover:text-red-500 font-medium px-2">
+                <Button variant="ghost" size="sm" className="!text-gray-400 hover:!text-red-500" onClick={() => setSelectedIds([])}>
                   Limpiar
-                </button>
-                <button type="button" onClick={() => setCatOpen(false)} className="text-xs font-semibold text-white bg-primary px-3 py-1.5 rounded-lg hover:bg-primary-dark transition-colors">
+                </Button>
+                <Button size="sm" onClick={() => setCatOpen(false)}>
                   Listo ({selectedIds.length})
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -141,7 +146,7 @@ export default function SearchBar({ className = '' }) {
 
       {/* Ubicación — Google Places Autocomplete (con fallback si no hay API key) */}
       <div className="flex-1 flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl transition-colors">
-        <MapPin size={18} className="text-primary shrink-0" />
+        <AppIcon icon={MapPin} size={18} className="text-primary shrink-0" aria-hidden="true" />
         <div className="flex-1 min-w-0">
           <label className="block text-xs font-semibold text-gray-500 mb-0.5">Zona / Ubicación</label>
           <LocationAutocomplete
@@ -157,7 +162,7 @@ export default function SearchBar({ className = '' }) {
 
       {/* Fecha */}
       <div className="flex-1 flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl transition-colors">
-        <CalendarDays size={18} className="text-primary shrink-0" />
+        <AppIcon icon={CalendarDays} size={18} className="text-primary shrink-0" aria-hidden="true" />
         <div className="flex-1 min-w-0">
           <label className="block text-xs font-semibold text-gray-500 mb-0.5">Fecha del evento</label>
           <input
@@ -171,13 +176,9 @@ export default function SearchBar({ className = '' }) {
       </div>
 
       {/* Buscar */}
-      <button
-        type="submit"
-        className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold px-6 py-3 rounded-xl transition-colors shadow-sm whitespace-nowrap"
-      >
-        <Search size={18} />
+      <Button type="submit" size="lg" icon={Search} className="whitespace-nowrap">
         <span className="hidden sm:inline">Buscar</span>
-      </button>
+      </Button>
     </form>
   );
 }

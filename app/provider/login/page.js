@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
 import { homePathForRole, isAdminRole, ROLES } from '@/lib/roles';
 import { Eye, EyeOff, Mail, Lock, BarChart3, CalendarDays, Wallet, Store } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
 
 export default function ProviderLoginPage() {
   const router = useRouter();
@@ -64,17 +67,14 @@ export default function ProviderLoginPage() {
               { icon: CalendarDays,text: 'Reservas y calendario centralizados' },
               { icon: Wallet,      text: 'Ingresos, comisiones y estado de pagos' },
               { icon: BarChart3,   text: 'Métricas de rendimiento de tu negocio' },
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.text} className="flex items-center gap-3 text-slate-200">
-                  <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-                    <Icon size={17} className="text-primary" />
-                  </span>
-                  <span className="text-sm">{item.text}</span>
-                </div>
-              );
-            })}
+            ].map((item) => (
+              <div key={item.text} className="flex items-center gap-3 text-slate-200">
+                <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                  <AppIcon icon={item.icon} size={17} className="text-primary" aria-hidden="true" />
+                </span>
+                <span className="text-sm">{item.text}</span>
+              </div>
+            ))}
           </div>
         </div>
         <div className="relative z-10 text-xs text-slate-500">Portal exclusivo para proveedores de Eventonow</div>
@@ -93,28 +93,23 @@ export default function ProviderLoginPage() {
           </div>
 
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary-light px-2.5 py-1 rounded-full mb-3">
-            <Store size={12} /> Portal de proveedores
+            <AppIcon icon={Store} size={12} aria-hidden="true" /> Portal de proveedores
           </div>
           <h1 className="text-2xl font-extrabold text-gray-900 mb-2">Ingresá a tu panel de proveedor</h1>
           <p className="text-gray-500 mb-6 text-sm">Gestioná tus servicios, reservas e ingresos.</p>
 
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6">
             <p className="text-xs font-semibold text-slate-600 mb-2">Demo:</p>
-            <button onClick={fillDemo} className="w-full text-xs font-medium text-slate-700 border border-slate-300 py-2 rounded-xl hover:bg-slate-100 transition-colors">
+            <Button variant="outline" size="sm" className="w-full !text-slate-700 !border-slate-300 hover:!bg-slate-100" onClick={fillDemo}>
               Completar credenciales de proveedor demo
-            </button>
+            </Button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="email" required autoComplete="email"
-                  className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                  placeholder="tu@negocio.com" value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              </div>
+              <Input type="email" required autoComplete="email" icon={Mail} placeholder="tu@negocio.com" value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })} />
             </div>
             <div>
               <div className="flex items-center justify-between mb-1.5">
@@ -122,14 +117,16 @@ export default function ProviderLoginPage() {
                 <a href="#" className="text-xs text-primary hover:underline">¿La olvidaste?</a>
               </div>
               <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type={showPass ? 'text' : 'password'} required autoComplete="current-password"
-                  className="w-full border border-gray-200 rounded-xl pl-9 pr-10 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                <Input type={showPass ? 'text' : 'password'} required autoComplete="current-password" icon={Lock} className="pr-10"
                   placeholder="Tu contraseña" value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })} />
-                <button type="button" onClick={() => setShowPass((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
+                <Button
+                  type="button" iconOnly size="sm" variant="ghost"
+                  icon={showPass ? EyeOff : Eye}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 !text-gray-400 hover:!text-gray-600"
+                  aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  onClick={() => setShowPass((v) => !v)}
+                />
               </div>
             </div>
 
@@ -137,10 +134,9 @@ export default function ProviderLoginPage() {
               <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</div>
             )}
 
-            <button type="submit" disabled={loading}
-              className="w-full bg-primary text-white font-bold py-3.5 rounded-xl hover:bg-primary-dark disabled:opacity-60 transition-colors shadow-sm">
+            <Button type="submit" className="w-full" size="lg" loading={loading}>
               {loading ? 'Ingresando...' : 'Ingresar al panel'}
-            </button>
+            </Button>
           </form>
 
           <div className="mt-6 text-center text-sm">

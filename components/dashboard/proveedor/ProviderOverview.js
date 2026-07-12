@@ -12,6 +12,10 @@ import ProviderStatusBadge from '@/components/ProviderStatusBadge';
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import EmptyState from '@/components/EmptyState';
 import MetricCard from '@/components/MetricCard';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import { CHART_AXIS, CHART_GRID_LIGHT, CHART_TOOLTIP_LIGHT, CHART_COLORS } from '@/lib/chartTheme';
+import { TABLE_HEAD_CLS, TABLE_ROW_HOVER_CLS } from '@/components/Table';
 import { providerDashboardService } from '@/services/providerDashboardService';
 import { parseApiDate, safeFormatDate } from '@/lib/date';
 
@@ -62,12 +66,10 @@ export default function ProviderOverview({ provider, services = [], onCreateServ
   if (error) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
-        <AlertTriangle size={32} className="mx-auto text-amber-500 mb-3" />
+        <AppIcon icon={AlertTriangle} size={32} className="mx-auto text-amber-500 mb-3" aria-hidden="true" />
         <p className="text-gray-700 font-medium mb-1">No pudimos cargar tu panel</p>
         <p className="text-sm text-gray-500 mb-5">{error}</p>
-        <button onClick={load} className="px-5 py-2.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors text-sm">
-          Reintentar
-        </button>
+        <Button onClick={load}>Reintentar</Button>
       </div>
     );
   }
@@ -100,12 +102,8 @@ export default function ProviderOverview({ provider, services = [], onCreateServ
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button onClick={() => onGoToTab?.('solicitudes')} className="px-3.5 py-2.5 text-sm font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-            Ver reservas
-          </button>
-          <button onClick={onCreateService} className="flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-bold text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors">
-            <Plus size={15} /> Crear servicio
-          </button>
+          <Button variant="outline" onClick={() => onGoToTab?.('solicitudes')}>Ver reservas</Button>
+          <Button icon={Plus} onClick={onCreateService}>Crear servicio</Button>
         </div>
       </div>
 
@@ -170,18 +168,18 @@ export default function ProviderOverview({ provider, services = [], onCreateServ
                     <AreaChart data={monthlyStats} margin={{ top: 5, right: 5, bottom: 5, left: -18 }}>
                       <defs>
                         <linearGradient id="povRev" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#0BB885" stopOpacity={0.25} />
-                          <stop offset="95%" stopColor="#0BB885" stopOpacity={0} />
+                          <stop offset="5%" stopColor={CHART_COLORS.success} stopOpacity={0.25} />
+                          <stop offset="95%" stopColor={CHART_COLORS.success} stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                      <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}k` : v} />
+                      <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_LIGHT} />
+                      <XAxis dataKey="label" tick={CHART_AXIS} axisLine={false} tickLine={false} />
+                      <YAxis tick={CHART_AXIS} axisLine={false} tickLine={false} tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}k` : v} />
                       <Tooltip
                         formatter={(v) => [money(v), 'Facturación']}
-                        contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 12 }}
+                        contentStyle={CHART_TOOLTIP_LIGHT}
                       />
-                      <Area type="monotone" dataKey="revenue" stroke="#0BB885" strokeWidth={2} fill="url(#povRev)" />
+                      <Area type="monotone" dataKey="revenue" stroke={CHART_COLORS.success} strokeWidth={2} fill="url(#povRev)" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -225,7 +223,7 @@ export default function ProviderOverview({ provider, services = [], onCreateServ
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900 text-sm">Reservas recientes</h3>
                 <button onClick={() => onGoToTab?.('solicitudes')} className="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
-                  Ver todas <ArrowRight size={12} />
+                  Ver todas <AppIcon icon={ArrowRight} size={12} aria-hidden="true" />
                 </button>
               </div>
               {recentBookings.length === 0 ? (
@@ -234,7 +232,7 @@ export default function ProviderOverview({ provider, services = [], onCreateServ
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm min-w-[420px]">
                     <thead>
-                      <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                      <tr className={`text-left ${TABLE_HEAD_CLS.light}`}>
                         <th className="py-2 font-medium">Cliente</th>
                         <th className="py-2 font-medium">Servicio</th>
                         <th className="py-2 font-medium">Fecha</th>
@@ -244,7 +242,7 @@ export default function ProviderOverview({ provider, services = [], onCreateServ
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {recentBookings.map((b) => (
-                        <tr key={b.id}>
+                        <tr key={b.id} className={TABLE_ROW_HOVER_CLS.light}>
                           <td className="py-2.5 font-medium text-gray-800 truncate max-w-[120px]">{b.clientName}</td>
                           <td className="py-2.5 text-gray-500 truncate max-w-[140px]">{b.serviceTitle}</td>
                           <td className="py-2.5 text-gray-500 whitespace-nowrap">{safeFormatDate(b.date, '—')}</td>
@@ -272,7 +270,7 @@ export default function ProviderOverview({ provider, services = [], onCreateServ
                         <p className="text-sm font-medium text-gray-800 truncate">{s.title}</p>
                         <p className="text-xs text-gray-400 flex items-center gap-2">
                           <span>{s.confirmedBookings} reservas</span>
-                          {s.ratingAvg > 0 && <span className="flex items-center gap-0.5"><Star size={10} className="text-yellow-400 fill-current" /> {s.ratingAvg.toFixed(1)}</span>}
+                          {s.ratingAvg > 0 && <span className="flex items-center gap-0.5"><AppIcon icon={Star} size={10} className="text-yellow-400 fill-current" aria-hidden="true" /> {s.ratingAvg.toFixed(1)}</span>}
                         </p>
                       </div>
                       <span className="text-sm font-semibold text-gray-800 shrink-0">{money(s.revenue)}</span>
