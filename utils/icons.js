@@ -4,8 +4,8 @@
 // criterio de elección por categoría/estado.
 
 import {
-  UtensilsCrossed, Music, Camera, Clapperboard, Sparkles, PartyPopper,
-  Martini, Speaker, Flame, Pizza, Tent, Users, Mic2, Aperture, ShieldCheck,
+  UtensilsCrossed, Music, Camera, Sparkles, PartyPopper,
+  Martini, Speaker, Tent, Users, Aperture, Building2,
 } from 'lucide-react';
 
 // Tamaños consistentes por contexto. La UI densa (checkmarks en checkboxes,
@@ -15,12 +15,15 @@ import {
 export const ICON_SIZE = {
   micro: 12,
   xs: 14,
+  badge: 14,
   sidebar: 20,
   navbar: 20,
   button: 18,
   input: 18,
   kpi: 24,
   card: 32,
+  emptyState: 28,
+  hero: 40,
 };
 
 // slug (eventonow-back/src/db/seeds/seed.js) → ícono Lucide.
@@ -28,18 +31,14 @@ const CATEGORY_ICON_MAP = {
   catering: UtensilsCrossed,
   dj: Music,
   fotografia: Camera,
-  video: Clapperboard,
   decoracion: Sparkles,
   animacion: PartyPopper,
   barra: Martini,
   sonido: Speaker,
-  parrilla: Flame,
-  pizza: Pizza,
   castillo: Tent,
   mozos: Users,
-  musica_vivo: Mic2,
   cabina_fotos: Aperture,
-  seguridad: ShieldCheck,
+  'salon-de-fiestas': Building2,
 };
 
 const DEFAULT_CATEGORY_ICON = Sparkles;

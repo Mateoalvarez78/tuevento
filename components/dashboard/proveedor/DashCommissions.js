@@ -7,7 +7,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import {
-  TrendingUp, TrendingDown, DollarSign, Percent, Info,
+  DollarSign, Percent, Info,
   BarChart3, Calendar, AlertTriangle, ArrowUpRight,
 } from 'lucide-react';
 import {
@@ -15,6 +15,7 @@ import {
 } from '@/lib/commissionHelpers';
 import { providerDashboardService } from '@/services/providerDashboardService';
 import { safeFormatDate } from '@/lib/date';
+import MetricCard from '@/components/MetricCard';
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } } };
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
@@ -37,18 +38,6 @@ function InfoTooltip({ text }) {
         <div className="absolute top-full right-3 border-4 border-transparent border-t-gray-900" />
       </div>
     </div>
-  );
-}
-
-function TrendBadge({ pct, inverse = false }) {
-  const up = pct >= 0;
-  const good = inverse ? !up : up;
-  const Icon = up ? TrendingUp : TrendingDown;
-  return (
-    <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${good ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
-      <Icon size={10} />
-      {up ? '+' : ''}{Math.abs(pct).toFixed(1)}%
-    </span>
   );
 }
 
@@ -96,31 +85,31 @@ function SummaryCards({ byMonth, summary }) {
     {
       key: 'gross', label: 'Facturación bruta', desc: 'Total facturado este mes',
       value: fmtUYU(cur.gross), trend: trendPct(cur.gross, prev.gross), inverse: false,
-      icon: <DollarSign size={16} className="text-blue-600" />, iconBg: 'bg-blue-50',
+      icon: DollarSign, tone: 'blue',
       tooltip: 'Suma de reservas aceptadas o completadas este mes, antes de descontar la comisión de Eventonow.',
     },
     {
       key: 'commission', label: 'Comisión Eventonow', desc: `${COMMISSION_LABEL} sobre facturación`,
       value: fmtUYU(cur.commission), trend: trendPct(cur.commission, prev.commission), inverse: true,
-      icon: <Percent size={16} className="text-orange-600" />, iconBg: 'bg-orange-50',
+      icon: Percent, tone: 'orange',
       tooltip: COMMISSION_DESCRIPTION,
     },
     {
       key: 'net', label: 'Ingreso neto', desc: 'Lo que recibís este mes',
       value: fmtUYU(cur.net), trend: trendPct(cur.net, prev.net), inverse: false,
-      icon: <ArrowUpRight size={16} className="text-emerald-600" />, iconBg: 'bg-emerald-50',
+      icon: ArrowUpRight, tone: 'emerald',
       tooltip: 'Facturación bruta menos la comisión de Eventonow.',
     },
     {
       key: 'avgTicket', label: 'Ticket neto promedio', desc: 'Por reserva confirmada',
       value: fmtUYU(avgNet), trend: trendPct(avgNet, prevAvgNet), inverse: false,
-      icon: <BarChart3 size={16} className="text-violet-600" />, iconBg: 'bg-violet-50',
+      icon: BarChart3, tone: 'violet',
       tooltip: 'Ingreso neto promedio por reserva del mes.',
     },
     {
       key: 'annualCommission', label: 'Comisiones (12 meses)', desc: 'Acumulado del período',
       value: fmtUYU(annualCommission), trend: null, inverse: true,
-      icon: <Calendar size={16} className="text-primary" />, iconBg: 'bg-primary-light',
+      icon: Calendar, tone: 'primary',
       tooltip: `Total de comisiones en los últimos 12 meses, sobre un bruto de ${fmtUYU(annualGross)}.`,
     },
   ];
@@ -128,18 +117,13 @@ function SummaryCards({ byMonth, summary }) {
   return (
     <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
       {CARDS.map((c) => (
-        <motion.div key={c.key} variants={fadeUp} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <div className={`w-9 h-9 rounded-xl ${c.iconBg} flex items-center justify-center`}>{c.icon}</div>
-            {c.trend !== null ? <TrendBadge pct={c.trend} inverse={c.inverse} /> : <InfoTooltip text={c.tooltip} />}
-          </div>
-          <div className="mb-1">
-            <p className="text-xs text-gray-400 font-medium leading-tight">{c.label}</p>
-            <p className="text-2xl font-bold text-gray-900 leading-tight mt-0.5">{c.value}</p>
-          </div>
-          <p className="text-[11px] text-gray-400 leading-tight">{c.desc}</p>
+        <motion.div key={c.key} variants={fadeUp}>
+          <MetricCard
+            icon={c.icon} tone={c.tone} label={c.label} value={c.value} sub={c.desc}
+            trend={c.trend} trendInverse={c.inverse} tooltip={c.trend === null ? c.tooltip : undefined}
+          />
           {c.trend !== null && (
-            <div className="mt-1.5 flex items-center justify-between">
+            <div className="mt-1.5 px-1 flex items-center justify-between">
               <InfoTooltip text={c.tooltip} />
               <span className="text-[10px] text-gray-300">vs mes ant.</span>
             </div>

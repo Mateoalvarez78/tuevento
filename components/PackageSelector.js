@@ -50,6 +50,14 @@ export default function PackageSelector({ packages, selectedId, onSelect }) {
                   {pkg.priceUnit ? ` ${pkg.priceUnit}` : ''}
                 </div>
               )}
+              {pkg.isDurationPackage && (
+                <div className="text-xs text-gray-500 mt-1">
+                  {pkg.durationHours} horas incluidas
+                  {pkg.allowsExtraHours && (
+                    <> · hora extra ${Number(pkg.extraHourPrice).toLocaleString('es-UY')} (máx. {pkg.maxExtraHours}hs)</>
+                  )}
+                </div>
+              )}
             </div>
 
             <p className="text-xs text-gray-500 mb-3 leading-relaxed">{pkg.description}</p>

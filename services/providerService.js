@@ -82,6 +82,13 @@ function mapPackages(packages) {
       priceUnit,
       description:   p.description || '',
       includes:      Array.isArray(p.includes) ? p.includes : [],
+      // Paquete de duración fija (ej. salón de fiestas) — se detecta por dato,
+      // no por categoría: si tiene duración, es de este tipo.
+      isDurationPackage: p.duration_hours != null,
+      durationHours:     p.duration_hours != null ? parseFloat(p.duration_hours) : null,
+      allowsExtraHours:  !!p.allows_extra_hours,
+      extraHourPrice:    p.extra_hour_price != null ? parseFloat(p.extra_hour_price) : null,
+      maxExtraHours:     p.max_extra_hours != null ? parseInt(p.max_extra_hours) : null,
     };
   });
 }

@@ -50,6 +50,11 @@ function mapBooking(b) {
     subtotalAdults:    parseFloat(b.subtotal_adults) || 0,
     subtotalChildren:  parseFloat(b.subtotal_children) || 0,
     extrasTotal:       parseFloat(b.extras_total) || 0,
+    // Paquete de duración fija (ej. salón de fiestas) — snapshot al reservar.
+    durationHours:     b.duration_hours != null ? parseFloat(b.duration_hours) : null,
+    extraHours:        parseInt(b.extra_hours) || 0,
+    extraHourPrice:    b.extra_hour_price != null ? parseFloat(b.extra_hour_price) : null,
+    extraHoursAmount:  parseFloat(b.extra_hours_amount) || 0,
     message:           b.message || '',
     extras:            Array.isArray(b.extras_selected) ? b.extras_selected : [],
     // Financial
@@ -138,6 +143,7 @@ export const bookingService = {
       package_id:      data.packageId || data.package_id || undefined,
       adults_count:    adults,
       children_count:  children,
+      extra_hours:     data.extraHours != null ? Number(data.extraHours) : undefined,
       event_date:      data.date     || data.event_date,
       event_time:      data.time     || data.event_time || undefined,
       event_location:  data.location || data.event_location,

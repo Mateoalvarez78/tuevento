@@ -11,6 +11,7 @@ import {
 import ProviderStatusBadge from '@/components/ProviderStatusBadge';
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import EmptyState from '@/components/EmptyState';
+import MetricCard from '@/components/MetricCard';
 import { providerDashboardService } from '@/services/providerDashboardService';
 import { parseApiDate, safeFormatDate } from '@/lib/date';
 
@@ -19,28 +20,6 @@ const currentMonthKey = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
-
-function MetricCard({ icon: Icon, label, value, sub, tone = 'gray' }) {
-  const tones = {
-    gray:    'text-gray-500 bg-gray-100',
-    primary: 'text-primary bg-primary-light',
-    amber:   'text-amber-600 bg-amber-50',
-    emerald: 'text-emerald-600 bg-emerald-50',
-    blue:    'text-blue-600 bg-blue-50',
-  };
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${tones[tone]}`}>
-          <Icon size={15} />
-        </span>
-        <span className="text-xs text-gray-500 font-medium leading-tight">{label}</span>
-      </div>
-      <div className="text-2xl font-bold text-gray-900">{value}</div>
-      {sub && <div className="text-[11px] text-gray-400 mt-0.5">{sub}</div>}
-    </div>
-  );
-}
 
 export default function ProviderOverview({ provider, services = [], onCreateService, onGoToTab }) {
   const [data, setData] = useState(null);

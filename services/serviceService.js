@@ -62,6 +62,12 @@ function mapMenu(p) {
     maxGuests:     p.max_guests != null ? parseInt(p.max_guests) : null,
     isActive:      p.is_active !== false,
     sortOrder:     p.sort_order || 0,
+    // Paquete de duración fija (ej. salón de fiestas) — se detecta por dato.
+    isDurationPackage: p.duration_hours != null,
+    durationHours:     p.duration_hours != null ? parseFloat(p.duration_hours) : null,
+    allowsExtraHours:  !!p.allows_extra_hours,
+    extraHourPrice:    p.extra_hour_price != null ? parseFloat(p.extra_hour_price) : null,
+    maxExtraHours:     p.max_extra_hours != null ? parseInt(p.max_extra_hours) : null,
     _raw: p,
   };
 }
@@ -78,6 +84,10 @@ function toMenuBody(d) {
   if (d.maxGuests     !== undefined) body.max_guests = d.maxGuests;
   if (d.sortOrder     !== undefined) body.sort_order = d.sortOrder;
   if (d.isActive      !== undefined) body.is_active = d.isActive;
+  if (d.durationHours    !== undefined) body.duration_hours = d.durationHours;
+  if (d.allowsExtraHours !== undefined) body.allows_extra_hours = d.allowsExtraHours;
+  if (d.extraHourPrice   !== undefined) body.extra_hour_price = d.extraHourPrice;
+  if (d.maxExtraHours    !== undefined) body.max_extra_hours = d.maxExtraHours;
   return body;
 }
 

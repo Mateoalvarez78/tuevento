@@ -2,7 +2,20 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Camera, Globe, MessageCircle, Play, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+import { siInstagram, siFacebook, siTiktok, siYoutube, siWhatsapp } from 'simple-icons';
+import AppIcon from '@/components/AppIcon';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
+
+// simple-icons no incluye LinkedIn (retirado del paquete). Se define el path
+// oficial de su logomark localmente, en el mismo formato { path, hex } que ya
+// usa simple-icons, para que siga pasando por el mismo <AppIcon>.
+const siLinkedin = {
+  title: 'LinkedIn',
+  hex: '0A66C2',
+  path: 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z',
+};
 
 const COMPANY_LINKS = [
   { label: 'Nosotros',           href: '#' },
@@ -20,14 +33,15 @@ const SUPPORT_LINKS = [
   { label: 'Reportar problema',    href: '#' },
 ];
 
-// lucide-react no incluye íconos de marca (Instagram/Facebook/Youtube no existen
-// en el paquete instalado) — se usan equivalentes genéricos consistentes con el
-// resto del sistema de íconos.
+// Íconos de marca reales vía simple-icons (Lucide se mantiene para todo lo
+// demás — ver AppIcon, que renderiza ambos casos de forma transparente).
 const SOCIALS = [
-  { icon: Camera, href: '#', title: 'Instagram' },
-  { icon: Globe, href: '#', title: 'Facebook' },
-  { icon: MessageCircle, href: '#', title: 'WhatsApp' },
-  { icon: Play, href: '#', title: 'YouTube' },
+  { icon: siInstagram, href: '#', title: 'Instagram' },
+  { icon: siFacebook, href: '#', title: 'Facebook' },
+  { icon: siTiktok, href: '#', title: 'TikTok' },
+  { icon: siYoutube, href: '#', title: 'YouTube' },
+  { icon: siLinkedin, href: '#', title: 'LinkedIn' },
+  { icon: siWhatsapp, href: '#', title: 'WhatsApp' },
 ];
 
 export default function Footer() {
@@ -66,9 +80,9 @@ export default function Footer() {
                   href={s.href}
                   title={s.title}
                   aria-label={s.title}
-                  className="w-9 h-9 rounded-full bg-gray-800 hover:bg-primary flex items-center justify-center text-white transition-colors"
+                  className="w-9 h-9 rounded-full bg-gray-800 hover:bg-primary flex items-center justify-center text-white transition-colors duration-200"
                 >
-                  <s.icon size={16} aria-hidden="true" />
+                  <AppIcon icon={s.icon} size={16} aria-hidden="true" />
                 </a>
               ))}
             </div>
@@ -109,25 +123,23 @@ export default function Footer() {
               Recibí tips de eventos y los mejores proveedores cada semana.
             </p>
             {subscribed ? (
-              <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3 text-sm text-green-400 font-medium">
-                <CheckCircle2 size={16} className="shrink-0" aria-hidden="true" />
+              <div className="flex items-center gap-2 bg-success/10 border border-success/30 rounded-xl px-4 py-3 text-sm text-success font-medium">
+                <AppIcon icon={CheckCircle2} size={16} className="shrink-0" aria-hidden="true" />
                 ¡Gracias! Te sumamos a la lista.
               </div>
             ) : (
               <form onSubmit={handleSubscribe} className="flex gap-2">
-                <input
+                <Input
                   type="email"
+                  variant="dark"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@email.com"
-                  className="flex-1 min-w-0 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-primary/60 transition-colors"
+                  wrapperClassName="flex-1 min-w-0"
                 />
-                <button
-                  type="submit"
-                  className="bg-primary hover:bg-primary-dark text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors whitespace-nowrap"
-                >
+                <Button type="submit" theme="dark" size="md" className="whitespace-nowrap">
                   Ok
-                </button>
+                </Button>
               </form>
             )}
 

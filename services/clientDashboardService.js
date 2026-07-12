@@ -7,7 +7,7 @@ import { bookingService } from './bookingService';
 import { categoryService } from './categoryService';
 
 // Categorías clave para el "organizador del evento" (usa slugs reales del catálogo).
-const ORGANIZER_SLUGS = ['catering', 'dj', 'barra', 'fotografia', 'decoracion', 'animacion', 'sonido'];
+const ORGANIZER_SLUGS = ['catering', 'dj', 'barra', 'fotografia', 'decoracion', 'animacion', 'sonido', 'salon-de-fiestas'];
 
 // Recomendaciones complementarias simples por categoría ya contratada.
 const COMPLEMENTS = {

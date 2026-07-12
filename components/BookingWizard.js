@@ -6,7 +6,7 @@ import { useApp } from '@/lib/AppContext';
 import { bookingService } from '@/services/bookingService';
 import { Check, CalendarDays, MapPin, Users, Package, User, ClipboardList, CheckCircle } from 'lucide-react';
 import PackageSelector from './PackageSelector';
-import { safeFormatDate } from '@/lib/date';
+import { safeFormatDate, addHoursToTime } from '@/lib/date';
 
 const EVENT_TYPES = ['Cumpleaños', 'Casamiento', 'Empresarial', 'Infantil', 'Fiesta privada', 'Otro'];
 const STEPS = [
@@ -31,6 +31,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
   const [packageData, setPackageData] = useState({
     packageId: initialPackageId || provider.packages[1]?.id || provider.packages[0]?.id,
     extras: [],
+    extraHours: 0,
   });
   const [contactData, setContactData] = useState({
     name: user?.name || '',
@@ -63,7 +64,18 @@ export default function BookingWizard({ provider, initialPackageId }) {
   const perPerson = selectedPkg ? selectedPkg.perPerson !== false : (provider.priceType === 'per_person');
   const subtotalAdults = perPerson ? adultsN * adultPrice : adultPrice;
   const subtotalChildren = perPerson ? childrenN * childPrice : 0;
-  const totalEstimated = subtotalAdults + subtotalChildren + extrasTotal;
+
+  // Paquete de duración fija (ej. salón de fiestas): precio fijo + horas extra.
+  const isDurationPkg = !!selectedPkg?.isDurationPackage;
+  const maxExtraHours = selectedPkg?.maxExtraHours || 0;
+  const extraHoursN = isDurationPkg ? Math.min(Math.max(0, Number(packageData.extraHours) || 0), maxExtraHours) : 0;
+  const extraHourPrice = selectedPkg?.extraHourPrice || 0;
+  const extraHoursAmount = extraHoursN * extraHourPrice;
+  const estimatedEnd = isDurationPkg && eventData.time && selectedPkg?.durationHours
+    ? addHoursToTime(eventData.time, Number(selectedPkg.durationHours) + extraHoursN)
+    : null;
+
+  const totalEstimated = subtotalAdults + subtotalChildren + extrasTotal + extraHoursAmount;
 
   const stepValid = () => {
     if (step === 0) return eventData.date && eventData.time && eventData.location && eventData.eventType && adultsN >= 1;
@@ -86,6 +98,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
         packageId:  packageData.packageId || undefined,
         adults:     adultsN,
         children:   childrenN,
+        extraHours: isDurationPkg ? extraHoursN : undefined,
         date:       eventData.date,
         time:       eventData.time,
         location:   eventData.location,
@@ -213,8 +226,45 @@ export default function BookingWizard({ provider, initialPackageId }) {
       {/* Step 1: Package */}
       {step === 1 && (
         <div>
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Seleccioná un menú</h3>
-          <PackageSelector packages={provider.packages} selectedId={packageData.packageId} onSelect={(id) => setPackageData({ ...packageData, packageId: id })} />
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Seleccioná un {isDurationPkg ? 'paquete' : 'menú'}</h3>
+          <PackageSelector packages={provider.packages} selectedId={packageData.packageId} onSelect={(id) => setPackageData({ ...packageData, packageId: id, extraHours: 0 })} />
+
+          {isDurationPkg && selectedPkg?.allowsExtraHours && (
+            <div className="mt-6 p-4 rounded-2xl border border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-800">Horas extra</h4>
+                  <p className="text-xs text-gray-500">
+                    ${Number(extraHourPrice).toLocaleString('es-UY')} por hora · máximo {maxExtraHours}hs
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPackageData({ ...packageData, extraHours: Math.max(0, extraHoursN - 1) })}
+                    disabled={extraHoursN === 0}
+                    className="w-8 h-8 rounded-full border border-gray-300 text-gray-600 font-bold hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    −
+                  </button>
+                  <span className="w-6 text-center font-semibold text-gray-900">{extraHoursN}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPackageData({ ...packageData, extraHours: Math.min(maxExtraHours, extraHoursN + 1) })}
+                    disabled={extraHoursN >= maxExtraHours}
+                    className="w-8 h-8 rounded-full border border-gray-300 text-gray-600 font-bold hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              {estimatedEnd && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Fin estimado: {estimatedEnd.time}hs{estimatedEnd.dayOffset > 0 ? ' (día siguiente)' : ''}
+                </p>
+              )}
+            </div>
+          )}
 
           {provider.extras.length > 0 && (
             <div className="mt-6">
@@ -271,11 +321,34 @@ export default function BookingWizard({ provider, initialPackageId }) {
             </div>
             {selectedPkg && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Menú</span>
+                <span className="text-gray-500">{isDurationPkg ? 'Paquete' : 'Menú'}</span>
                 <span className="font-medium text-gray-900">{selectedPkg.name}</span>
               </div>
             )}
-            {perPerson ? (
+            {isDurationPkg ? (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Duración</span>
+                  <span className="font-medium text-gray-900">
+                    {selectedPkg.durationHours}hs · ${subtotalAdults.toLocaleString('es-UY')}
+                  </span>
+                </div>
+                {extraHoursN > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Horas extra</span>
+                    <span className="font-medium text-gray-900">
+                      {extraHoursN} × ${extraHourPrice.toLocaleString('es-UY')} = ${extraHoursAmount.toLocaleString('es-UY')}
+                    </span>
+                  </div>
+                )}
+                {estimatedEnd && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Fin estimado</span>
+                    <span className="font-medium text-gray-900">{estimatedEnd.time}hs{estimatedEnd.dayOffset > 0 ? ' (día sig.)' : ''}</span>
+                  </div>
+                )}
+              </>
+            ) : perPerson ? (
               <>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Adultos</span>
