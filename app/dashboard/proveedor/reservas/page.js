@@ -10,6 +10,7 @@ import { bookingService } from '@/services/bookingService';
 import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import EmptyState from '@/components/EmptyState';
 import { CalendarDrawer } from '@/components/dashboard/proveedor/DashCalendar';
+import AcceptBookingModal from '@/components/dashboard/proveedor/AcceptBookingModal';
 import { safeFormatDate } from '@/lib/date';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
@@ -39,6 +40,7 @@ export default function ProviderReservationsPage() {
   const [selected, setSelected] = useState(null);
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [acceptModal, setAcceptModal] = useState(null);
   const [busyId, setBusyId] = useState(null);
 
   const reload = useCallback(async () => {
@@ -78,8 +80,13 @@ export default function ProviderReservationsPage() {
     }
   };
 
-  const handleAccept = (b) => runAction(b.id, () => bookingService.updateStatus(b.id, 'accepted'), 'Reserva confirmada');
   const handleComplete = (b) => runAction(b.id, () => bookingService.updateStatus(b.id, 'completed'), 'Reserva marcada como completada');
+
+  const handleAccepted = async () => {
+    setAcceptModal(null);
+    showToast('Reserva aceptada', 'success');
+    await reload();
+  };
 
   const handleReject = async () => {
     const b = rejectModal;
@@ -204,7 +211,7 @@ export default function ProviderReservationsPage() {
                   {b.status === 'pending' && (
                     <>
                       <Button variant="danger" size="sm" icon={X} disabled={busyId === b.id} onClick={() => setRejectModal(b)}>Rechazar</Button>
-                      <Button variant="success" size="sm" icon={Check} disabled={busyId === b.id} onClick={() => handleAccept(b)}>Aceptar</Button>
+                      <Button variant="success" size="sm" icon={Check} disabled={busyId === b.id} onClick={() => setAcceptModal(b)}>Aceptar</Button>
                     </>
                   )}
                   {b.status === 'confirmed' && (
@@ -219,6 +226,7 @@ export default function ProviderReservationsPage() {
         )}
 
       <CalendarDrawer booking={selected} onClose={() => setSelected(null)} />
+      <AcceptBookingModal booking={acceptModal} onClose={() => setAcceptModal(null)} onAccepted={handleAccepted} onChanged={reload} />
 
       {rejectModal && (
         <Modal

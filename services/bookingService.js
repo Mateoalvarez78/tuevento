@@ -159,8 +159,9 @@ export const bookingService = {
    * Updates booking status.
    * Accepts backend statuses (accepted/rejected/cancelled/completed) and also
    * the legacy UI term 'confirmed' (→ accepted). Maps to the REST action path.
+   * `options.blockFullDay` solo aplica al aceptar (ver AcceptBookingModal).
    */
-  async updateStatus(id, status, reason) {
+  async updateStatus(id, status, reason, options = {}) {
     // One-way normalization only: 'confirmed' (legacy) → 'accepted'.
     const backendStatus = status === 'confirmed' ? 'accepted' : status;
     const endpointMap = {
@@ -171,7 +172,7 @@ export const bookingService = {
     };
     const endpoint = endpointMap[backendStatus];
     if (!endpoint) throw new ApiError(`Acción de reserva no soportada: ${status}`, 400, 'UNSUPPORTED_STATUS');
-    const body = reason ? { reason } : {};
+    const body = { ...(reason ? { reason } : {}), ...(backendStatus === 'accepted' ? { blockFullDay: !!options.blockFullDay } : {}) };
     const res = await api.patch(`/bookings/${id}/${endpoint}`, body);
     return mapBooking(res.data);
   },
@@ -180,6 +181,24 @@ export const bookingService = {
   async getById(id) {
     const res = await api.get(`/bookings/${id}`);
     return mapBooking(res.data);
+  },
+
+  /** Preview de aceptación: eventos/personas comprometidos + proyección. */
+  async getAcceptPreview(id) {
+    const res = await api.get(`/bookings/${id}/accept-preview`);
+    const d = res.data || {};
+    return {
+      serviceTitle: d.serviceTitle || '',
+      date: d.date, time: d.time || '',
+      guestCount: d.guestCount || 0,
+      eventsBefore: d.eventsBefore || 0,
+      guestsBefore: d.guestsBefore || 0,
+      eventsAfter: d.eventsAfter || 0,
+      guestsAfter: d.guestsAfter || 0,
+      maxEvents: d.maxEvents,
+      maxGuests: d.maxGuests,
+      wouldStillBeAvailable: d.wouldStillBeAvailable !== false,
+    };
   },
 
   /**

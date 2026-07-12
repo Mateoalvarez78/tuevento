@@ -33,6 +33,14 @@ function mapService(s) {
     minGuests:     s.min_guests || null,
     maxGuests:     s.max_guests || null,
     durationHours: s.duration_hours || null,
+    // Capacidad/disponibilidad propia (opcional, hereda del proveedor por defecto)
+    useProviderCapacity:      s.use_provider_capacity !== false,
+    maxConcurrentEvents:      s.max_concurrent_events != null ? parseInt(s.max_concurrent_events) : null,
+    maxConcurrentGuests:      s.max_concurrent_guests != null ? parseInt(s.max_concurrent_guests) : null,
+    durationMinutes:          s.duration_minutes != null ? parseInt(s.duration_minutes) : null,
+    preparationMinutes:       s.preparation_minutes != null ? parseInt(s.preparation_minutes) : 0,
+    cleanupMinutes:           s.cleanup_minutes != null ? parseInt(s.cleanup_minutes) : 0,
+    minimumBookingNoticeHours: s.minimum_booking_notice_hours != null ? parseInt(s.minimum_booking_notice_hours) : null,
     status:        s.status || 'draft',
     statusReason:  s.status_reason || null,
     rating:        parseFloat(s.rating_avg) || 0,
@@ -147,6 +155,13 @@ export const serviceService = {
     if (data.max_guests !== undefined)   body.max_guests = data.max_guests;
     if (data.durationHours !== undefined) body.duration_hours = data.durationHours;
     if (data.duration_hours !== undefined) body.duration_hours = data.duration_hours;
+    if (data.useProviderCapacity !== undefined) body.use_provider_capacity = data.useProviderCapacity;
+    if (data.maxConcurrentEvents !== undefined) body.max_concurrent_events = data.maxConcurrentEvents;
+    if (data.maxConcurrentGuests !== undefined) body.max_concurrent_guests = data.maxConcurrentGuests;
+    if (data.durationMinutes !== undefined) body.duration_minutes = data.durationMinutes;
+    if (data.preparationMinutes !== undefined) body.preparation_minutes = data.preparationMinutes;
+    if (data.cleanupMinutes !== undefined) body.cleanup_minutes = data.cleanupMinutes;
+    if (data.minimumBookingNoticeHours !== undefined) body.minimum_booking_notice_hours = data.minimumBookingNoticeHours;
     const res = await api.put(`/services/${id}`, body);
     return mapService(res.data);
   },

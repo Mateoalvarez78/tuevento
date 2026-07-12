@@ -43,6 +43,8 @@ const STATUS_FILTERS = [
 const EMPTY_FORM = {
   title: '', category_id: '', description: '', price_type: 'per_person', price_from: '',
   min_guests: '', max_guests: '', duration_hours: '', zones: [],
+  use_provider_capacity: true, max_concurrent_events: '', max_concurrent_guests: '',
+  duration_minutes: '', preparation_minutes: '0', cleanup_minutes: '0', minimum_booking_notice_hours: '',
 };
 
 function serviceToForm(s) {
@@ -56,6 +58,13 @@ function serviceToForm(s) {
     max_guests: s.maxGuests != null ? String(s.maxGuests) : '',
     duration_hours: s.durationHours != null ? String(s.durationHours) : '',
     zones: Array.isArray(s.zones) ? s.zones : [],
+    use_provider_capacity: s.useProviderCapacity !== false,
+    max_concurrent_events: s.maxConcurrentEvents != null ? String(s.maxConcurrentEvents) : '',
+    max_concurrent_guests: s.maxConcurrentGuests != null ? String(s.maxConcurrentGuests) : '',
+    duration_minutes: s.durationMinutes != null ? String(s.durationMinutes) : '',
+    preparation_minutes: s.preparationMinutes != null ? String(s.preparationMinutes) : '0',
+    cleanup_minutes: s.cleanupMinutes != null ? String(s.cleanupMinutes) : '0',
+    minimum_booking_notice_hours: s.minimumBookingNoticeHours != null ? String(s.minimumBookingNoticeHours) : '',
   };
 }
 
@@ -125,6 +134,13 @@ export default function ProviderServicesPage() {
       max_guests: f.max_guests !== '' ? Number(f.max_guests) : null,
       duration_hours: f.duration_hours !== '' ? Number(f.duration_hours) : null,
       zones: f.zones,
+      useProviderCapacity: f.use_provider_capacity,
+      maxConcurrentEvents: f.use_provider_capacity ? null : (f.max_concurrent_events !== '' ? Number(f.max_concurrent_events) : null),
+      maxConcurrentGuests: f.use_provider_capacity ? null : (f.max_concurrent_guests !== '' ? Number(f.max_concurrent_guests) : null),
+      durationMinutes: f.duration_minutes !== '' ? Number(f.duration_minutes) : null,
+      preparationMinutes: f.preparation_minutes !== '' ? Number(f.preparation_minutes) : 0,
+      cleanupMinutes: f.cleanup_minutes !== '' ? Number(f.cleanup_minutes) : 0,
+      minimumBookingNoticeHours: f.use_provider_capacity ? null : (f.minimum_booking_notice_hours !== '' ? Number(f.minimum_booking_notice_hours) : null),
     };
 
     setSaving(true);
@@ -462,6 +478,55 @@ function ServiceDrawer({ drawer, setDrawer, categories, saving, onSave, onClose 
             {ZONES.map((z) => (
               <Chip key={z} selected={form.zones.includes(z)} onClick={() => toggleZone(z)}>{z}</Chip>
             ))}
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-gray-100">
+          <label className="block text-xs font-semibold text-gray-600 mb-2">Capacidad y disponibilidad</label>
+          <label className="flex items-center gap-2 text-sm text-gray-700 mb-3">
+            <input
+              type="checkbox"
+              checked={form.use_provider_capacity}
+              onChange={(e) => setForm({ use_provider_capacity: e.target.checked })}
+            />
+            Usar la capacidad general de mi cuenta (configurada en Calendario → Configuración)
+          </label>
+
+          {!form.use_provider_capacity && (
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Máx. eventos simultáneos</label>
+                <Input type="number" min="1" placeholder="Ej: 1" value={form.max_concurrent_events} onChange={(e) => setForm({ max_concurrent_events: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Máx. personas simultáneas</label>
+                <Input type="number" min="1" placeholder="Sin límite" value={form.max_concurrent_guests} onChange={(e) => setForm({ max_concurrent_guests: e.target.value })} />
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Duración estimada (min.)</label>
+              <Input type="number" min="0" placeholder="Ej: 300" value={form.duration_minutes} onChange={(e) => setForm({ duration_minutes: e.target.value })} />
+            </div>
+            {!form.use_provider_capacity && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Anticipación mínima (hs)</label>
+                <Input type="number" min="0" placeholder="Ej: 72" value={form.minimum_booking_notice_hours} onChange={(e) => setForm({ minimum_booking_notice_hours: e.target.value })} />
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Preparación previa (min.)</label>
+              <Input type="number" min="0" value={form.preparation_minutes} onChange={(e) => setForm({ preparation_minutes: e.target.value })} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Desmontaje (min.)</label>
+              <Input type="number" min="0" value={form.cleanup_minutes} onChange={(e) => setForm({ cleanup_minutes: e.target.value })} />
+            </div>
           </div>
         </div>
 

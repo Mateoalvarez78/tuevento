@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
 import { bookingService } from '@/services/bookingService';
-import { Check, CalendarDays, MapPin, Users, Package, User, ClipboardList, CheckCircle } from 'lucide-react';
+import { availabilityService } from '@/services/availabilityService';
+import { Check, CalendarDays, MapPin, Users, Package, User, ClipboardList, CheckCircle, AlertTriangle } from 'lucide-react';
 import PackageSelector from './PackageSelector';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
-import { safeFormatDate, addHoursToTime } from '@/lib/date';
+import { safeFormatDate, addHoursToTime, todayStr } from '@/lib/date';
 
 const EVENT_TYPES = ['Cumpleaños', 'Casamiento', 'Empresarial', 'Infantil', 'Fiesta privada', 'Otro'];
 const STEPS = [
@@ -42,6 +43,23 @@ export default function BookingWizard({ provider, initialPackageId }) {
     email: user?.email || '',
     message: '',
   });
+
+  const [availability, setAvailability] = useState(null);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+
+  // Consulta de disponibilidad pública (Etapa 7): solo informativa — el
+  // backend siempre vuelve a validar al crear la reserva.
+  useEffect(() => {
+    if (!eventData.date) { setAvailability(null); return; }
+    let cancelled = false;
+    setCheckingAvailability(true);
+    const guestCount = (Number(eventData.adults) || 0) + (Number(eventData.children) || 0);
+    availabilityService.getPublicAvailability(provider.id, { date: eventData.date, time: eventData.time || undefined, guestCount: guestCount || undefined })
+      .then((res) => { if (!cancelled) setAvailability(res); })
+      .catch(() => { if (!cancelled) setAvailability(null); })
+      .finally(() => { if (!cancelled) setCheckingAvailability(false); });
+    return () => { cancelled = true; };
+  }, [provider.id, eventData.date, eventData.time, eventData.adults, eventData.children]);
 
   const selectedPkg = provider.packages.find((p) => p.packageId === packageData.packageId) || provider.packages.find((p) => p.id === packageData.packageId) || provider.packages[0];
 
@@ -175,13 +193,26 @@ export default function BookingWizard({ provider, initialPackageId }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha *</label>
-              <input type="date" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" value={eventData.date} onChange={(e) => setEventData({ ...eventData, date: e.target.value })} min={new Date().toISOString().split('T')[0]} />
+              <input type="date" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" value={eventData.date} onChange={(e) => setEventData({ ...eventData, date: e.target.value })} min={todayStr()} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Hora *</label>
               <input type="time" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" value={eventData.time} onChange={(e) => setEventData({ ...eventData, time: e.target.value })} />
             </div>
           </div>
+
+          {eventData.date && !checkingAvailability && availability && !availability.available && (
+            <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <AppIcon icon={AlertTriangle} size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <p>{availability.reasonMessage || 'El proveedor no tiene disponibilidad para esta fecha.'}</p>
+            </div>
+          )}
+          {eventData.date && !checkingAvailability && availability?.available && (
+            <p className="text-xs text-emerald-600 flex items-center gap-1">
+              <AppIcon icon={Check} size={12} aria-hidden="true" /> Fecha disponible según la agenda del proveedor.
+            </p>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Ubicación del evento *</label>
             <Input icon={MapPin} placeholder="Ej: Salón Crystal, Av. 18 de Julio, Montevideo" value={eventData.location} onChange={(e) => setEventData({ ...eventData, location: e.target.value })} />

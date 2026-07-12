@@ -1,16 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   ChevronLeft, ChevronRight, Phone, MessageCircle,
   MapPin, Users, DollarSign, CalendarClock, FileText, CheckCircle2, AlertCircle,
+  CalendarCheck2, CalendarClock as CalendarPartial, CalendarOff,
 } from 'lucide-react';
 import { fmtFull } from '@/lib/commissionHelpers';
-import { parseApiDate } from '@/lib/date';
+import { parseApiDate, todayStr } from '@/lib/date';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Drawer from '@/components/Drawer';
 import { CHART_COLORS } from '@/lib/chartTheme';
+import { availabilityService } from '@/services/availabilityService';
+import { serviceService } from '@/services/serviceService';
+import DayDetailDrawer from './DayDetailDrawer';
+
+// Estados de disponibilidad por día (Etapa 6.1) — simplificado a 3 estados
+// visuales (a pedido): disponible, parcial y bloqueado. "Completo" y "fuera
+// de horario" no se distinguen visualmente (se pliegan a parcial/disponible).
+const DAY_STATUS_STYLES = {
+  available: { icon: CalendarCheck2,  className: 'text-emerald-600',                label: 'Disponible' },
+  partial:   { icon: CalendarPartial, className: 'text-amber-600 bg-amber-50',       label: 'Parcial' },
+  blocked:   { icon: CalendarOff,     className: 'text-red-700 bg-red-100',          label: 'Bloqueado', cellClassName: 'bg-red-50 ring-1 ring-inset ring-red-300 hover:bg-red-100/60' },
+};
+
+// El backend devuelve 5 estados (available/partial/full/blocked/outside_hours);
+// acá se colapsan a los 3 que se muestran en el grid.
+function toDisplayStatus(rawStatus) {
+  if (rawStatus === 'blocked') return 'blocked';
+  if (rawStatus === 'partial' || rawStatus === 'full') return 'partial';
+  return 'available'; // available | outside_hours
+}
 
 const STATUS_STYLES = {
   confirmed: { bg: 'bg-emerald-100',  text: 'text-emerald-700', dot: CHART_COLORS.success, label: 'Confirmada' },
@@ -22,11 +43,6 @@ const STATUS_STYLES = {
 
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-
-function todayStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 function EventPill({ booking, onClick }) {
   const s = STATUS_STYLES[booking.status] || STATUS_STYLES.pending;
@@ -149,6 +165,9 @@ export function FullCalendarView({ bookings = [] }) {
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
   const [selected, setSelected] = useState(null);
+  const [dayDetail, setDayDetail] = useState(null);
+  const [statusByDate, setStatusByDate] = useState({});
+  const [services, setServices] = useState([]);
   const TODAY = todayStr();
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -156,6 +175,22 @@ export function FullCalendarView({ bookings = [] }) {
   const prevMonth = () => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); };
   const nextMonth = () => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); };
   const getDay = (d) => `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+  const loadMonthStatus = useCallback(async () => {
+    const from = getDay(1);
+    const to = getDay(daysInMonth);
+    try {
+      const days = await availabilityService.getCalendar(from, to);
+      const map = {};
+      days.forEach((d) => { map[d.date] = d; });
+      setStatusByDate(map);
+    } catch {
+      // el grid sigue funcionando mostrando solo las reservas, sin estados de disponibilidad
+    }
+  }, [year, month]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { loadMonthStatus(); }, [loadMonthStatus]);
+  useEffect(() => { serviceService.getByProvider().then(setServices).catch(() => {}); }, []);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -188,10 +223,36 @@ export function FullCalendarView({ bookings = [] }) {
               const isToday = dateStr === TODAY;
               const isPast = dateStr < TODAY;
               const total = dayBookings.reduce((s, b) => s + (b.totalEstimated || 0), 0);
+              const dayStatus = statusByDate[dateStr];
+              const displayStatus = dayStatus ? toDisplayStatus(dayStatus.status) : null;
+              const statusStyle = displayStatus ? DAY_STATUS_STYLES[displayStatus] : null;
+              const isBlocked = displayStatus === 'blocked';
               return (
-                <div key={day} className={`min-h-[110px] p-2 relative ${isPast && !isToday ? 'bg-gray-50/30' : 'hover:bg-blue-50/20 transition-colors'}`}>
-                  <div className={`inline-flex w-7 h-7 items-center justify-center rounded-full text-sm font-bold mb-1 ${isToday ? 'bg-primary text-white' : isPast ? 'text-gray-400' : 'text-gray-700'}`}>
-                    {day}
+                <div
+                  key={day}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setDayDetail(dateStr)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDayDetail(dateStr); } }}
+                  className={`min-h-[110px] p-2 relative text-left w-full cursor-pointer ${
+                    isBlocked
+                      ? statusStyle.cellClassName
+                      : isPast && !isToday ? 'bg-gray-50/30' : 'hover:bg-blue-50/20 transition-colors'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className={`inline-flex w-7 h-7 items-center justify-center rounded-full text-sm font-bold ${isToday ? 'bg-primary text-white' : isPast ? 'text-gray-400' : 'text-gray-700'}`}>
+                      {day}
+                    </div>
+                    {statusStyle && (
+                      displayStatus === 'available' ? (
+                        <AppIcon icon={statusStyle.icon} size={14} className={statusStyle.className} aria-hidden="true" />
+                      ) : (
+                        <span className={`inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${statusStyle.className}`} title={statusStyle.label}>
+                          <AppIcon icon={statusStyle.icon} size={10} aria-hidden="true" />
+                        </span>
+                      )
+                    )}
                   </div>
                   {dayBookings.map((b) => <EventPill key={b.id} booking={b} onClick={setSelected} />)}
                   {total > 0 && <div className="text-[9px] text-gray-400 mt-1 font-medium">${(total / 1000).toFixed(0)}K</div>}
@@ -210,8 +271,22 @@ export function FullCalendarView({ bookings = [] }) {
           </div>
         ))}
       </div>
+      <div className="px-6 py-3 border-t border-gray-100 flex items-center gap-5 flex-wrap">
+        {Object.entries(DAY_STATUS_STYLES).map(([k, s]) => (
+          <div key={k} className="flex items-center gap-1.5">
+            <AppIcon icon={s.icon} size={13} className={s.className.split(' ')[0]} aria-hidden="true" />
+            <span className="text-xs text-gray-500">{s.label}</span>
+          </div>
+        ))}
+      </div>
 
       <CalendarDrawer booking={selected} onClose={() => setSelected(null)} />
+      <DayDetailDrawer
+        date={dayDetail}
+        services={services}
+        onClose={() => setDayDetail(null)}
+        onChanged={loadMonthStatus}
+      />
     </div>
   );
 }
