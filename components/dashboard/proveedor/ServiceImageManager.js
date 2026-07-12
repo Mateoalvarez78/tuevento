@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { UploadCloud, Star, Trash2, ArrowLeft, ArrowRight, ImageIcon, AlertTriangle, X } from 'lucide-react';
+import { UploadCloud, Star, Trash2, ArrowLeft, ArrowRight, ImageIcon, AlertTriangle, X, Check } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import { serviceImageService, IMAGE_LIMITS } from '@/services/serviceImageService';
 import AppIcon from '@/components/AppIcon';
@@ -19,6 +19,8 @@ export default function ServiceImageManager({ service, onClose, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [brokenIds, setBrokenIds] = useState(() => new Set());
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState(() => new Set());
 
   const reload = useCallback(() => {
     setLoading(true); setError(null);
@@ -84,6 +86,40 @@ export default function ServiceImageManager({ service, onClose, onChanged }) {
     try { await serviceImageService.deleteServiceImage(service.id, id); await reload(); onChanged?.(); showToast('Imagen eliminada', 'info'); }
     catch (e) { showToast(e?.message || 'Error', 'error'); }
     finally { setBusy(false); }
+  };
+
+  const toggleSelectMode = () => {
+    setSelectMode((v) => !v);
+    setSelected(new Set());
+  };
+
+  const toggleSelect = (id) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const removeSelected = async () => {
+    const ids = [...selected];
+    if (!ids.length) return;
+    if (!window.confirm(`¿Eliminar ${ids.length} ${ids.length === 1 ? 'imagen' : 'imágenes'}?`)) return;
+    setBusy(true);
+    try {
+      const results = await Promise.allSettled(ids.map((id) => serviceImageService.deleteServiceImage(service.id, id)));
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      await reload();
+      onChanged?.();
+      showToast(
+        failed ? `${ids.length - failed} eliminadas, ${failed} fallaron` : `${ids.length} ${ids.length === 1 ? 'imagen eliminada' : 'imágenes eliminadas'}`,
+        failed ? 'error' : 'info'
+      );
+      setSelected(new Set());
+      setSelectMode(false);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const move = async (index, dir) => {
@@ -155,7 +191,23 @@ export default function ServiceImageManager({ service, onClose, onChanged }) {
 
       {/* Galería actual */}
       <div className="mt-5">
-        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Galería actual</h4>
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Galería actual</h4>
+          {images.length > 1 && (
+            selectMode ? (
+              <div className="flex items-center gap-2">
+                {selected.size > 0 && (
+                  <Button size="sm" variant="danger" icon={Trash2} disabled={busy} loading={busy} onClick={removeSelected}>
+                    Eliminar ({selected.size})
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" disabled={busy} onClick={toggleSelectMode}>Cancelar</Button>
+              </div>
+            ) : (
+              <Button size="sm" variant="ghost" onClick={toggleSelectMode}>Seleccionar varias</Button>
+            )
+          )}
+        </div>
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">{[...Array(3)].map((_, i) => <div key={i} className="skeleton aspect-video rounded-xl" />)}</div>
         ) : error ? (
@@ -170,8 +222,18 @@ export default function ServiceImageManager({ service, onClose, onChanged }) {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {images.map((im, i) => (
-              <div key={im.id} className={`relative group aspect-video rounded-xl overflow-hidden border ${im.isMain ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200'} bg-gray-50`}>
+            {images.map((im, i) => {
+              const isSelected = selected.has(im.id);
+              return (
+              <div
+                key={im.id}
+                role={selectMode ? 'checkbox' : undefined}
+                aria-checked={selectMode ? isSelected : undefined}
+                tabIndex={selectMode ? 0 : undefined}
+                onClick={selectMode ? () => toggleSelect(im.id) : undefined}
+                onKeyDown={selectMode ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSelect(im.id); } } : undefined}
+                className={`relative group aspect-video rounded-xl overflow-hidden border ${im.isMain ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200'} bg-gray-50 ${selectMode ? 'cursor-pointer' : ''}`}
+              >
                 {brokenIds.has(im.id) ? (
                   <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-gray-400 bg-gray-100 px-2 text-center">
                     <AppIcon icon={AlertTriangle} size={18} className="text-amber-500" aria-hidden="true" />
@@ -198,23 +260,33 @@ export default function ServiceImageManager({ service, onClose, onChanged }) {
                     <AppIcon icon={Star} size={9} className="fill-current" aria-hidden="true" /> Principal
                   </span>
                 )}
-                {/* Acciones */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
-                  <Button iconOnly size="sm" variant="ghost" className="bg-white/90 !text-gray-700 hover:!text-primary"
-                    icon={Star} disabled={busy || im.isMain} aria-label="Marcar principal" title="Marcar principal"
-                    onClick={() => setMain(im.id)} />
-                  <Button iconOnly size="sm" variant="ghost" className="bg-white/90 !text-gray-700 hover:!text-primary"
-                    icon={ArrowLeft} disabled={busy || i === 0} aria-label="Mover antes" title="Mover antes"
-                    onClick={() => move(i, -1)} />
-                  <Button iconOnly size="sm" variant="ghost" className="bg-white/90 !text-gray-700 hover:!text-primary"
-                    icon={ArrowRight} disabled={busy || i === images.length - 1} aria-label="Mover después" title="Mover después"
-                    onClick={() => move(i, 1)} />
-                  <Button iconOnly size="sm" variant="ghost" className="bg-white/90 !text-red-600 hover:!bg-red-50"
-                    icon={Trash2} disabled={busy} aria-label="Eliminar" title="Eliminar"
-                    onClick={() => remove(im.id)} />
-                </div>
+                {selectMode ? (
+                  /* Overlay de selección */
+                  <div className={`absolute inset-0 transition-colors ${isSelected ? 'bg-primary/30' : 'bg-black/0 group-hover:bg-black/10'}`}>
+                    <span className={`absolute bottom-1.5 right-1.5 w-6 h-6 rounded-md border-2 flex items-center justify-center ${isSelected ? 'bg-primary border-primary' : 'bg-white/90 border-gray-300'}`}>
+                      {isSelected && <AppIcon icon={Check} size={14} className="text-white" aria-hidden="true" />}
+                    </span>
+                  </div>
+                ) : (
+                  /* Acciones */
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                    <Button iconOnly size="sm" variant="ghost" className="bg-white/90 !text-gray-700 hover:!text-primary"
+                      icon={Star} disabled={busy || im.isMain} aria-label="Marcar principal" title="Marcar principal"
+                      onClick={() => setMain(im.id)} />
+                    <Button iconOnly size="sm" variant="ghost" className="bg-white/90 !text-gray-700 hover:!text-primary"
+                      icon={ArrowLeft} disabled={busy || i === 0} aria-label="Mover antes" title="Mover antes"
+                      onClick={() => move(i, -1)} />
+                    <Button iconOnly size="sm" variant="ghost" className="bg-white/90 !text-gray-700 hover:!text-primary"
+                      icon={ArrowRight} disabled={busy || i === images.length - 1} aria-label="Mover después" title="Mover después"
+                      onClick={() => move(i, 1)} />
+                    <Button iconOnly size="sm" variant="ghost" className="bg-white/90 !text-red-600 hover:!bg-red-50"
+                      icon={Trash2} disabled={busy} aria-label="Eliminar" title="Eliminar"
+                      onClick={() => remove(im.id)} />
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
