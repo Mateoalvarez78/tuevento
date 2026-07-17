@@ -20,6 +20,7 @@ import Button from '@/components/Button';
 import Input from '@/components/Input';
 import Modal from '@/components/Modal';
 import Drawer from '@/components/Drawer';
+import LocationMap from '@/components/LocationMap';
 import { safeFormatDate } from '@/lib/date';
 
 const EDIT_WINDOW_MS = 30 * 60 * 1000;
@@ -387,6 +388,9 @@ function BookingDetailDrawer({ booking: b, onClose, onCancel, onPay, paying }) {
       <div className="space-y-3 pb-4 border-b border-gray-100 mb-4">
         <DetailRow icon={CalendarClock} label="Fecha y hora" value={`${safeFormatDate(b.date)}${b.time ? `, ${b.time}` : ''}`} />
         <DetailRow icon={MapPin} label="Ubicación" value={b.location || '—'} />
+        {b.locationDetails && (
+          <LocationMap lat={b.locationDetails.lat} lng={b.locationDetails.lng} readOnly height="h-40" className="ml-6" />
+        )}
         <DetailRow icon={Users} label="Invitados" value={b.adults != null ? `${b.adults} adultos${b.children ? ` + ${b.children} niños` : ''}` : `${b.guests} personas`} />
         <DetailRow icon={DollarSign} label="Total estimado" value={`$${b.totalEstimated?.toLocaleString('es-UY')}`} />
         {b.depositAmount > 0 && (

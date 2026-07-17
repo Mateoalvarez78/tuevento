@@ -40,6 +40,19 @@ function mapBooking(b) {
     date:              b.event_date,
     time:              b.event_time || '',
     location:          b.event_location || '',
+    // Snapshot estructurado de la dirección (migración 011). null en
+    // reservas históricas sin geocodificar (location_source='legacy_text').
+    locationDetails: b.event_lat != null && b.event_lng != null ? {
+      formattedAddress: b.event_formatted_address || b.event_location || '',
+      placeId:          b.event_place_id || null,
+      lat:              parseFloat(b.event_lat),
+      lng:              parseFloat(b.event_lng),
+      city:             b.event_city || '',
+      department:       b.event_department || '',
+      addressComplement: b.event_address_complement || '',
+      accessNotes:        b.event_access_notes || '',
+      source:             b.event_location_source || null,
+    } : null,
     eventType:         b.event_type || '',
     guests:            b.guest_count || 0,
     // Per-person breakdown (menu model)
@@ -138,6 +151,7 @@ export const bookingService = {
   async create(data) {
     const adults   = data.adults   != null ? Number(data.adults)   : (data.guests != null ? Number(data.guests) : undefined);
     const children = data.children != null ? Number(data.children) : undefined;
+    const loc = data.locationDetails || data.event_location_details;
     const body = {
       service_id:      data.serviceId || data.service_id,
       package_id:      data.packageId || data.package_id || undefined,
@@ -146,10 +160,22 @@ export const bookingService = {
       extra_hours:     data.extraHours != null ? Number(data.extraHours) : undefined,
       event_date:      data.date     || data.event_date,
       event_time:      data.time     || data.event_time || undefined,
-      event_location:  data.location || data.event_location,
       event_type:      data.eventType || data.event_type || undefined,
       message:         data.message  || undefined,
       extras_selected: data.extras   || data.extras_selected || [],
+      // Requerido por el backend — solo una dirección validada por Google
+      // Places, nunca texto libre (ver docs/API.md).
+      event_location_details: loc ? {
+        formatted_address:  loc.formattedAddress,
+        place_id:           loc.placeId || undefined,
+        lat:                loc.lat,
+        lng:                loc.lng,
+        city:               loc.city || undefined,
+        department:         loc.department || undefined,
+        address_complement: loc.addressComplement || undefined,
+        access_notes:       loc.accessNotes || undefined,
+        location_source:    loc.source || 'google_places',
+      } : undefined,
     };
     const res = await api.post('/bookings', body);
     return mapBooking(res.data);

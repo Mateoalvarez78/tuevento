@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
 import { bookingService } from '@/services/bookingService';
 import { availabilityService } from '@/services/availabilityService';
-import { Check, CalendarDays, MapPin, Users, Package, User, ClipboardList, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Check, CalendarDays, Users, Package, User, ClipboardList, CheckCircle, AlertTriangle } from 'lucide-react';
 import PackageSelector from './PackageSelector';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
+import LocationPicker from '@/components/LocationPicker';
 import { safeFormatDate, addHoursToTime, todayStr } from '@/lib/date';
 
 const EVENT_TYPES = ['Cumpleaños', 'Casamiento', 'Empresarial', 'Infantil', 'Fiesta privada', 'Otro'];
@@ -30,7 +31,11 @@ export default function BookingWizard({ provider, initialPackageId }) {
   const [requestNumber, setRequestNumber] = useState('');
 
   const [eventData, setEventData] = useState({
-    date: '', time: '', location: '', eventType: '', adults: '', children: '',
+    date: '', time: '', eventType: '', adults: '', children: '',
+    // Solo se acepta una dirección validada por Google Places — nunca un
+    // texto libre. Shape: { formattedAddress, placeId, lat, lng, city,
+    // department, addressComplement, accessNotes, source } | null.
+    location: null,
   });
   const [packageData, setPackageData] = useState({
     packageId: initialPackageId || provider.packages[1]?.id || provider.packages[0]?.id,
@@ -99,7 +104,15 @@ export default function BookingWizard({ provider, initialPackageId }) {
   const totalEstimated = subtotalAdults + subtotalChildren + extrasTotal + extraHoursAmount;
 
   const stepValid = () => {
-    if (step === 0) return eventData.date && eventData.time && eventData.location && eventData.eventType && adultsN >= 1;
+    if (step === 0) {
+      const hasValidLocation = !!(
+        eventData.location &&
+        eventData.location.formattedAddress &&
+        typeof eventData.location.lat === 'number' && Number.isFinite(eventData.location.lat) &&
+        typeof eventData.location.lng === 'number' && Number.isFinite(eventData.location.lng)
+      );
+      return eventData.date && eventData.time && hasValidLocation && eventData.eventType && adultsN >= 1;
+    }
     if (step === 1) return provider.packages.length === 0 || !!packageData.packageId;
     if (step === 2) return contactData.name && contactData.phone && contactData.email;
     return true;
@@ -122,10 +135,22 @@ export default function BookingWizard({ provider, initialPackageId }) {
         extraHours: isDurationPkg ? extraHoursN : undefined,
         date:       eventData.date,
         time:       eventData.time,
-        location:   eventData.location,
         eventType:  eventData.eventType,
         message:    contactData.message,
         extras:     packageData.extras.map((id) => ({ id, quantity: 1 })),
+        // Ubicación del evento: solo llega acá si stepValid() ya confirmó
+        // que viene de una selección real de Google Places (lat/lng válidos).
+        locationDetails: {
+          formattedAddress: eventData.location.formattedAddress,
+          placeId:          eventData.location.placeId,
+          lat:              eventData.location.lat,
+          lng:              eventData.location.lng,
+          city:             eventData.location.city,
+          department:       eventData.location.department,
+          addressComplement: eventData.location.addressComplement || undefined,
+          accessNotes:       eventData.location.accessNotes || undefined,
+          source:            eventData.location.source || 'google_places',
+        },
       });
       setRequestNumber(booking.requestNumber || '');
       setDone(true);
@@ -214,8 +239,9 @@ export default function BookingWizard({ provider, initialPackageId }) {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Ubicación del evento *</label>
-            <Input icon={MapPin} placeholder="Ej: Salón Crystal, Av. 18 de Julio, Montevideo" value={eventData.location} onChange={(e) => setEventData({ ...eventData, location: e.target.value })} />
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">¿Dónde se realizará el evento? *</label>
+            <p className="text-xs text-gray-400 mb-1.5">La dirección exacta solo la ve el proveedor que aceptes.</p>
+            <LocationPicker value={eventData.location} onChange={(location) => setEventData({ ...eventData, location })} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipo de evento *</label>
@@ -410,7 +436,10 @@ export default function BookingWizard({ provider, initialPackageId }) {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Ubicación</span>
-              <span className="font-medium text-gray-900 text-right max-w-[60%]">{eventData.location}</span>
+              <span className="font-medium text-gray-900 text-right max-w-[60%]">
+                {eventData.location?.formattedAddress}
+                {eventData.location?.addressComplement ? `, ${eventData.location.addressComplement}` : ''}
+              </span>
             </div>
             <div className="h-px bg-gray-200" />
             <div className="flex justify-between text-base">

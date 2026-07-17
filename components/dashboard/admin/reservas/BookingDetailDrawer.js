@@ -10,6 +10,7 @@ import ReservationStatusBadge from '@/components/ReservationStatusBadge';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Drawer from '@/components/Drawer';
+import LocationMap from '@/components/LocationMap';
 import { bookingAdminService } from '@/services/bookingAdminService';
 import BookingActionsModal from './BookingActionsModal';
 import BookingCancelModal from './BookingCancelModal';
@@ -107,6 +108,9 @@ export default function BookingDetailDrawer({ bookingId, onClose, onChanged }) {
               <div className="flex items-center gap-2 text-sm text-gray-200"><AppIcon icon={CalendarDays} size={15} className="text-gray-500" aria-hidden="true" /> <span className="capitalize">{fmtDate(data.eventDate)}</span></div>
               {data.eventTime && <div className="flex items-center gap-2 text-sm text-gray-400"><AppIcon icon={Clock} size={15} className="text-gray-500" aria-hidden="true" /> {data.eventTime} hs</div>}
               {data.location && <div className="flex items-center gap-2 text-sm text-gray-400"><AppIcon icon={MapPin} size={15} className="text-gray-500" aria-hidden="true" /> {data.location}</div>}
+              {data.locationDetails && (
+                <LocationMap lat={data.locationDetails.lat} lng={data.locationDetails.lng} readOnly height="h-40" className="ml-6" />
+              )}
               {data.eventType && <div className="text-xs text-gray-500 ml-6">Tipo: {data.eventType}</div>}
             </div>
 

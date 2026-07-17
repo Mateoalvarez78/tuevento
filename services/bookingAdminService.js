@@ -47,6 +47,18 @@ function mapDetail(b) {
     eventDate: b.event_date,
     eventTime: b.event_time || '',
     location: b.event_location || '',
+    // Snapshot estructurado (migración 011) — null en reservas históricas.
+    locationDetails: b.event_lat != null && b.event_lng != null ? {
+      formattedAddress: b.event_formatted_address || b.event_location || '',
+      placeId: b.event_place_id || null,
+      lat: parseFloat(b.event_lat),
+      lng: parseFloat(b.event_lng),
+      city: b.event_city || '',
+      department: b.event_department || '',
+      addressComplement: b.event_address_complement || '',
+      accessNotes: b.event_access_notes || '',
+      source: b.event_location_source || null,
+    } : null,
     eventType: b.event_type || '',
     guests: parseInt(b.guest_count) || 0,
     adults: b.adults_count != null ? parseInt(b.adults_count) : null,

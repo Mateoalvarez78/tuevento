@@ -11,6 +11,7 @@ import { parseApiDate, todayStr } from '@/lib/date';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Drawer from '@/components/Drawer';
+import LocationMap from '@/components/LocationMap';
 import { CHART_COLORS } from '@/lib/chartTheme';
 import { availabilityService } from '@/services/availabilityService';
 import { serviceService } from '@/services/serviceService';
@@ -102,6 +103,9 @@ export function CalendarDrawer({ booking, onClose }) {
           <div className="space-y-3 pb-4 border-b border-gray-100 mb-4">
             <DetailRow icon={CalendarClock} label="Fecha y hora" value={`${dateLabel}${booking.time ? `, ${booking.time}` : ''}`} />
             <DetailRow icon={MapPin} label="Ubicación" value={booking.location || '—'} />
+            {booking.locationDetails && (
+              <LocationMap lat={booking.locationDetails.lat} lng={booking.locationDetails.lng} readOnly height="h-40" className="ml-6" />
+            )}
             <DetailRow icon={Users} label="Invitados" value={`${booking.guests} personas`} />
             <DetailRow icon={DollarSign} label="Monto" value={fmtFull(gross)} sub={booking.depositPaid ? 'Seña pagada' : 'Seña pendiente'} subIcon={booking.depositPaid ? CheckCircle2 : AlertCircle} subColor={booking.depositPaid ? 'text-emerald-600' : 'text-amber-500'} />
             <DetailRow icon={FileText} label="Servicio" value={booking.serviceTitle || '—'} />

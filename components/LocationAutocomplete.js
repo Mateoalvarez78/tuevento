@@ -9,27 +9,12 @@
 // script), degrada a un input de texto simple con sugerencias de las zonas
 // canónicas de Uruguay — nunca rompe la pantalla ni bloquea la búsqueda.
 
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
 import { useGoogleMapsScript } from '@/hooks/useGoogleMapsScript';
 import { ZONES } from '@/utils/constants';
-
-function normalizePlace(place) {
-  const comps = place.address_components || [];
-  const find = (type) => comps.find((c) => c.types.includes(type))?.long_name || '';
-  const loc = place.geometry?.location;
-  return {
-    label: place.formatted_address || place.name || '',
-    address: place.formatted_address || place.name || '',
-    placeId: place.place_id || null,
-    lat: loc ? loc.lat() : null,
-    lng: loc ? loc.lng() : null,
-    city: find('locality') || find('sublocality') || find('administrative_area_level_2') || '',
-    department: find('administrative_area_level_1') || '',
-    country: find('country') || '',
-  };
-}
+import { normalizePlace } from '@/lib/googlePlaces';
 
 /**
  * @param {string} value - valor de texto controlado (label mostrado).
@@ -52,25 +37,35 @@ export default function LocationAutocomplete({
   const inputEl = externalRef || localRef;
   const autocompleteRef = useRef(null);
   const datalistId = `zones-${useId()}`;
+  // Si el widget de Google falla al inicializarse (ej. la API de Places no
+  // está habilitada en el proyecto de Google Cloud), degrada al mismo
+  // fallback de texto+zonas que ya existe para status !== 'ready' — nunca
+  // rompe la pantalla que lo esté usando (booking wizard incluido).
+  const [widgetFailed, setWidgetFailed] = useState(false);
+  const effectiveReady = status === 'ready' && !widgetFailed;
 
   useEffect(() => {
     if (status !== 'ready' || !inputEl.current || autocompleteRef.current) return;
-    const ac = new window.google.maps.places.Autocomplete(inputEl.current, {
-      types: ['geocode'],
-      componentRestrictions: { country: 'uy' },
-      fields: ['formatted_address', 'name', 'place_id', 'geometry', 'address_components'],
-    });
-    ac.addListener('place_changed', () => {
-      const place = ac.getPlace();
-      if (!place || (!place.formatted_address && !place.name)) {
-        onPlaceSelected?.(null);
-        return;
-      }
-      const normalized = normalizePlace(place);
-      onChange?.(normalized.label);
-      onPlaceSelected?.(normalized);
-    });
-    autocompleteRef.current = ac;
+    try {
+      const ac = new window.google.maps.places.Autocomplete(inputEl.current, {
+        types: ['geocode'],
+        componentRestrictions: { country: 'uy' },
+        fields: ['formatted_address', 'name', 'place_id', 'geometry', 'address_components'],
+      });
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace();
+        if (!place || (!place.formatted_address && !place.name)) {
+          onPlaceSelected?.(null);
+          return;
+        }
+        const normalized = normalizePlace(place);
+        onChange?.(normalized.label);
+        onPlaceSelected?.(normalized);
+      });
+      autocompleteRef.current = ac;
+    } catch {
+      setWidgetFailed(true);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
@@ -79,7 +74,7 @@ export default function LocationAutocomplete({
     onChange?.(next);
     // Fallback sin Maps: si el valor coincide exacto con una zona canónica
     // (typeahead nativo del <datalist>), lo tratamos como lugar seleccionado.
-    if (status !== 'ready' && ZONES.includes(next)) {
+    if (!effectiveReady && ZONES.includes(next)) {
       onPlaceSelected?.({
         label: next, address: next, placeId: null, lat: null, lng: null,
         city: '', department: next, country: 'Uruguay',
@@ -99,14 +94,14 @@ export default function LocationAutocomplete({
         value={value}
         onChange={handleChange}
         autoComplete="off"
-        list={status === 'ready' ? undefined : datalistId}
+        list={effectiveReady ? undefined : datalistId}
       />
-      {status !== 'ready' && (
+      {!effectiveReady && (
         <datalist id={datalistId}>
           {ZONES.map((z) => <option key={z} value={z} />)}
         </datalist>
       )}
-      {status === 'no-key' && (
+      {(status === 'no-key' || widgetFailed) && (
         <p className="absolute top-full left-0 mt-1 text-[10px] text-gray-400 flex items-center gap-1">
           <AppIcon icon={MapPin} size={9} aria-hidden="true" /> Autocompletado de direcciones próximamente
         </p>
