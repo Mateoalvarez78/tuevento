@@ -3,8 +3,16 @@
 import { Bot, Sparkles, ArrowLeft, Search } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
+import PageHeader from '@/components/PageHeader';
+import SmartPackagesGenerator from '@/components/smart-packages/SmartPackagesGenerator';
+import { isSmartPackagesEnabled } from '@/lib/smartPackages';
 
-export default function ArmarEventoPage() {
+// Feature flag: mientras esté apagada (o ausente), esta página sigue
+// mostrando el placeholder "Próximamente" de siempre — ver docs/DECISIONS.md
+// y docs/DEPLOYMENT.md (cómo habilitarla en local/Vercel).
+const SMART_PACKAGES_ENABLED = isSmartPackagesEnabled(process.env.NEXT_PUBLIC_SMART_PACKAGES_ENABLED);
+
+function ComingSoon() {
   return (
     <div className="bg-surface min-h-screen flex items-center justify-center px-4 py-16">
       <div className="max-w-lg w-full text-center">
@@ -22,6 +30,24 @@ export default function ArmarEventoPage() {
           <Button icon={Search} href="/catalogo">Mientras tanto, explorá servicios</Button>
           <Button icon={ArrowLeft} variant="outline" href="/dashboard/cliente">Volver a mi panel</Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+export default function ArmarEventoPage() {
+  if (!SMART_PACKAGES_ENABLED) return <ComingSoon />;
+
+  return (
+    <div className="bg-surface min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto mb-6">
+        <PageHeader
+          title="Armá tu evento"
+          subtitle="Contanos los datos de tu evento y te armamos hasta 3 combinaciones de proveedores compatibles."
+        />
+      </div>
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <SmartPackagesGenerator />
       </div>
     </div>
   );

@@ -7,3 +7,4 @@ export { bookingService } from './bookingService';
 export { categoryService } from './categoryService';
 export { adminService } from './adminService';
 export { availabilityService } from './availabilityService';
+export { smartPackagesService } from './smartPackagesService';
