@@ -1,6 +1,7 @@
 // ─── AVAILABILITY SERVICE ─────────────────────────────────────────────────────
-// Disponibilidad/agenda real del proveedor: configuración general, horario
-// semanal, bloqueos/excepciones, reservas externas y calendario agregado.
+// Disponibilidad/agenda real del proveedor: configuración general (capacidad/
+// anticipación), bloqueos (siempre de día completo — ya no hay horario
+// semanal recurrente), reservas externas y calendario agregado.
 
 import { api, buildQuery } from './api';
 
@@ -10,15 +11,6 @@ function mapSettings(s) {
     maxConcurrentEvents: s.max_concurrent_events != null ? parseInt(s.max_concurrent_events) : 1,
     maxConcurrentGuests: s.max_concurrent_guests != null ? parseInt(s.max_concurrent_guests) : null,
     defaultMinBookingNoticeHours: s.default_min_booking_notice_hours != null ? parseInt(s.default_min_booking_notice_hours) : 0,
-  };
-}
-
-function mapWeeklyRule(r) {
-  return {
-    dayOfWeek: r.dayOfWeek,
-    isAvailable: !!r.isAvailable,
-    startTime: r.startTime ? r.startTime.slice(0, 5) : '',
-    endTime: r.endTime ? r.endTime.slice(0, 5) : '',
   };
 }
 
@@ -81,7 +73,6 @@ function mapDayDetail(d) {
   return {
     date: d.date,
     status: d.status,
-    workingHours: d.workingHours ? { isAvailable: d.workingHours.isAvailable, startTime: d.workingHours.startTime, endTime: d.workingHours.endTime } : null,
     capacity: d.capacity,
     bookings: d.bookings || [],
     pendingRequests: d.pendingRequests || [],
@@ -103,16 +94,6 @@ export const availabilityService = {
       defaultMinBookingNoticeHours: data.defaultMinBookingNoticeHours,
     });
     return mapSettings(res.data);
-  },
-
-  // ── Horario semanal ──────────────────────────────────────────────────────
-  async getWeeklyRules() {
-    const res = await api.get('/providers/me/availability/weekly');
-    return (res.data || []).map(mapWeeklyRule);
-  },
-  async replaceWeeklyRules(rules) {
-    const res = await api.put('/providers/me/availability/weekly', { rules });
-    return (res.data || []).map(mapWeeklyRule);
   },
 
   // ── Bloqueos / excepciones ───────────────────────────────────────────────

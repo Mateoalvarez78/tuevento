@@ -21,7 +21,6 @@ const REASON_OPTIONS = [
 ];
 
 const toInputDate = (v) => (v ? String(v).slice(0, 10) : '');
-const toInputTime = (v) => (v ? String(v).slice(11, 16) : '');
 
 export default function BlockDateModal({ open, onClose, exception, services = [], onSaved }) {
   const { showToast } = useApp();
@@ -30,9 +29,6 @@ export default function BlockDateModal({ open, onClose, exception, services = []
   const [serviceId, setServiceId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [isFullDay, setIsFullDay] = useState(true);
-  const [startTime, setStartTime] = useState('14:00');
-  const [endTime, setEndTime] = useState('18:00');
   const [reason, setReason] = useState('Feriado');
   const [saving, setSaving] = useState(false);
   const [impact, setImpact] = useState([]);
@@ -44,25 +40,23 @@ export default function BlockDateModal({ open, onClose, exception, services = []
       setServiceId(exception.serviceId || '');
       setStartDate(toInputDate(exception.startDatetime));
       setEndDate(toInputDate(exception.endDatetime));
-      setIsFullDay(exception.isFullDay);
-      setStartTime(toInputTime(exception.startDatetime) || '14:00');
-      setEndTime(toInputTime(exception.endDatetime) || '18:00');
       setReason(exception.reason || 'Feriado');
     } else {
       const today = todayStr();
       setServiceId(''); setStartDate(today); setEndDate(today);
-      setIsFullDay(true); setStartTime('14:00'); setEndTime('18:00'); setReason('Feriado');
+      setReason('Feriado');
     }
     setImpact([]);
   }, [open, exception]);
 
+  // Bloqueo SIEMPRE de día(s) completo(s) — ya no existe la opción de
+  // bloquear solo una franja horaria (el proveedor ya no configura horario
+  // semanal tampoco, ver docs/AVAILABILITY.md). El backend igual normaliza
+  // esto de nuevo del lado del servidor (nunca confía en lo que mande acá).
   const buildRange = useCallback(() => {
     if (!startDate || !endDate) return null;
-    if (isFullDay) {
-      return { startDatetime: `${startDate} 00:00:00`, endDatetime: `${endDate} 23:59:59` };
-    }
-    return { startDatetime: `${startDate} ${startTime}:00`, endDatetime: `${endDate} ${endTime}:00` };
-  }, [startDate, endDate, isFullDay, startTime, endTime]);
+    return { startDatetime: `${startDate} 00:00:00`, endDatetime: `${endDate} 23:59:59` };
+  }, [startDate, endDate]);
 
   const checkImpact = useCallback(async () => {
     const range = buildRange();
@@ -83,7 +77,7 @@ export default function BlockDateModal({ open, onClose, exception, services = []
     if (!range) { showToast('Completá las fechas', 'error'); return; }
     setSaving(true);
     try {
-      const payload = { ...range, serviceId: serviceId || null, exceptionType: 'block', isFullDay, reason };
+      const payload = { ...range, serviceId: serviceId || null, exceptionType: 'block', isFullDay: true, reason };
       if (isEdit) await availabilityService.updateException(exception.id, payload);
       else await availabilityService.createException(payload);
       showToast(isEdit ? 'Bloqueo actualizado' : 'Bloqueo creado', 'success');
@@ -133,23 +127,7 @@ export default function BlockDateModal({ open, onClose, exception, services = []
           </div>
         </div>
 
-        <label className="flex items-center gap-2 text-sm text-gray-700">
-          <input type="checkbox" checked={isFullDay} onChange={(e) => { setIsFullDay(e.target.checked); }} onBlur={checkImpact} />
-          Bloquear el/los día(s) completo(s)
-        </label>
-
-        {!isFullDay && (
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Desde hora</label>
-              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} onBlur={checkImpact} />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Hasta hora</label>
-              <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} onBlur={checkImpact} />
-            </div>
-          </div>
-        )}
+        <p className="text-xs text-gray-400 -mt-1">El bloqueo aplica al/los día(s) completo(s) seleccionado(s).</p>
 
         <div>
           <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Motivo (interno, el cliente no lo ve)</label>

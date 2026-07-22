@@ -70,7 +70,7 @@ export default function AvailabilityPanel() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="font-bold text-gray-900">Bloqueos y vacaciones</h3>
-            <p className="text-xs text-gray-500">Fechas, rangos u horarios en los que no aceptás reservas.</p>
+            <p className="text-xs text-gray-500">Días o rangos de fechas en los que no aceptás reservas.</p>
           </div>
           <Button size="sm" icon={Plus} onClick={() => setBlockModal({})}>Bloquear fecha</Button>
         </div>

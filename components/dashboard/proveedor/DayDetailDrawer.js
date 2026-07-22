@@ -19,7 +19,6 @@ const STATUS_LABELS = {
   partial: { label: 'Parcialmente ocupado', className: 'bg-amber-100 text-amber-700' },
   full: { label: 'Completo', className: 'bg-red-100 text-red-600' },
   blocked: { label: 'Bloqueado', className: 'bg-gray-200 text-gray-700' },
-  outside_hours: { label: 'Fuera de horario', className: 'bg-gray-100 text-gray-500' },
 };
 
 // Panel/drawer del día (Etapa 6.2): reemplaza el click únicamente sobre

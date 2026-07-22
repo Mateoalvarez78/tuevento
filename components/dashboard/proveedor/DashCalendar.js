@@ -18,20 +18,21 @@ import { serviceService } from '@/services/serviceService';
 import DayDetailDrawer from './DayDetailDrawer';
 
 // Estados de disponibilidad por día (Etapa 6.1) — simplificado a 3 estados
-// visuales (a pedido): disponible, parcial y bloqueado. "Completo" y "fuera
-// de horario" no se distinguen visualmente (se pliegan a parcial/disponible).
+// visuales (a pedido): disponible, parcial y bloqueado. "Completo" no se
+// distingue visualmente (se pliega a parcial).
 const DAY_STATUS_STYLES = {
   available: { icon: CalendarCheck2,  className: 'text-emerald-600',                label: 'Disponible' },
   partial:   { icon: CalendarPartial, className: 'text-amber-600 bg-amber-50',       label: 'Parcial' },
   blocked:   { icon: CalendarOff,     className: 'text-red-700 bg-red-100',          label: 'Bloqueado', cellClassName: 'bg-red-50 ring-1 ring-inset ring-red-300 hover:bg-red-100/60' },
 };
 
-// El backend devuelve 5 estados (available/partial/full/blocked/outside_hours);
-// acá se colapsan a los 3 que se muestran en el grid.
+// El backend devuelve 4 estados (available/partial/full/blocked) — ya no
+// existe "outside_hours" (se eliminó el horario semanal del motor). Acá se
+// colapsan a los 3 que se muestran en el grid.
 function toDisplayStatus(rawStatus) {
   if (rawStatus === 'blocked') return 'blocked';
   if (rawStatus === 'partial' || rawStatus === 'full') return 'partial';
-  return 'available'; // available | outside_hours
+  return 'available';
 }
 
 const STATUS_STYLES = {

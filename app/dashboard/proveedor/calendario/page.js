@@ -9,7 +9,6 @@ import { bookingService } from '@/services/bookingService';
 import { FullCalendarView } from '@/components/dashboard/proveedor/DashCalendar';
 import AvailabilityPanel from '@/components/dashboard/proveedor/availability/AvailabilityPanel';
 import AvailabilitySettingsForm from '@/components/dashboard/proveedor/availability/AvailabilitySettingsForm';
-import WeeklyHoursForm from '@/components/dashboard/proveedor/availability/WeeklyHoursForm';
 
 const TABS = [
   { value: 'calendario', label: 'Calendario' },
@@ -76,7 +75,6 @@ export default function ProviderCalendarPage() {
       {tab === 'configuracion' && (
         <div className="space-y-6">
           <AvailabilitySettingsForm />
-          <WeeklyHoursForm />
         </div>
       )}
     </>
