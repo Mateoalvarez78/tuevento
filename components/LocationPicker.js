@@ -12,13 +12,12 @@
 // selección real de Google Places (formattedAddress + lat/lng numéricos).
 
 import { useState } from 'react';
-import { MapPin, RefreshCw, AlertTriangle, Pencil } from 'lucide-react';
+import { MapPin, Pencil } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import LocationAutocomplete from '@/components/LocationAutocomplete';
 import LocationMap from '@/components/LocationMap';
-import { useGoogleMapsScript, retryGoogleMapsScript } from '@/hooks/useGoogleMapsScript';
 import { isValidSelectedLocation } from '@/lib/googlePlaces';
 
 // Mismas clases que components/Input.js (variant="light", con icono) — no se
@@ -30,11 +29,13 @@ const INPUT_CLASSES =
 
 /**
  * @param {object|null} value - { formattedAddress, placeId, lat, lng, city,
- *   department, addressComplement, accessNotes, source } | null
+ *   department, addressComplement, accessNotes, source, locationToken,
+ *   tokenExpiresAt } | null. `locationToken` es lo único que POST /bookings
+ *   acepta como prueba de que la dirección salió realmente de Google Places
+ *   (ver docs/SECURITY.md) — se renueva en cada nueva selección.
  * @param {(value: object|null) => void} onChange
  */
 export default function LocationPicker({ value, onChange }) {
-  const status = useGoogleMapsScript();
   const [inputLabel, setInputLabel] = useState(value?.formattedAddress || '');
   const [typedWithoutSelecting, setTypedWithoutSelecting] = useState(false);
   const [editing, setEditing] = useState(!value);
@@ -45,9 +46,10 @@ export default function LocationPicker({ value, onChange }) {
   };
 
   const handlePlaceSelected = (place) => {
-    // Ni siquiera el fallback de zona (sin lat/lng, cuando Google no está
-    // disponible) cuenta como selección válida acá.
-    if (!isValidSelectedLocation(place)) {
+    // isValidSelectedLocation solo chequea address+lat/lng; locationToken se
+    // valida acá aparte porque es lo único que el backend realmente exige —
+    // sin token, esta selección no sirve para crear una reserva.
+    if (!isValidSelectedLocation(place) || !place.locationToken) {
       setTypedWithoutSelecting(inputLabel.trim().length > 0);
       onChange(null);
       return;
@@ -65,6 +67,8 @@ export default function LocationPicker({ value, onChange }) {
       addressComplement: value?.addressComplement || '',
       accessNotes: value?.accessNotes || '',
       source: 'google_places',
+      locationToken: place.locationToken,
+      tokenExpiresAt: place.tokenExpiresAt,
     });
   };
 
@@ -77,32 +81,6 @@ export default function LocationPicker({ value, onChange }) {
     if (!value) return;
     onChange({ ...value, [field]: val });
   };
-
-  // Google no disponible: no se puede seleccionar ni confirmar una dirección
-  // exacta. Se ofrece reintentar sin perder el resto del wizard — nunca se
-  // deja avanzar con una ubicación no validada.
-  if (status === 'no-key' || status === 'error') {
-    return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
-        <div className="flex items-start gap-2.5">
-          <AppIcon icon={AlertTriangle} size={18} className="text-amber-500 mt-0.5 shrink-0" aria-hidden="true" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-amber-800">No se pudo cargar el buscador de direcciones</p>
-            <p className="text-xs text-amber-700 mt-0.5">
-              Necesitamos una dirección validada para poder confirmar tu evento.
-            </p>
-            <Button size="sm" variant="outline" icon={RefreshCw} className="mt-2.5" onClick={() => retryGoogleMapsScript()}>
-              Reintentar
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (status === 'loading') {
-    return <div className="h-11 rounded-xl bg-gray-100 skeleton" aria-hidden="true" />;
-  }
 
   return (
     <div className="space-y-3">

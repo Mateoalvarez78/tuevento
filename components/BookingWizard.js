@@ -21,6 +21,27 @@ const STEPS = [
   { label: 'Resumen',  icon: ClipboardList },
 ];
 
+// Traduce el error de POST /bookings a un mensaje accionable. `err` es un
+// ApiError (services/api.js) con status/code/reasonCode, o un error de red
+// genérico (sin status) si ni siquiera llegó a responder el backend.
+function describeBookingError(err) {
+  if (!err?.status) {
+    return err?.name === 'AbortError'
+      ? 'La solicitud tardó demasiado. Probá de nuevo.'
+      : 'No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.';
+  }
+  if (err.status === 400 && (err.code === 'INVALID_LOCATION_TOKEN' || err.code === 'LOCATION_TOKEN_EXPIRED')) {
+    return 'La dirección seleccionada ya no es válida. Volvé a elegirla en el paso "Evento".';
+  }
+  if (err.status === 400) return err.message || 'Revisá los datos del formulario e intentá de nuevo.';
+  if (err.status === 401) return 'Tu sesión expiró. Iniciá sesión de nuevo para continuar.';
+  if (err.status === 403) return 'Tu cuenta no tiene permiso para realizar esta acción.';
+  if (err.status === 409) return err.message || 'La disponibilidad cambió mientras completabas el formulario. Elegí otra fecha u horario.';
+  if (err.status === 429) return 'Hiciste demasiadas solicitudes seguidas. Esperá un momento y volvé a intentar.';
+  if (err.status >= 500) return 'Tuvimos un problema para procesar tu solicitud. Intentá de nuevo en unos minutos.';
+  return err.message || 'No se pudo enviar la solicitud. Intentá de nuevo.';
+}
+
 export default function BookingWizard({ provider, initialPackageId }) {
   const router = useRouter();
   const { user, showToast } = useApp();
@@ -52,21 +73,30 @@ export default function BookingWizard({ provider, initialPackageId }) {
   const [availability, setAvailability] = useState(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
+  const selectedPkg = provider.packages.find((p) => p.packageId === packageData.packageId) || provider.packages.find((p) => p.id === packageData.packageId) || provider.packages[0];
+  const isDurationPkgForAvailability = !!selectedPkg?.isDurationPackage;
+
   // Consulta de disponibilidad pública (Etapa 7): solo informativa — el
-  // backend siempre vuelve a validar al crear la reserva.
+  // backend siempre vuelve a validar al crear la reserva. Manda packageId/
+  // extraHours para que el backend considere la duración real del paquete
+  // elegido (si es de duración fija) en vez de la genérica del servicio.
   useEffect(() => {
     if (!eventData.date) { setAvailability(null); return; }
     let cancelled = false;
     setCheckingAvailability(true);
     const guestCount = (Number(eventData.adults) || 0) + (Number(eventData.children) || 0);
-    availabilityService.getPublicAvailability(provider.id, { date: eventData.date, time: eventData.time || undefined, guestCount: guestCount || undefined })
+    availabilityService.getPublicAvailability(provider.id, {
+      date: eventData.date,
+      time: eventData.time || undefined,
+      guestCount: guestCount || undefined,
+      packageId: packageData.packageId || undefined,
+      extraHours: isDurationPkgForAvailability ? packageData.extraHours || undefined : undefined,
+    })
       .then((res) => { if (!cancelled) setAvailability(res); })
       .catch(() => { if (!cancelled) setAvailability(null); })
       .finally(() => { if (!cancelled) setCheckingAvailability(false); });
     return () => { cancelled = true; };
-  }, [provider.id, eventData.date, eventData.time, eventData.adults, eventData.children]);
-
-  const selectedPkg = provider.packages.find((p) => p.packageId === packageData.packageId) || provider.packages.find((p) => p.id === packageData.packageId) || provider.packages[0];
+  }, [provider.id, eventData.date, eventData.time, eventData.adults, eventData.children, packageData.packageId, packageData.extraHours, isDurationPkgForAvailability]);
 
   const toggleExtra = (id) => {
     setPackageData((prev) => ({
@@ -105,11 +135,18 @@ export default function BookingWizard({ provider, initialPackageId }) {
 
   const stepValid = () => {
     if (step === 0) {
+      // locationToken: sin esto POST /bookings rechaza la ubicación entera
+      // (ver docs/SECURITY.md) — no alcanza con tener lat/lng en pantalla,
+      // tiene que venir de una selección real contra el backend. La
+      // expiración del token (30 min) se revisa recién en handleSubmit, no
+      // acá: acá se evalúa durante el render y llamar Date.now() ahí lo
+      // volvería impuro (regla del React Compiler de Next.js 16).
       const hasValidLocation = !!(
         eventData.location &&
         eventData.location.formattedAddress &&
         typeof eventData.location.lat === 'number' && Number.isFinite(eventData.location.lat) &&
-        typeof eventData.location.lng === 'number' && Number.isFinite(eventData.location.lng)
+        typeof eventData.location.lng === 'number' && Number.isFinite(eventData.location.lng) &&
+        eventData.location.locationToken
       );
       return eventData.date && eventData.time && hasValidLocation && eventData.eventType && adultsN >= 1;
     }
@@ -121,6 +158,19 @@ export default function BookingWizard({ provider, initialPackageId }) {
   const handleSubmit = async () => {
     if (!user) { showToast('Necesitás iniciar sesión para reservar', 'error'); router.push('/login'); return; }
     if (submitting) return;
+
+    // El location_token dura 30 minutos (ver docs/SECURITY.md) — si el
+    // cliente se quedó completando los pasos siguientes más tiempo que eso,
+    // mejor pedirle que vuelva a elegir la dirección acá mismo que dejar que
+    // el backend lo rechace con un 400 genérico.
+    const tokenExpired = eventData.location?.tokenExpiresAt
+      && new Date(eventData.location.tokenExpiresAt).getTime() <= Date.now();
+    if (!eventData.location?.locationToken || tokenExpired) {
+      setError('La dirección seleccionada expiró. Volvé al paso "Evento" y elegila de nuevo.');
+      setStep(0);
+      return;
+    }
+
     setSubmitting(true);
     setError('');
     try {
@@ -139,7 +189,8 @@ export default function BookingWizard({ provider, initialPackageId }) {
         message:    contactData.message,
         extras:     packageData.extras.map((id) => ({ id, quantity: 1 })),
         // Ubicación del evento: solo llega acá si stepValid() ya confirmó
-        // que viene de una selección real de Google Places (lat/lng válidos).
+        // que viene de una selección real de Google Places con un
+        // location_token vigente.
         locationDetails: {
           formattedAddress: eventData.location.formattedAddress,
           placeId:          eventData.location.placeId,
@@ -150,14 +201,23 @@ export default function BookingWizard({ provider, initialPackageId }) {
           addressComplement: eventData.location.addressComplement || undefined,
           accessNotes:       eventData.location.accessNotes || undefined,
           source:            eventData.location.source || 'google_places',
+          locationToken:     eventData.location.locationToken,
+          tokenExpiresAt:    eventData.location.tokenExpiresAt,
         },
       });
       setRequestNumber(booking.requestNumber || '');
       setDone(true);
     } catch (err) {
-      const msg = err?.message || 'No se pudo enviar la solicitud. Intentá de nuevo.';
+      const msg = describeBookingError(err);
       setError(msg);
       showToast(msg, 'error');
+      // 409 (disponibilidad cambió) y errores de ubicación (token vencido/
+      // inválido) dejan al cliente elegir de nuevo desde el paso "Evento" —
+      // el resto de los datos del formulario se conserva (nunca se resetea
+      // el wizard en un error recuperable).
+      if (err?.status === 409 || err?.code === 'INVALID_LOCATION_TOKEN' || err?.code === 'LOCATION_TOKEN_EXPIRED') {
+        setStep(0);
+      }
     } finally {
       setSubmitting(false);
     }

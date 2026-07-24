@@ -163,18 +163,16 @@ export const bookingService = {
       event_type:      data.eventType || data.event_type || undefined,
       message:         data.message  || undefined,
       extras_selected: data.extras   || data.extras_selected || [],
-      // Requerido por el backend — solo una dirección validada por Google
-      // Places, nunca texto libre (ver docs/API.md).
-      event_location_details: loc ? {
-        formatted_address:  loc.formattedAddress,
-        place_id:           loc.placeId || undefined,
-        lat:                loc.lat,
-        lng:                loc.lng,
-        city:               loc.city || undefined,
-        department:         loc.department || undefined,
-        address_complement: loc.addressComplement || undefined,
-        access_notes:       loc.accessNotes || undefined,
-        location_source:    loc.source || 'google_places',
+      // El backend nunca confía en placeId/lat/lng/location_source sueltos
+      // (se pueden falsificar) — la única prueba válida de que la dirección
+      // salió de Google Places es el location_token firmado que devolvió
+      // GET /locations/places/:placeId (ver docs/SECURITY.md). Complemento/
+      // instrucciones sí viajan tal cual: son texto libre que Google nunca
+      // devuelve, no hay nada que el backend pueda verificar ahí.
+      event_location_details: loc?.locationToken ? {
+        location_token:      loc.locationToken,
+        address_complement:  loc.addressComplement || undefined,
+        access_notes:        loc.accessNotes || undefined,
       } : undefined,
     };
     const res = await api.post('/bookings', body);

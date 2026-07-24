@@ -66,24 +66,31 @@ async function request(path, options = {}) {
   }
 
   if (!res.ok) {
-    throw new ApiError(data.message || 'Error del servidor', res.status, data.code);
+    throw new ApiError(data.message || 'Error del servidor', res.status, data.code, data.reasonCode);
   }
 
   return data;
 }
 
 export class ApiError extends Error {
-  constructor(message, status, code) {
+  constructor(message, status, code, reasonCode) {
     super(message);
     this.status = status;
     this.code = code;
+    // Motivo específico de un 409 AVAILABILITY_CONFLICT (blocked,
+    // fully_booked, guest_capacity_exceeded, etc. — ver
+    // eventonow-back/src/modules/availability/availability.service.js).
+    if (reasonCode) this.reasonCode = reasonCode;
     this.name = 'ApiError';
   }
 }
 
 // ── HTTP helpers ──────────────────────────────────────────────────────────────
 export const api = {
-  get: (path) => request(path),
+  // `options` opcional (ej. { signal } de un AbortController) — para
+  // endpoints como /locations/autocomplete, que necesitan poder cancelar una
+  // consulta obsoleta mientras el usuario sigue tipeando.
+  get: (path, options = {}) => request(path, options),
 
   post: (path, body, options = {}) =>
     request(path, {

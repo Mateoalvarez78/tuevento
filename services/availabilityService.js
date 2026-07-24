@@ -152,8 +152,12 @@ export const availabilityService = {
   // `time` opcional: sin horario elegido, el backend prueba a las 12:00 como
   // aproximación (puede no reflejar la noche llena o la mañana libre) — en
   // cuanto el cliente elige hora, pasarla acá para una revisión más precisa.
-  async getPublicAvailability(serviceId, { date, time, guestCount } = {}) {
-    const res = await api.get(`/services/${serviceId}/availability${buildQuery({ date, time, guestCount })}`);
+  // `packageId`/`extraHours`: si el paquete es de duración fija, el backend
+  // usa su duración (+ horas extra) para calcular el intervalo consultado en
+  // vez de la duración genérica del servicio — sin esto, la consulta previa
+  // podía decir "disponible" para una ventana más corta que la real.
+  async getPublicAvailability(serviceId, { date, time, guestCount, packageId, extraHours } = {}) {
+    const res = await api.get(`/services/${serviceId}/availability${buildQuery({ date, time, guestCount, packageId, extraHours })}`);
     const d = res.data || {};
     return {
       available: !!d.available,
