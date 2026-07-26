@@ -66,6 +66,9 @@ function mapMenu(p) {
     adultPrice:    parseFloat(p.adult_price != null ? p.adult_price : p.price) || 0,
     childPrice:    p.child_price != null ? parseFloat(p.child_price) : null,
     childAgeLimit: p.child_age_limit != null ? parseInt(p.child_age_limit) : 14,
+    offersCeliacMenu:  !!p.offers_celiac_menu,
+    celiacUnitPrice:   p.celiac_unit_price != null ? parseFloat(p.celiac_unit_price) : null,
+    celiacDescription: p.celiac_description || '',
     minGuests:     p.min_guests != null ? parseInt(p.min_guests) : null,
     maxGuests:     p.max_guests != null ? parseInt(p.max_guests) : null,
     isActive:      p.is_active !== false,
@@ -88,6 +91,9 @@ function toMenuBody(d) {
   if (d.adultPrice    !== undefined) body.adult_price = d.adultPrice;
   if (d.childPrice    !== undefined) body.child_price = d.childPrice;
   if (d.childAgeLimit !== undefined) body.child_age_limit = d.childAgeLimit;
+  if (d.offersCeliacMenu  !== undefined) body.offers_celiac_menu = d.offersCeliacMenu;
+  if (d.celiacUnitPrice   !== undefined) body.celiac_unit_price = d.celiacUnitPrice;
+  if (d.celiacDescription !== undefined) body.celiac_description = d.celiacDescription;
   if (d.minGuests     !== undefined) body.min_guests = d.minGuests;
   if (d.maxGuests     !== undefined) body.max_guests = d.maxGuests;
   if (d.sortOrder     !== undefined) body.sort_order = d.sortOrder;

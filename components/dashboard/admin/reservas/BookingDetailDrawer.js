@@ -119,7 +119,13 @@ export default function BookingDetailDrawer({ bookingId, onClose, onChanged }) {
               <div className="flex items-center gap-2 text-sm text-gray-200"><AppIcon icon={Package} size={14} className="text-gray-500" aria-hidden="true" /> {data.serviceTitle}</div>
               <Row label="Categoría">{data.category}</Row>
               <Row label="Menú">{data.packageName || '—'}</Row>
-              {data.adults != null && <Row label="Invitados"><AppIcon icon={Users} size={12} className="inline mr-1" aria-hidden="true" />{data.adults} adultos{data.children ? ` + ${data.children} niños` : ''}</Row>}
+              {data.adults != null && (
+                <Row label="Invitados">
+                  <AppIcon icon={Users} size={12} className="inline mr-1" aria-hidden="true" />
+                  {data.adults} adultos{data.celiacs > 0 ? ` (${data.adults - data.celiacs} estándar + ${data.celiacs} celíaco)` : ''}{data.children ? ` + ${data.children} niños` : ''} · {data.adults + data.children} en total
+                </Row>
+              )}
+              {data.celiacDescription && <Row label="Menú celíaco contratado">{data.celiacDescription}</Row>}
               {data.extras?.length > 0 && <Row label="Extras">{data.extras.length} seleccionado(s)</Row>}
             </Section>
 
@@ -138,7 +144,8 @@ export default function BookingDetailDrawer({ bookingId, onClose, onChanged }) {
 
             {/* Financiero */}
             <Section title="Desglose económico">
-              {data.subtotalAdults > 0 && <Row label="Subtotal adultos">{money(data.subtotalAdults)}</Row>}
+              {data.subtotalAdults > 0 && <Row label={data.celiacs > 0 ? 'Subtotal adultos — menú estándar' : 'Subtotal adultos'}>{money(data.subtotalAdults)}</Row>}
+              {data.subtotalCeliacs > 0 && <Row label="Subtotal adultos — menú celíaco">{money(data.subtotalCeliacs)}</Row>}
               {data.subtotalChildren > 0 && <Row label="Subtotal niños">{money(data.subtotalChildren)}</Row>}
               {data.extrasTotal > 0 && <Row label="Extras">{money(data.extrasTotal)}</Row>}
               <Row label="Subtotal">{money(data.subtotal)}</Row>

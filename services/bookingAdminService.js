@@ -25,6 +25,7 @@ function mapRow(b) {
     guests: parseInt(b.guest_count) || 0,
     adults: b.adults_count != null ? parseInt(b.adults_count) : null,
     children: b.children_count != null ? parseInt(b.children_count) : 0,
+    celiacs: b.celiacs_count != null ? parseInt(b.celiacs_count) : 0,
     serviceTitle: b.service_title || '',
     category: b.category_name || '',
     categoryEmoji: b.category_emoji || '',
@@ -63,6 +64,8 @@ function mapDetail(b) {
     guests: parseInt(b.guest_count) || 0,
     adults: b.adults_count != null ? parseInt(b.adults_count) : null,
     children: b.children_count != null ? parseInt(b.children_count) : 0,
+    celiacs: b.celiacs_count != null ? parseInt(b.celiacs_count) : 0,
+    celiacDescription: b.celiac_description || '',
     message: b.message || '',
     // Servicio / partes
     serviceTitle: b.service_title || '',
@@ -80,8 +83,10 @@ function mapDetail(b) {
     // Financiero
     adultUnitPrice: num(b.adult_unit_price),
     childUnitPrice: num(b.child_unit_price),
+    celiacUnitPrice: num(b.celiac_unit_price),
     subtotalAdults: num(b.subtotal_adults),
     subtotalChildren: num(b.subtotal_children),
+    subtotalCeliacs: num(b.subtotal_celiacs),
     extrasTotal: num(b.extras_total),
     subtotal: num(b.subtotal),
     total: num(b.total_amount),

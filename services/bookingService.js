@@ -58,10 +58,17 @@ function mapBooking(b) {
     // Per-person breakdown (menu model)
     adults:            b.adults_count != null ? parseInt(b.adults_count) : null,
     children:          b.children_count != null ? parseInt(b.children_count) : 0,
+    // Celíacos: SUBCONJUNTO de `adults` (nunca se suman al total de
+    // invitados) — snapshot al reservar, incluida la descripción (el paquete
+    // puede cambiar su descripción después).
+    celiacs:           b.celiacs_count != null ? parseInt(b.celiacs_count) : 0,
     adultUnitPrice:    parseFloat(b.adult_unit_price) || 0,
     childUnitPrice:    parseFloat(b.child_unit_price) || 0,
+    celiacUnitPrice:   parseFloat(b.celiac_unit_price) || 0,
     subtotalAdults:    parseFloat(b.subtotal_adults) || 0,
     subtotalChildren:  parseFloat(b.subtotal_children) || 0,
+    subtotalCeliacs:   parseFloat(b.subtotal_celiacs) || 0,
+    celiacDescription: b.celiac_description || '',
     extrasTotal:       parseFloat(b.extras_total) || 0,
     // Paquete de duración fija (ej. salón de fiestas) — snapshot al reservar.
     durationHours:     b.duration_hours != null ? parseFloat(b.duration_hours) : null,
@@ -151,12 +158,14 @@ export const bookingService = {
   async create(data) {
     const adults   = data.adults   != null ? Number(data.adults)   : (data.guests != null ? Number(data.guests) : undefined);
     const children = data.children != null ? Number(data.children) : undefined;
+    const celiacs  = data.celiacs  != null ? Number(data.celiacs)  : undefined;
     const loc = data.locationDetails || data.event_location_details;
     const body = {
       service_id:      data.serviceId || data.service_id,
       package_id:      data.packageId || data.package_id || undefined,
       adults_count:    adults,
       children_count:  children,
+      celiacs_count:   celiacs,
       extra_hours:     data.extraHours != null ? Number(data.extraHours) : undefined,
       event_date:      data.date     || data.event_date,
       event_time:      data.time     || data.event_time || undefined,

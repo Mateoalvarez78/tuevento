@@ -51,6 +51,13 @@ export default function PackageSelector({ packages, selectedId, onSelect }) {
                   {pkg.priceUnit ? ` ${pkg.priceUnit}` : ''}
                 </div>
               )}
+              {pkg.offersCeliacMenu && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Opción celíaca disponible:{' '}
+                  <span className="font-semibold text-gray-700">${pkg.celiacUnitPrice.toLocaleString('es-UY')}</span>
+                  {pkg.priceUnit ? ` ${pkg.priceUnit}` : ''}
+                </div>
+              )}
               {pkg.isDurationPackage && (
                 <div className="text-xs text-gray-500 mt-1">
                   {pkg.durationHours} horas incluidas

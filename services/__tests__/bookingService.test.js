@@ -61,6 +61,29 @@ describe('bookingService.create', () => {
     expect(body.children_count).toBe(1);
   });
 
+  // Celíacos: SUBCONJUNTO de adults (nunca aditivo) — la fuente única de la
+  // fórmula es calculateQuote en el backend; acá solo confirmamos que el
+  // cliente manda celiacs_count sin transformarlo.
+  test('manda celiacs_count cuando se especifica', async () => {
+    await bookingService.create({
+      serviceId: 'service-1', packageId: 'pkg-1', adults: 50, children: 10, celiacs: 5,
+      date: '2027-01-01', locationDetails: { locationToken: 't' },
+    });
+    const [, options] = global.fetch.mock.calls[0];
+    const body = JSON.parse(options.body);
+    expect(body.celiacs_count).toBe(5);
+    expect(body.adults_count).toBe(50);
+  });
+
+  test('sin celiacs: no manda celiacs_count (undefined, no 0 forzado)', async () => {
+    await bookingService.create({
+      serviceId: 'service-1', adults: 2, date: '2027-01-01', locationDetails: { locationToken: 't' },
+    });
+    const [, options] = global.fetch.mock.calls[0];
+    const body = JSON.parse(options.body);
+    expect(body.celiacs_count).toBeUndefined();
+  });
+
   test('sin location_token: no arma event_location_details (el backend la exige, mejor no mandar datos a medias)', async () => {
     await bookingService.create({
       serviceId: 'service-1', adults: 2, date: '2027-01-01',
@@ -80,5 +103,45 @@ describe('bookingService.create', () => {
       serviceId: 'service-1', adults: 1, date: '2027-01-01',
       locationDetails: { locationToken: 't' },
     })).rejects.toMatchObject({ status: 409, code: 'AVAILABILITY_CONFLICT', reasonCode: 'blocked' });
+  });
+});
+
+describe('bookingService mapBooking (celiac snapshot)', () => {
+  afterEach(() => {
+    global.fetch = ORIGINAL_FETCH;
+    vi.restoreAllMocks();
+  });
+
+  test('mapea celiacs_count/celiac_unit_price/subtotal_celiacs/celiac_description del snapshot histórico', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      status: 200, ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          id: 'booking-1', request_number: 'EN-TEST-0002',
+          adults_count: 50, children_count: 10, celiacs_count: 5,
+          adult_unit_price: '350.00', celiac_unit_price: '500.00',
+          subtotal_adults: '15750.00', subtotal_celiacs: '2500.00',
+          celiac_description: 'Menú sin TACC, elaboración separada.',
+        },
+      }),
+    });
+    const booking = await bookingService.getById('booking-1');
+    expect(booking.adults).toBe(50);
+    expect(booking.celiacs).toBe(5);
+    expect(booking.celiacUnitPrice).toBe(500);
+    expect(booking.subtotalAdults).toBe(15750);
+    expect(booking.subtotalCeliacs).toBe(2500);
+    expect(booking.celiacDescription).toBe('Menú sin TACC, elaboración separada.');
+  });
+
+  test('reserva sin celíacos: celiacs=0 y subtotalCeliacs=0 (no rompe el flujo previo)', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      status: 200, ok: true,
+      json: async () => ({ success: true, data: { id: 'booking-2', adults_count: 20, children_count: 0 } }),
+    });
+    const booking = await bookingService.getById('booking-2');
+    expect(booking.celiacs).toBe(0);
+    expect(booking.subtotalCeliacs).toBe(0);
   });
 });

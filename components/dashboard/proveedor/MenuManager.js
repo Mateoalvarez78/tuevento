@@ -10,11 +10,13 @@ import Input from '@/components/Input';
 import Modal from '@/components/Modal';
 
 const SALON_SLUG = 'salon-de-fiestas';
+const CATERING_SLUG = 'catering';
 
 const EMPTY = {
   name: '', description: '', adultPrice: '', childPrice: '',
   childAgeLimit: 14, minGuests: '', maxGuests: '',
   durationHours: '', allowsExtraHours: false, extraHourPrice: '', maxExtraHours: '',
+  offersCeliacMenu: false, celiacUnitPrice: '', celiacDescription: '',
 };
 
 const money = (n) => `$${Number(n).toLocaleString('es-UY')}`;
@@ -22,6 +24,7 @@ const money = (n) => `$${Number(n).toLocaleString('es-UY')}`;
 export default function MenuManager({ service, onClose, onChanged }) {
   const { showToast } = useApp();
   const isSalon = service.category === SALON_SLUG;
+  const isCatering = service.category === CATERING_SLUG;
   const [menus, setMenus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,6 +56,9 @@ export default function MenuManager({ service, onClose, onChanged }) {
       allowsExtraHours: !!m.allowsExtraHours,
       extraHourPrice: m.extraHourPrice ?? '',
       maxExtraHours: m.maxExtraHours ?? '',
+      offersCeliacMenu: !!m.offersCeliacMenu,
+      celiacUnitPrice: m.celiacUnitPrice ?? '',
+      celiacDescription: m.celiacDescription || '',
     });
   };
 
@@ -65,6 +71,12 @@ export default function MenuManager({ service, onClose, onChanged }) {
     if (isSalon && !(adult > 0)) { showToast('El precio del paquete debe ser mayor que cero', 'error'); return; }
     if (!isSalon && form.childPrice !== '' && (!Number.isFinite(Number(form.childPrice)) || Number(form.childPrice) < 0)) {
       showToast('El precio niño no puede ser negativo', 'error'); return;
+    }
+    if (isCatering && form.offersCeliacMenu) {
+      const celiacPrice = Number(form.celiacUnitPrice);
+      if (form.celiacUnitPrice === '' || !Number.isFinite(celiacPrice) || celiacPrice < 0) {
+        showToast('El precio del menú celíaco es obligatorio y no puede ser negativo si ofrecés la opción', 'error'); return;
+      }
     }
     const duration = Number(form.durationHours);
     if (isSalon && !(duration > 0)) { showToast('La duración del paquete es obligatoria y debe ser mayor que cero', 'error'); return; }
@@ -99,6 +111,11 @@ export default function MenuManager({ service, onClose, onChanged }) {
         childAgeLimit: Number(form.childAgeLimit) || 14,
         minGuests: form.minGuests === '' ? null : Number(form.minGuests),
         maxGuests: form.maxGuests === '' ? null : Number(form.maxGuests),
+        // Desmarcar el checkbox limpia precio/descripción — nunca queda un
+        // precio celíaco "huérfano" configurado con la opción desactivada.
+        offersCeliacMenu: isCatering && form.offersCeliacMenu,
+        celiacUnitPrice: isCatering && form.offersCeliacMenu ? Number(form.celiacUnitPrice) : null,
+        celiacDescription: isCatering && form.offersCeliacMenu ? form.celiacDescription.trim() : null,
       };
       if (editingId) await serviceService.updatePackage(service.id, editingId, payload);
       else await serviceService.createPackage(service.id, payload);
@@ -246,6 +263,35 @@ export default function MenuManager({ service, onClose, onChanged }) {
                         onChange={(e) => setForm({ ...form, maxGuests: e.target.value })} />
                     </div>
                   </div>
+                  {isCatering && (
+                    <>
+                      <label className="flex items-center gap-2 text-sm text-gray-700 pt-1">
+                        <input type="checkbox" className="rounded border-gray-300 text-primary focus:ring-primary/30"
+                          checked={form.offersCeliacMenu}
+                          onChange={(e) => setForm({ ...form, offersCeliacMenu: e.target.checked })} />
+                        ¿Ofrece menú para celíacos?
+                      </label>
+                      {form.offersCeliacMenu && (
+                        <>
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">Precio por persona del menú celíaco *</label>
+                            <Input type="number" min="0" placeholder="0" value={form.celiacUnitPrice}
+                              onChange={(e) => setForm({ ...form, celiacUnitPrice: e.target.value })} />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Precio COMPLETO del menú celíaco (reemplaza al precio adulto normal para esas personas, no es un recargo). Ej: si el menú normal cuesta $350 y el celíaco $500, cargá $500 acá.
+                            </p>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">Descripción de la opción celíaca</label>
+                            <textarea rows={2} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              placeholder="Detallá qué incluye el menú y las medidas adoptadas para su preparación."
+                              value={form.celiacDescription}
+                              onChange={(e) => setForm({ ...form, celiacDescription: e.target.value })} />
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
                 </>
               )}
 
@@ -303,6 +349,7 @@ export default function MenuManager({ service, onClose, onChanged }) {
                               <div className="text-xs text-gray-600 mt-0.5">
                                 Adulto <span className="font-semibold">{money(m.adultPrice)}</span>
                                 {m.childPrice != null ? <> · Niño (hasta {m.childAgeLimit}) <span className="font-semibold">{money(m.childPrice)}</span></> : ' · sin precio niño'}
+                                {m.offersCeliacMenu && m.celiacUnitPrice != null ? <> · Celíaco <span className="font-semibold">{money(m.celiacUnitPrice)}</span></> : ''}
                               </div>
                               {(m.minGuests || m.maxGuests) && (
                                 <div className="text-[11px] text-gray-400 mt-0.5">

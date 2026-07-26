@@ -391,7 +391,15 @@ function BookingDetailDrawer({ booking: b, onClose, onCancel, onPay, paying }) {
         {b.locationDetails && (
           <LocationMap lat={b.locationDetails.lat} lng={b.locationDetails.lng} readOnly height="h-40" className="ml-6" />
         )}
-        <DetailRow icon={Users} label="Invitados" value={b.adults != null ? `${b.adults} adultos${b.children ? ` + ${b.children} niños` : ''}` : `${b.guests} personas`} />
+        <DetailRow
+          icon={Users}
+          label="Invitados"
+          value={
+            b.adults != null
+              ? `${b.adults} adultos${b.celiacs > 0 ? ` (${b.adults - b.celiacs} menú estándar + ${b.celiacs} menú celíaco)` : ''}${b.children ? ` + ${b.children} niños` : ''} · ${b.guests} en total`
+              : `${b.guests} personas`
+          }
+        />
         <DetailRow icon={DollarSign} label="Total estimado" value={`$${b.totalEstimated?.toLocaleString('es-UY')}`} />
         {b.depositAmount > 0 && (
           <DetailRow

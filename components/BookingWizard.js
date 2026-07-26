@@ -53,6 +53,9 @@ export default function BookingWizard({ provider, initialPackageId }) {
 
   const [eventData, setEventData] = useState({
     date: '', time: '', eventType: '', adults: '', children: '',
+    // Celíacos: SUBCONJUNTO de adultos (nunca una categoría aparte) — el
+    // checkbox controla si se muestra/usa el campo de cantidad.
+    wantsCeliac: false, celiacs: '',
     // Solo se acepta una dirección validada por Google Places — nunca un
     // texto libre. Shape: { formattedAddress, placeId, lat, lng, city,
     // department, addressComplement, accessNotes, source } | null.
@@ -75,6 +78,17 @@ export default function BookingWizard({ provider, initialPackageId }) {
 
   const selectedPkg = provider.packages.find((p) => p.packageId === packageData.packageId) || provider.packages.find((p) => p.id === packageData.packageId) || provider.packages[0];
   const isDurationPkgForAvailability = !!selectedPkg?.isDurationPackage;
+  const hasCeliacOption = !!selectedPkg?.offersCeliacMenu;
+
+  // Si el menú/paquete elegido cambia y deja de ofrecer la opción celíaca,
+  // se limpia el checkbox y la cantidad — nunca queda un conteo celíaco
+  // "huérfano" de un paquete que ya no aplica.
+  useEffect(() => {
+    if (!hasCeliacOption && (eventData.wantsCeliac || eventData.celiacs !== '')) {
+      setEventData((prev) => ({ ...prev, wantsCeliac: false, celiacs: '' }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasCeliacOption]);
 
   // Consulta de disponibilidad pública (Etapa 7): solo informativa — el
   // backend siempre vuelve a validar al crear la reserva. Manda packageId/
@@ -118,7 +132,22 @@ export default function BookingWizard({ provider, initialPackageId }) {
   const childAgeLimit = selectedPkg?.childAgeLimit ?? 14;
   // Per-person menus multiply by headcount; per-event menus (foto/DJ) are flat.
   const perPerson = selectedPkg ? selectedPkg.perPerson !== false : (provider.priceType === 'per_person');
-  const subtotalAdults = perPerson ? adultsN * adultPrice : adultPrice;
+
+  // Celíacos: SUBCONJUNTO de adultos (nunca aditivo) — el precio celíaco
+  // reemplaza (nunca suma sobre) el precio adulto normal para esas personas.
+  // Nunca se clampea en silencio: si la cantidad supera a los adultos, se
+  // invalida el paso (ver stepValid) en vez de recalcular con un valor
+  // corregido.
+  const celiacUnitPrice = selectedPkg?.celiacUnitPrice ?? 0;
+  const rawCeliacsN = Number(eventData.celiacs) || 0;
+  const celiacsError = hasCeliacOption && eventData.wantsCeliac && (rawCeliacsN < 0 || rawCeliacsN > adultsN)
+    ? 'La cantidad de personas con menú celíaco no puede superar la cantidad de adultos'
+    : null;
+  const celiacsN = hasCeliacOption && eventData.wantsCeliac && !celiacsError ? rawCeliacsN : 0;
+  const standardAdultsN = adultsN - celiacsN;
+
+  const subtotalAdults = perPerson ? standardAdultsN * adultPrice : adultPrice;
+  const subtotalCeliacs = perPerson ? celiacsN * celiacUnitPrice : 0;
   const subtotalChildren = perPerson ? childrenN * childPrice : 0;
 
   // Paquete de duración fija (ej. salón de fiestas): precio fijo + horas extra.
@@ -131,7 +160,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
     ? addHoursToTime(eventData.time, Number(selectedPkg.durationHours) + extraHoursN)
     : null;
 
-  const totalEstimated = subtotalAdults + subtotalChildren + extrasTotal + extraHoursAmount;
+  const totalEstimated = subtotalAdults + subtotalCeliacs + subtotalChildren + extrasTotal + extraHoursAmount;
 
   const stepValid = () => {
     if (step === 0) {
@@ -148,7 +177,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
         typeof eventData.location.lng === 'number' && Number.isFinite(eventData.location.lng) &&
         eventData.location.locationToken
       );
-      return eventData.date && eventData.time && hasValidLocation && eventData.eventType && adultsN >= 1;
+      return eventData.date && eventData.time && hasValidLocation && eventData.eventType && adultsN >= 1 && !celiacsError;
     }
     if (step === 1) return provider.packages.length === 0 || !!packageData.packageId;
     if (step === 2) return contactData.name && contactData.phone && contactData.email;
@@ -182,6 +211,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
         packageId:  packageData.packageId || undefined,
         adults:     adultsN,
         children:   childrenN,
+        celiacs:    celiacsN,
         extraHours: isDurationPkg ? extraHoursN : undefined,
         date:       eventData.date,
         time:       eventData.time,
@@ -320,6 +350,32 @@ export default function BookingWizard({ provider, initialPackageId }) {
               <Input type="number" min="0" icon={Users} placeholder="Cantidad de niños" value={eventData.children} onChange={(e) => setEventData({ ...eventData, children: e.target.value })} />
             </div>
           </div>
+
+          {hasCeliacOption && (
+            <div className="rounded-xl border border-gray-200 p-4 space-y-2">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" className="rounded border-gray-300 text-primary focus:ring-primary/30"
+                  checked={eventData.wantsCeliac}
+                  onChange={(e) => setEventData({ ...eventData, wantsCeliac: e.target.checked, celiacs: e.target.checked ? eventData.celiacs : '' })} />
+                Agregar personas con menú celíaco
+              </label>
+              {eventData.wantsCeliac && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Cantidad de adultos que requieren menú celíaco</label>
+                    <Input type="number" min="0" icon={Users} placeholder="Ej: 5" value={eventData.celiacs} onChange={(e) => setEventData({ ...eventData, celiacs: e.target.value })} />
+                  </div>
+                  <p className="text-xs text-gray-500">Estas personas ya deben estar incluidas en la cantidad de adultos.</p>
+                  {selectedPkg?.celiacDescription && (
+                    <p className="text-xs text-gray-500">{selectedPkg.celiacDescription}</p>
+                  )}
+                  {celiacsError && (
+                    <p className="text-xs text-red-600">{celiacsError}</p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -453,9 +509,15 @@ export default function BookingWizard({ provider, initialPackageId }) {
             ) : perPerson ? (
               <>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Adultos</span>
-                  <span className="font-medium text-gray-900">{adultsN} × ${adultPrice.toLocaleString('es-UY')} = ${subtotalAdults.toLocaleString('es-UY')}</span>
+                  <span className="text-gray-500">{celiacsN > 0 ? 'Adultos — menú estándar' : 'Adultos'}</span>
+                  <span className="font-medium text-gray-900">{standardAdultsN} × ${adultPrice.toLocaleString('es-UY')} = ${subtotalAdults.toLocaleString('es-UY')}</span>
                 </div>
+                {celiacsN > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Adultos — menú celíaco</span>
+                    <span className="font-medium text-gray-900">{celiacsN} × ${celiacUnitPrice.toLocaleString('es-UY')} = ${subtotalCeliacs.toLocaleString('es-UY')}</span>
+                  </div>
+                )}
                 {childrenN > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Niños (hasta {childAgeLimit} años)</span>

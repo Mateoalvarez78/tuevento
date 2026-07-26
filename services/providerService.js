@@ -65,6 +65,8 @@ function mapPackages(packages) {
   return packages.map((p) => {
     const adultPrice = parseFloat(p.adult_price != null ? p.adult_price : p.price) || 0;
     const childPrice = p.child_price != null ? parseFloat(p.child_price) : null;
+    const offersCeliacMenu = !!p.offers_celiac_menu;
+    const celiacUnitPrice = p.celiac_unit_price != null ? parseFloat(p.celiac_unit_price) : null;
     const priceUnit = p.price_unit || '';
     return {
       id:            p.id,
@@ -75,6 +77,13 @@ function mapPackages(packages) {
       childPrice,
       childAgeLimit: p.child_age_limit != null ? parseInt(p.child_age_limit) : 14,
       hasChildPrice: childPrice != null,
+      // Celíacos son un SUBCONJUNTO de adultos: celiacUnitPrice reemplaza (no
+      // suma sobre) adultPrice para esas personas — nunca una categoría de
+      // invitados aparte.
+      offersCeliacMenu,
+      celiacUnitPrice,
+      celiacDescription: p.celiac_description || '',
+      hasCeliacOption: offersCeliacMenu,
       // Per-person menus multiply by headcount; per-event menus are a flat rate.
       perPerson:     /persona|person/i.test(priceUnit) || childPrice != null,
       minGuests:     p.min_guests != null ? parseInt(p.min_guests) : null,

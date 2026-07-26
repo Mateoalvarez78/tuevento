@@ -107,7 +107,15 @@ export function CalendarDrawer({ booking, onClose }) {
             {booking.locationDetails && (
               <LocationMap lat={booking.locationDetails.lat} lng={booking.locationDetails.lng} readOnly height="h-40" className="ml-6" />
             )}
-            <DetailRow icon={Users} label="Invitados" value={`${booking.guests} personas`} />
+            <DetailRow
+              icon={Users}
+              label="Invitados"
+              value={
+                booking.adults != null
+                  ? `${booking.adults} adultos${booking.celiacs > 0 ? ` (${booking.adults - booking.celiacs} menú estándar + ${booking.celiacs} menú celíaco)` : ''}${booking.children ? ` + ${booking.children} niños` : ''} · ${booking.guests} en total`
+                  : `${booking.guests} personas`
+              }
+            />
             <DetailRow icon={DollarSign} label="Monto" value={fmtFull(gross)} sub={booking.depositPaid ? 'Seña pagada' : 'Seña pendiente'} subIcon={booking.depositPaid ? CheckCircle2 : AlertCircle} subColor={booking.depositPaid ? 'text-emerald-600' : 'text-amber-500'} />
             <DetailRow icon={FileText} label="Servicio" value={booking.serviceTitle || '—'} />
             {booking.message && (

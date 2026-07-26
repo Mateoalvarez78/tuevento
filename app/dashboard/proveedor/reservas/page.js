@@ -186,7 +186,7 @@ export default function ProviderReservationsPage() {
                   <div>
                     <span className="text-gray-400 block">Personas</span>
                     <span className="font-medium text-gray-800">
-                      {b.adults != null ? `${b.adults} ad.${b.children ? ` + ${b.children} niños` : ''}` : `${b.guests} pers.`}
+                      {b.adults != null ? `${b.adults} ad.${b.celiacs > 0 ? ` (${b.celiacs} celíaco)` : ''}${b.children ? ` + ${b.children} niños` : ''}` : `${b.guests} pers.`}
                     </span>
                   </div>
                   <div>
