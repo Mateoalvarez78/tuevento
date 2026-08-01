@@ -41,7 +41,8 @@ export const adminService = {
     return mapAdminProvider(res.data);
   },
 
-  /** Servicios de un proveedor puntual (admin endpoint, evita el 403 de /services/mine). */
+  /** Servicios de un proveedor puntual (admin endpoint, evita el 403 de /services/mine).
+   *  Incluye calificación y fechas de actualización/publicación (Proveedor 360°, tab Servicios). */
   async getProviderServices(id) {
     const res = await api.get(`/admin/providers/${id}/services`);
     return (res.data || []).map((s) => ({
@@ -55,6 +56,10 @@ export const adminService = {
       totalBookings: parseInt(s.total_bookings) || 0,
       views: parseInt(s.views) || 0,
       createdAt: s.created_at || null,
+      updatedAt: s.updated_at || null,
+      publishedAt: s.published_at || null,
+      ratingAvg: parseFloat(s.rating_avg) || 0,
+      reviewCount: parseInt(s.total_reviews) || 0,
       primaryImage: s.primary_image || null,
     }));
   },
@@ -62,7 +67,9 @@ export const adminService = {
   // ── Providers ──────────────────────────────────────────────────────────────
   providers: {
     getAll:       (filters)      => providerService.admin.getAll(filters),
+    getSummary:   (filters)      => providerService.admin.getSummary(filters),
     getById:      (id)           => providerService.admin.getById(id),
+    getBookings:  (id, filters)  => providerService.admin.getBookings(id, filters),
     create:       (data)         => providerService.admin.create(data),
     update:       (id, data)     => providerService.admin.update(id, data),
     updateStatus: (id, status, r)=> providerService.admin.updateStatus(id, status, r),

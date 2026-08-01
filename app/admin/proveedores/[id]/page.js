@@ -1,5 +1,8 @@
 'use client';
 
+// Proveedor 360° (Fase A) — encabezado y acciones administrativas sin
+// cambios; se agregan pestañas (Resumen/Servicios/Reservas) donde antes
+// había un único bloque de info + tabla de servicios.
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -7,14 +10,19 @@ import { ArrowLeft, Pencil, Pause, Ban, RotateCcw } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { assetUrl } from '@/services/api';
 import ProviderStatusBadge from '@/components/ProviderStatusBadge';
-import ServiceStatusBadge from '@/components/ServiceStatusBadge';
-import { formatCurrency } from '@/utils/formatters';
-import { safeFormatDate } from '@/lib/date';
+import ProviderOverviewTab from '@/components/dashboard/admin/proveedores/ProviderOverviewTab';
+import ProviderServicesTab from '@/components/dashboard/admin/proveedores/ProviderServicesTab';
+import ProviderBookingsTab from '@/components/dashboard/admin/proveedores/ProviderBookingsTab';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Modal from '@/components/Modal';
 import Avatar from '@/components/Avatar';
-import { TABLE_HEAD_CLS, TABLE_ROW_HOVER_CLS } from '@/components/Table';
+
+const TABS = [
+  { value: 'resumen', label: 'Resumen' },
+  { value: 'servicios', label: 'Servicios' },
+  { value: 'reservas', label: 'Reservas' },
+];
 
 function ConfirmModal({ title, description, confirmLabel, confirmVariant, onConfirm, onCancel, requireReason }) {
   const [reason, setReason] = useState('');
@@ -55,6 +63,7 @@ export default function AdminProviderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [modal, setModal] = useState(null); // 'suspend' | 'deactivate' | 'activate'
+  const [activeTab, setActiveTab] = useState('resumen');
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -113,7 +122,7 @@ export default function AdminProviderDetailPage() {
   };
 
   return (
-    <div className="p-4 sm:p-8 max-w-4xl">
+    <div className="p-4 sm:p-6 lg:p-8 w-full">
       {/* Back */}
       <Link href="/admin/proveedores" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 mb-6 transition-colors">
         <AppIcon icon={ArrowLeft} size={15} aria-hidden="true" />
@@ -121,7 +130,7 @@ export default function AdminProviderDetailPage() {
       </Link>
 
       {/* Header */}
-      <div className="flex items-start gap-4 mb-8">
+      <div className="flex items-start gap-4 mb-6">
         <Avatar src={provider.logo_url ? assetUrl(provider.logo_url) : null} name={displayName} size="lg" shape="square" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
@@ -138,7 +147,7 @@ export default function AdminProviderDetailPage() {
       </div>
 
       {/* Action buttons */}
-      <div className="flex flex-wrap gap-2 mb-8">
+      <div className="flex flex-wrap gap-2 mb-6">
         <Button variant="outline" theme="dark" icon={Pencil} href={`/admin/proveedores/${id}/editar`}>Editar</Button>
         {provider.status === 'active' && (
           <>
@@ -151,85 +160,28 @@ export default function AdminProviderDetailPage() {
         )}
       </div>
 
-      {/* Info grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-        <InfoCard title="Información del negocio">
-          <InfoRow label="Nombre comercial" value={displayName} />
-          <InfoRow label="Razón social" value={provider.legalName || '—'} />
-          <InfoRow label="RUT" value={provider.taxId || '—'} />
-          <InfoRow label="Categoría" value={provider.categoryLabel} />
-          <InfoRow label="Ciudad / Depto" value={[provider.city, provider.department].filter(Boolean).join(' / ') || '—'} />
-          <InfoRow label="Dirección" value={provider.address || '—'} />
-          <InfoRow label="Zonas" value={provider.zones?.join(', ') || '—'} />
-          <InfoRow label="Descripción" value={provider.description || '—'} />
-        </InfoCard>
-        <InfoCard title="Contacto">
-          <InfoRow label="Responsable" value={provider.ownerName || provider.owner?.name || '—'} />
-          <InfoRow label="Email" value={provider.email || '—'} />
-          <InfoRow label="Teléfono" value={provider.phone || provider.owner?.phone || '—'} />
-          <InfoRow label="WhatsApp" value={provider.whatsapp || '—'} />
-        </InfoCard>
-        <InfoCard title="Comercial">
-          <InfoRow label="Comisión" value={provider.commissionRate != null ? `${(provider.commissionRate * 100).toFixed(1)}%` : 'Default de la plataforma'} />
-          <InfoRow label="Moneda" value={provider.currency || '—'} />
-          <InfoRow label="Método de cobro" value={provider.paymentMethod || '—'} />
-        </InfoCard>
-        <InfoCard title="Plataforma">
-          <InfoRow label="ID" value={provider.id} mono />
-          <InfoRow label="Registrado" value={safeFormatDate(provider.createdAt, '—')} />
-          <InfoRow label="Activo desde" value={safeFormatDate(provider.approvedAt, '—')} />
-          <InfoRow label="Rating" value={provider.rating ? `${provider.rating} (${provider.reviewCount} reseñas)` : '—'} />
-        </InfoCard>
-        <InfoCard title="Estadísticas">
-          <InfoRow label="Reservas totales" value={provider.totalBookings || 0} />
-          <InfoRow label="Tiempo de respuesta" value={provider.responseTime || '—'} />
-          <InfoRow label="Verificado" value={provider.verified ? 'Sí' : 'No'} />
-          <InfoRow label="Precio desde" value={provider.priceFrom ? `$${formatCurrency(provider.priceFrom)}` : '—'} />
-        </InfoCard>
-        {provider.internalNotes && (
-          <InfoCard title="Notas internas">
-            <p className="text-sm text-gray-300 whitespace-pre-wrap">{provider.internalNotes}</p>
-          </InfoCard>
-        )}
+      {/* Tabs */}
+      <div className="flex gap-1 mb-6 border-b border-gray-800 pb-0">
+        {TABS.map((tab) => (
+          <button
+            key={tab.value}
+            role="tab"
+            aria-selected={activeTab === tab.value}
+            onClick={() => setActiveTab(tab.value)}
+            className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors ${
+              activeTab === tab.value
+                ? 'text-primary border-b-2 border-primary -mb-px bg-primary/5'
+                : 'text-gray-500 hover:text-gray-300'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* Services */}
-      <section className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-800">
-          <h2 className="text-sm font-semibold text-gray-300">Servicios publicados ({services.length})</h2>
-        </div>
-        {services.length === 0 ? (
-          <p className="px-5 py-6 text-gray-500 text-sm">Sin servicios.</p>
-        ) : (
-          <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[400px]">
-            <thead>
-              <tr className={TABLE_HEAD_CLS.dark}>
-                <th className="text-left px-5 py-3 font-medium">Servicio</th>
-                <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Precio desde</th>
-                <th className="text-left px-4 py-3 font-medium">Estado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              {services.map((s) => (
-                <tr key={s.id} className={TABLE_ROW_HOVER_CLS.dark}>
-                  <td className="px-5 py-3.5">
-                    <p className="text-gray-200 font-medium">{s.title}</p>
-                    <p className="text-gray-500 text-xs">{s.category}</p>
-                  </td>
-                  <td className="px-4 py-3.5 text-gray-400 hidden md:table-cell">
-                    ${formatCurrency(s.priceFrom)}
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <ServiceStatusBadge status={s.status} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          </div>
-        )}
-      </section>
+      {activeTab === 'resumen' && <ProviderOverviewTab provider={provider} />}
+      {activeTab === 'servicios' && <ProviderServicesTab services={services} />}
+      {activeTab === 'reservas' && <ProviderBookingsTab providerId={id} />}
 
       {/* Confirm modal */}
       {modal && (
@@ -239,24 +191,6 @@ export default function AdminProviderDetailPage() {
           onCancel={() => setModal(null)}
         />
       )}
-    </div>
-  );
-}
-
-function InfoCard({ title, children }) {
-  return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{title}</h3>
-      <div className="space-y-2.5">{children}</div>
-    </div>
-  );
-}
-
-function InfoRow({ label, value, mono }) {
-  return (
-    <div className="flex justify-between gap-4 text-sm">
-      <span className="text-gray-500 shrink-0">{label}</span>
-      <span className={`text-gray-200 text-right ${mono ? 'font-mono text-xs' : ''}`}>{value}</span>
     </div>
   );
 }

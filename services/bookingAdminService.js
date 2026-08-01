@@ -8,7 +8,11 @@ const num = (v) => parseFloat(v) || 0;
 // El backend usa 'accepted'; la UI muestra 'confirmed' en los badges.
 const uiStatus = (s) => (s === 'accepted' ? 'confirmed' : s);
 
-function mapRow(b) {
+// Exportado además de usarse acá adentro: lo reutiliza
+// providerService.js#admin.getBookings (tab "Reservas" de Proveedor 360°)
+// para que una fila de reserva se vea/mapee igual sin importar desde qué
+// listado se pidió.
+export function mapRow(b) {
   return {
     id: b.id,
     requestNumber: b.request_number,

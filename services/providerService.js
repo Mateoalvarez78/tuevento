@@ -3,6 +3,7 @@
 // Keeps the same method signatures for backward compatibility.
 
 import { api, buildQuery } from './api';
+import { mapRow as mapBookingRow } from './bookingAdminService';
 
 // ── Mappers ───────────────────────────────────────────────────────────────────
 // Maps backend service object → frontend "provider card" shape used by catalog/ServiceCard
@@ -112,9 +113,41 @@ function mapExtras(extras) {
   }));
 }
 
+// Tasa de aceptación/cancelación — Proveedor 360° (Fase A). Aproximación
+// documentada (no reconstruye booking_status_history): la aceptación se mide
+// sobre reservas ya DECIDIDAS por el proveedor (excluye "pending"); la
+// cancelación es sobre el total histórico. Ver plan de Fase A.
+function computeBookingRates({ accepted, completed, rejected, cancelled, total }) {
+  const decided = accepted + completed + rejected;
+  return {
+    acceptanceRate: decided > 0 ? (accepted + completed) / decided : null,
+    cancellationRate: total > 0 ? cancelled / total : null,
+  };
+}
+
 // Maps backend provider admin object → frontend admin provider shape
 export function mapAdminProvider(p) {
   if (!p) return null;
+
+  // Agregados de Proveedor 360° (Fase A) — solo presentes en las respuestas
+  // de admin.getAll/getById (ver PROVIDER_AGGREGATE_COLUMNS en el backend);
+  // ausentes en otros contextos que reutilizan este mismo mapper (ej.
+  // getByUserId/getByProviderId de la API pública) — por eso todo default a
+  // 0/null en vez de asumir que siempre vienen.
+  const bookingsPending = parseInt(p.bookings_pending) || 0;
+  const bookingsAccepted = parseInt(p.bookings_accepted) || 0;
+  const bookingsCompleted = parseInt(p.bookings_completed) || 0;
+  const bookingsCancelled = parseInt(p.bookings_cancelled) || 0;
+  const bookingsRejected = parseInt(p.bookings_rejected) || 0;
+  const bookingsTotal = bookingsPending + bookingsAccepted + bookingsCompleted + bookingsCancelled + bookingsRejected;
+  const { acceptanceRate, cancellationRate } = computeBookingRates({
+    accepted: bookingsAccepted, completed: bookingsCompleted, rejected: bookingsRejected, cancelled: bookingsCancelled, total: bookingsTotal,
+  });
+  const lastActivityAt = [p.last_booking_at, p.last_service_update_at, p.updated_at]
+    .filter(Boolean)
+    .sort()
+    .pop() || p.created_at || null;
+
   return {
     id:           p.id,
     name:         p.business_name,
@@ -141,6 +174,7 @@ export function mapAdminProvider(p) {
     instagram:    p.instagram || '',
     whatsapp:     p.whatsapp || '',
     website:      p.website || '',
+    responseTime: p.response_time || '',
     logo_url:     p.logo_url || '',
     legalName:      p.legal_name || '',
     taxId:          p.tax_id || '',
@@ -149,6 +183,30 @@ export function mapAdminProvider(p) {
     bankAccount:    p.bank_account || {},
     commissionRate: p.commission_rate != null ? parseFloat(p.commission_rate) : null,
     internalNotes:  p.internal_notes || '',
+    // Proveedor 360° (Fase A)
+    servicesCount:          parseInt(p.services_count) || 0,
+    publishedServicesCount: parseInt(p.published_services_count) || 0,
+    bookingsPending,
+    bookingsAccepted,
+    bookingsCompleted,
+    bookingsCancelled,
+    bookingsRejected,
+    bookingsActive:             bookingsPending + bookingsAccepted,
+    bookingsCancelledRejected:  bookingsCancelled + bookingsRejected,
+    grossAmount:       parseFloat(p.gross_amount) || 0,
+    commissionAmount:  parseFloat(p.commission_amount) || 0,
+    providerNetAmount: parseFloat(p.provider_net_amount) || 0,
+    acceptanceRate,
+    cancellationRate,
+    lastActivityAt,
+    upcomingBookings: Array.isArray(p.upcoming_bookings) ? p.upcoming_bookings.map((b) => ({
+      id: b.id,
+      requestNumber: b.request_number,
+      eventDate: b.event_date,
+      eventTime: b.event_time,
+      serviceTitle: b.service_title,
+      clientName: b.client_name,
+    })) : [],
     _raw: p,
   };
 }
@@ -256,14 +314,43 @@ export const providerService = {
   // No existe alta pública de proveedor: se crean únicamente desde
   // admin.create() (POST /admin/providers), ver panel de administración.
   admin: {
+    /** Listado paginado/filtrado en backend — Proveedor 360° (Fase A). */
     async getAll(filters = {}) {
       const res = await api.get(`/admin/providers${buildQuery(filters)}`);
-      return (res.data || []).map(mapAdminProvider);
+      return {
+        data: (res.data || []).map(mapAdminProvider),
+        pagination: res.pagination || { total: 0, page: 1, limit: 20, totalPages: 1 },
+      };
+    },
+
+    /** KPIs globales para la cabecera del listado — no depende de los filtros de la tabla (Fase A). */
+    async getSummary(filters = {}) {
+      const res = await api.get(`/admin/providers/summary${buildQuery(filters)}`);
+      return res.data;
     },
 
     async getById(id) {
       const res = await api.get(`/admin/providers/${id}`);
       return mapAdminProvider(res.data);
+    },
+
+    /** Reservas de un proveedor puntual, paginadas/filtradas — tab "Reservas" del 360°.
+     *  Mismo mapeo de fila que el listado global (bookingAdminService#mapRow). */
+    async getBookings(id, filters = {}) {
+      const params = {
+        status:   filters.status   || undefined,
+        dateFrom: filters.dateFrom || undefined,
+        dateTo:   filters.dateTo   || undefined,
+        sort:     filters.sort     || undefined,
+        page:     filters.page     || 1,
+        limit:    filters.limit    || 20,
+      };
+      const res = await api.get(`/admin/providers/${id}/bookings${buildQuery(params)}`);
+      return {
+        data: (res.data || []).map(mapBookingRow),
+        pagination: res.pagination || { total: 0, page: 1, limit: 20, totalPages: 1 },
+        stats: res.stats || null,
+      };
     },
 
     /** Alta manual de proveedor. Devuelve también la contraseña temporal (una única vez). */

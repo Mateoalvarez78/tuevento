@@ -26,37 +26,11 @@ export function useAdminStats() {
   return { stats, loading, error, reload };
 }
 
-export function useAdminProviders(initialFilters = {}) {
-  const [filters, setFilters] = useState(initialFilters);
-  const [providers, setProviders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const filtersKey = JSON.stringify(filters);
-
-  const reload = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const list = await adminService.providers.getAll(filters);
-      setProviders(list);
-    } catch (err) {
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtersKey]);
-
-  useEffect(() => { reload(); }, [reload]);
-
-  const updateStatus = useCallback(async (id, status, reason) => {
-    await adminService.providers.updateStatus(id, status, reason);
-    reload();
-  }, [reload]);
-
-  return { providers, loading, error, filters, setFilters, updateStatus, reload };
-}
+// useAdminProviders fue removido (Proveedor 360°, Fase A): la nueva página de
+// listado (app/admin/proveedores/page.js) sigue el patrón inline de
+// app/admin/reservas/page.js (fetch debounced + filtersKey) porque necesita
+// paginación real de servidor, que este hook no soportaba (devolvía un array
+// plano, sin `pagination`). Confirmado sin otros usos antes de eliminarlo.
 
 export function useAdminServices(initialFilters = {}) {
   const [filters, setFilters] = useState(initialFilters);
