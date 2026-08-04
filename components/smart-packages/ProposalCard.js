@@ -1,9 +1,10 @@
 'use client';
 
-import { Sparkles, TriangleAlert, CircleOff } from 'lucide-react';
+import { Sparkles, TriangleAlert, CircleOff, PartyPopper } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
 import Card from '@/components/Card';
 import Badge from '@/components/Badge';
+import Button from '@/components/Button';
 import CategoryLineItem from './CategoryLineItem';
 import { formatCurrency } from '@/utils/formatters';
 import { PROFILE_LABELS, budgetSharePct } from '@/lib/smartPackages';
@@ -12,8 +13,13 @@ import { PROFILE_LABELS, budgetSharePct } from '@/lib/smartPackages';
  * Una de las 3 propuestas devueltas por el backend (económica/equilibrada/
  * premium). Todos los números (total, restante, overBudget) vienen ya
  * calculados del motor — acá solo se formatean y se decide qué destacar.
+ *
+ * `onSelect`: si se pasa, muestra el botón "Elegir esta propuesta" — el
+ * componente no persiste nada por sí mismo, solo delega en el callback
+ * (ver components/smart-packages/SmartPackagesGenerator.js#handleSelect,
+ * que usa hooks/useAcceptProposal.js).
  */
-export default function ProposalCard({ proposal, budget }) {
+export default function ProposalCard({ proposal, budget, onSelect, selecting = false, disabled = false }) {
   const { profile, totalPrice, remainingBudget, overBudget, recommended, categories, missingCategories } = proposal;
   const pct = budgetSharePct(totalPrice, budget);
 
@@ -69,10 +75,24 @@ export default function ProposalCard({ proposal, budget }) {
                 ))}
               </ul>
               <p className="mt-1.5 text-xs text-gray-400">
-                Puede deberse a capacidad, disponibilidad, ubicación o falta de proveedores demo en esa categoría.
+                Puede deberse a capacidad, disponibilidad, ubicación o falta de proveedores en esa categoría.
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {onSelect && categories.length > 0 && (
+        <div className="mt-5 pt-4 border-t border-gray-100">
+          <Button
+            className="w-full"
+            icon={PartyPopper}
+            loading={selecting}
+            disabled={disabled && !selecting}
+            onClick={onSelect}
+          >
+            {selecting ? 'Agregando a tu evento…' : 'Elegir esta propuesta'}
+          </Button>
         </div>
       )}
     </Card>

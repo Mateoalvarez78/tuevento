@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, Star, Search, Users, CalendarCheck, Store, CheckCircle2 } from 'lucide-react';
-import SearchBar from '@/components/SearchBar';
+import EventHero from '@/components/home/EventHero';
 import CategoryCard from '@/components/CategoryCard';
 import FeaturedProviders from '@/components/home/FeaturedProviders';
 import AppIcon from '@/components/AppIcon';
@@ -92,20 +92,21 @@ export default async function HomePage() {
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-[3.75rem] font-extrabold text-white leading-[1.1] tracking-tight mb-5">
-              Crea eventos{' '}
-              <span className="gradient-text">inolvidables</span>,<br className="hidden sm:block" />
-              sin complicaciones.
+              Te ayudamos a organizar{' '}
+              <span className="gradient-text">todo tu evento</span>,<br className="hidden sm:block" />
+              de punta a punta.
             </h1>
             <p className="text-base sm:text-lg text-gray-300 max-w-xl leading-relaxed">
-              Conectá con los mejores proveedores de Uruguay: catering, DJ, fotografía, decoración y mucho más.
+              Contanos qué estás organizando y armamos hasta 3 propuestas completas con catering, DJ, fotografía, decoración y más — proveedores y precios reales.
             </p>
           </div>
 
-          {/* Search — ancho completo hasta max-w-5xl */}
-          <SearchBar className="w-full max-w-5xl" />
+          {/* Armar mi evento — ancho completo hasta max-w-5xl */}
+          <EventHero className="w-full max-w-5xl" />
 
-          {/* Quick tags */}
-          <div className="flex flex-wrap gap-2 mt-5 max-w-5xl">
+          {/* Camino secundario: explorar el marketplace por categoría */}
+          <div className="flex flex-wrap items-center gap-2 mt-5 max-w-5xl">
+            <span className="text-xs sm:text-sm text-white/50 mr-1">O contratá un solo servicio:</span>
             {quickTags.map((cat) => (
               <Link
                 key={cat.id}

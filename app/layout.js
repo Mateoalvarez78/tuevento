@@ -1,6 +1,7 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/lib/AppContext";
+import { MyEventProvider } from "@/lib/MyEventContext";
 import ConditionalNav from "@/components/ConditionalNav";
 
 const inter = Inter({
@@ -21,9 +22,11 @@ export default function RootLayout({ children }) {
     <html lang="es" className={inter.variable}>
       <body className="min-h-screen flex flex-col bg-white antialiased">
         <AppProvider>
-          <ConditionalNav>
-            <main className="flex-1">{children}</main>
-          </ConditionalNav>
+          <MyEventProvider>
+            <ConditionalNav>
+              <main className="flex-1">{children}</main>
+            </ConditionalNav>
+          </MyEventProvider>
         </AppProvider>
       </body>
     </html>

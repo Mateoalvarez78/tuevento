@@ -1,19 +1,27 @@
 'use client';
 
-import { Wallet, Users, Baby, CalendarDays, AlertTriangle } from 'lucide-react';
+import { Wallet, Users, Baby, CalendarDays, AlertTriangle, PartyPopper } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
 import Input from '@/components/Input';
 import LocationPicker from '@/components/LocationPicker';
 import { formatCurrency } from '@/utils/formatters';
 import { todayStr } from '@/lib/date';
 
+// Mismas opciones que components/BookingWizard.js#EVENT_TYPES — no se
+// extrae a un módulo compartido para un array de 6 strings; si un tercer
+// lugar lo necesita, ahí sí vale la pena.
+export const EVENT_TYPES = ['Cumpleaños', 'Casamiento', 'Empresarial', 'Infantil', 'Fiesta privada', 'Otro'];
+
 /**
- * Paso 1 del generador: presupuesto, invitados, fecha y ubicación del evento.
- * Controlado — no guarda estado propio, todo vive en SmartPackagesGenerator
- * (mismo patrón que BookingWizard).
+ * Paso 1 del generador: tipo de evento, presupuesto, invitados, fecha y
+ * ubicación. Controlado — no guarda estado propio, todo vive en
+ * SmartPackagesGenerator (mismo patrón que BookingWizard). `eventType` es
+ * el único campo que no viaja a POST /smart-packages/simulate (el motor no
+ * lo necesita) — se guarda igual acá porque sí es un dato general real de
+ * `client_events.event_type` al confirmar una propuesta.
  */
 export default function EventStepForm({ value, onChange, errors = {} }) {
-  const { budget, adults, children, eventDate, location } = value;
+  const { eventType, budget, adults, children, eventDate, location } = value;
   const adultsN = Number(adults) || 0;
   const childrenN = Number(children) || 0;
   const totalGuests = adultsN + childrenN;
@@ -22,6 +30,24 @@ export default function EventStepForm({ value, onChange, errors = {} }) {
 
   return (
     <div className="space-y-5">
+      <div>
+        <label htmlFor="sp-event-type" className="block text-sm font-medium text-gray-700 mb-1.5">
+          Tipo de evento
+        </label>
+        <div className="relative">
+          <AppIcon icon={PartyPopper} size="input" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" aria-hidden="true" />
+          <select
+            id="sp-event-type"
+            value={eventType || ''}
+            onChange={(e) => onChange({ eventType: e.target.value })}
+            className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm text-gray-800 bg-white outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="">Elegí un tipo (opcional)</option>
+            {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+      </div>
+
       <div>
         <label htmlFor="sp-budget" className="block text-sm font-medium text-gray-700 mb-1.5">
           Presupuesto total (UYU) *

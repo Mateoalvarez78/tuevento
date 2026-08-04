@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useApp } from '@/lib/AppContext';
-import { Menu, X, Heart, Calendar, ChevronDown, LogOut, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { useMyEvent } from '@/lib/MyEventContext';
+import { Menu, X, Heart, Calendar, ChevronDown, LogOut, LayoutDashboard, ShieldCheck, PartyPopper } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
 
 const DROPDOWN_MOTION = {
@@ -25,8 +26,12 @@ const MOBILE_MENU_MOTION = {
 export default function Navbar() {
   const pathname = usePathname();
   const { user, logout, favorites } = useApp();
+  const { event: myEvent } = useMyEvent();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const myEventItemCount = myEvent?.items?.length || 0;
+  const myEventLabel = myEvent ? 'Mi evento' : 'Crear mi evento';
 
   const links = [
     { href: '/catalogo', label: 'Explorar servicios' },
@@ -64,6 +69,19 @@ export default function Navbar() {
 
           {/* Desktop right */}
           <div className="hidden md:flex items-center gap-3">
+            <Link
+              href="/mi-evento"
+              className="relative inline-flex items-center gap-1.5 text-sm font-semibold text-primary border border-primary/30 hover:bg-primary-light px-3.5 py-1.5 rounded-full transition-colors duration-200"
+            >
+              <AppIcon icon={PartyPopper} size={15} aria-hidden="true" />
+              {myEventLabel}
+              {myEventItemCount > 0 && (
+                <span className="ml-0.5 bg-primary text-white text-xs px-1.5 py-0.5 rounded-full leading-none">
+                  {myEventItemCount}
+                </span>
+              )}
+            </Link>
+
             <Link
               href="/catalogo"
               className="text-sm font-medium text-gray-600 hover:text-primary transition-colors duration-200"
@@ -198,6 +216,19 @@ export default function Navbar() {
         {mobileOpen && (
           <motion.div {...MOBILE_MENU_MOTION} className="md:hidden bg-white border-t border-gray-100 overflow-hidden">
             <div className="py-4 px-4 space-y-1">
+              <Link
+                href="/mi-evento"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-primary bg-primary-light rounded-xl transition-colors duration-200"
+              >
+                <AppIcon icon={PartyPopper} size={16} aria-hidden="true" />
+                {myEventLabel}
+                {myEventItemCount > 0 && (
+                  <span className="ml-auto bg-primary text-white text-xs px-1.5 py-0.5 rounded-full leading-none">
+                    {myEventItemCount}
+                  </span>
+                )}
+              </Link>
               {links.map((l) => (
                 <Link
                   key={l.href}

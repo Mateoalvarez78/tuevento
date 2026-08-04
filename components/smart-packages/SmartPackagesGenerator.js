@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, CalendarHeart, ListChecks, Sparkles, Pencil, RefreshCw, TriangleAlert } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Check, CalendarHeart, ListChecks, Sparkles, Pencil, RefreshCw, TriangleAlert, CheckCircle2 } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import EmptyState from '@/components/EmptyState';
@@ -10,6 +11,9 @@ import CategoriesStepForm from './CategoriesStepForm';
 import ProposalCard from './ProposalCard';
 import { categoryService } from '@/services/categoryService';
 import { smartPackagesService } from '@/services/smartPackagesService';
+import { useAcceptProposal } from '@/hooks/useAcceptProposal';
+import { useApp } from '@/lib/AppContext';
+import { useMyEvent } from '@/lib/MyEventContext';
 import {
   DEFAULT_PREFERENCE, PROFILE_ORDER, validateEventStep, validateCategoriesStep,
   buildSimulatePayload, hasNoResultsAtAll,
@@ -24,18 +28,36 @@ const STEPS = [
 ];
 
 export default function SmartPackagesGenerator() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(0);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
-  const [eventData, setEventData] = useState({ budget: '', adults: '', children: '', eventDate: '', location: null });
+  // Prefill opcional desde el hero de la Home (?eventType=&eventDate=&adults=)
+  // — solo se lee una vez, al montar; el usuario puede editar todo desde acá.
+  const [eventData, setEventData] = useState(() => ({
+    eventType: searchParams.get('eventType') || '',
+    budget: '',
+    adults: searchParams.get('adults') || '',
+    children: '',
+    eventDate: searchParams.get('eventDate') || '',
+    location: null,
+  }));
   const [categoriesData, setCategoriesData] = useState({ categoryIds: [], preference: DEFAULT_PREFERENCE });
   const [errors, setErrors] = useState({});
 
   const [status, setStatus] = useState('idle'); // idle | loading | success | error
   const [result, setResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [selectingProfile, setSelectingProfile] = useState(null);
   const resultsRef = useRef(null);
+
+  const { user } = useApp();
+  const { event: myEvent, status: myEventStatus, createEvent, importItems } = useMyEvent();
+  const { acceptProposal, acceptStatus } = useAcceptProposal({
+    user, event: myEvent, myEventStatus, createEvent, importItems, router,
+  });
 
   useEffect(() => {
     categoryService.getAll()
@@ -113,6 +135,32 @@ export default function SmartPackagesGenerator() {
     setStep(0);
   };
 
+  const handleSelect = async (proposal) => {
+    setSelectingProfile(proposal.profile);
+    try {
+      const updatedEvent = await acceptProposal({
+        eventData,
+        profile: proposal.profile,
+        categories: proposal.categories.map((c) => ({
+          categoryId: c.categoryId, categoryName: c.categoryName,
+          serviceId: c.serviceId, packageId: c.packageId,
+        })),
+      });
+      // updatedEvent === null: no había sesión, acceptProposal ya redirigió
+      // a /login — no hay nada más que hacer acá, el flujo se reanuda solo.
+      // La propuesta se guarda entera o no se guarda nada (POST atómico), así
+      // que cualquier resultado no nulo implica éxito completo.
+      if (updatedEvent) {
+        router.push('/mi-evento');
+      }
+    } catch {
+      // el estado de error ya queda expuesto en acceptStatus — el banner de
+      // abajo lo muestra, no hace falta nada más acá.
+    } finally {
+      setSelectingProfile(null);
+    }
+  };
+
   const totalGuests = (Number(eventData.adults) || 0) + (Number(eventData.children) || 0);
   const noResultsAtAll = useMemo(() => status === 'success' && hasNoResultsAtAll(result?.proposals), [status, result]);
 
@@ -147,7 +195,7 @@ export default function SmartPackagesGenerator() {
               <div>
                 <h2 className="text-lg font-bold text-gray-900 mb-1">Contanos sobre tu evento</h2>
                 <p className="text-sm text-gray-500 mb-5">
-                  Con estos datos calculamos qué proveedores demo son compatibles y cuánto costaría cada combinación.
+                  Con estos datos calculamos qué proveedores reales son compatibles y cuánto costaría cada combinación.
                 </p>
                 <EventStepForm value={eventData} onChange={updateEventData} errors={errors} />
               </div>
@@ -226,14 +274,38 @@ export default function SmartPackagesGenerator() {
           )}
 
           {status === 'success' && !noResultsAtAll && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              {PROFILE_ORDER.map((profile) => {
-                const proposal = result.proposals.find((p) => p.profile === profile);
-                return proposal ? (
-                  <ProposalCard key={profile} proposal={proposal} budget={Number(eventData.budget)} />
-                ) : null;
-              })}
-            </div>
+            <>
+              {acceptStatus === 'error' && (
+                <div className="mb-5 flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                  <AppIcon icon={TriangleAlert} size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+                  {/* Todo o nada: si algún componente ya no estaba disponible, o
+                      el evento cambió en otro lado (409), no se guardó nada de
+                      esta propuesta — nunca queda a medio camino. */}
+                  No pudimos guardar esta propuesta completa en tu evento (puede que algún servicio ya no esté disponible). No se guardó ningún cambio — probá de nuevo.
+                </div>
+              )}
+              {acceptStatus === 'done' && (
+                <div className="mb-5 flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                  <AppIcon icon={CheckCircle2} size={16} className="shrink-0" aria-hidden="true" />
+                  ¡Listo! Guardamos esta propuesta en tu evento. Redirigiendo…
+                </div>
+              )}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                {PROFILE_ORDER.map((profile) => {
+                  const proposal = result.proposals.find((p) => p.profile === profile);
+                  return proposal ? (
+                    <ProposalCard
+                      key={profile}
+                      proposal={proposal}
+                      budget={Number(eventData.budget)}
+                      onSelect={() => handleSelect(proposal)}
+                      selecting={selectingProfile === profile}
+                      disabled={selectingProfile != null}
+                    />
+                  ) : null;
+                })}
+              </div>
+            </>
           )}
         </div>
       )}

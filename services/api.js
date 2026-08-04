@@ -111,7 +111,11 @@ export const api = {
       body: body ? JSON.stringify(body) : undefined,
     }),
 
-  delete: (path) => request(path, { method: 'DELETE' }),
+  // `body` opcional: casi todo DELETE del proyecto no lo necesita, pero
+  // DELETE /me/events/:eventId y .../items/:itemId sí exigen `{version}` en
+  // el body (no hay ETag/If-Match en el proyecto — ver services/myEventService.js).
+  // Retrocompatible: sin segundo argumento, comportamiento idéntico al de antes.
+  delete: (path, body) => request(path, { method: 'DELETE', ...(body !== undefined ? { body: JSON.stringify(body) } : {}) }),
 
   upload: (path, formData) =>
     request(path, { method: 'POST', body: formData }),

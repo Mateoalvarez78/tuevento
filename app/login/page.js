@@ -1,16 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
 import { homePathForRole } from '@/lib/roles';
+import { safeInternalPath } from '@/lib/nextPath';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, showToast } = useApp();
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
@@ -25,7 +27,11 @@ export default function LoginPage() {
     setLoading(false);
     if (result.success) {
       showToast(`¡Bienvenido/a, ${result.user.name.split(' ')[0]}!`, 'success');
-      router.push(homePathForRole(result.user.role));
+      // Retorno poslogin: solo se respeta un `next` interno y seguro (nunca
+      // una URL externa/protocol-relative — ver lib/nextPath.js). Si no hay
+      // uno válido, mismo destino de siempre por rol.
+      const next = safeInternalPath(searchParams.get('next'));
+      router.push(next || homePathForRole(result.user.role));
     } else {
       setError(result.error);
     }
@@ -143,7 +149,12 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-500 mt-6">
             ¿No tenés cuenta?{' '}
-            <Link href="/registro" className="text-primary font-semibold hover:underline">Registrate gratis</Link>
+            <Link
+              href={searchParams.get('next') ? `/registro?next=${encodeURIComponent(searchParams.get('next'))}` : '/registro'}
+              className="text-primary font-semibold hover:underline"
+            >
+              Registrate gratis
+            </Link>
           </p>
           <p className="text-center text-xs text-gray-400 mt-2">
             ¿Sos proveedor?{' '}
@@ -152,5 +163,15 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  // useSearchParams() exige un límite <Suspense> (mismo patrón que
+  // app/catalogo/page.js) para no romper el prerender estático.
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-surface" />}>
+      <LoginForm />
+    </Suspense>
   );
 }

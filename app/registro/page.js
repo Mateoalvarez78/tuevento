@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
 import { homePathForRole } from '@/lib/roles';
+import { safeInternalPath } from '@/lib/nextPath';
 import { Eye, EyeOff, Mail, Lock, Phone, UserCircle, Check } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
@@ -12,8 +13,10 @@ import Input from '@/components/Input';
 
 // Alta de cuenta de CLIENTE únicamente. Eventonow es un marketplace curado:
 // los proveedores no se autoregistran, se dan de alta desde el panel de admin.
-export default function RegistroPage() {
+function RegistroForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextParam = searchParams.get('next');
   const { register, showToast } = useApp();
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -27,7 +30,8 @@ export default function RegistroPage() {
     setLoading(false);
     if (result.success) {
       showToast(`¡Cuenta creada! Bienvenido/a, ${result.user.name.split(' ')[0]}!`, 'success');
-      router.push(homePathForRole(result.user.role));
+      const next = safeInternalPath(nextParam);
+      router.push(next || homePathForRole(result.user.role));
     } else {
       showToast(result.error || 'No se pudo crear la cuenta', 'error');
     }
@@ -131,10 +135,23 @@ export default function RegistroPage() {
 
           <p className="text-center text-sm text-gray-500 mt-6">
             ¿Ya tenés cuenta?{' '}
-            <Link href="/login" className="text-primary font-semibold hover:underline">Ingresá</Link>
+            <Link
+              href={nextParam ? `/login?next=${encodeURIComponent(nextParam)}` : '/login'}
+              className="text-primary font-semibold hover:underline"
+            >
+              Ingresá
+            </Link>
           </p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegistroPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-surface" />}>
+      <RegistroForm />
+    </Suspense>
   );
 }

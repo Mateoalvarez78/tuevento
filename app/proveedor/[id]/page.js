@@ -2,8 +2,9 @@
 
 import { useState, use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin, CheckCircle, Clock, CalendarDays, Heart, Share2, ChevronDown, ChevronUp, PackageX, Star } from 'lucide-react';
+import { MapPin, CheckCircle, Clock, CalendarDays, Heart, Share2, ChevronDown, ChevronUp, PackageX, Star, PartyPopper } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
+import { useMyEvent } from '@/lib/MyEventContext';
 import { providerService } from '@/services/providerService';
 import { reviewService } from '@/services/reviewService';
 import ProviderGallery from '@/components/ProviderGallery';
@@ -13,6 +14,7 @@ import RatingStars from '@/components/RatingStars';
 import EmptyState from '@/components/EmptyState';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
+import AddToMyEventModal from '@/components/my-event/AddToMyEventModal';
 import { BADGE_CONFIG } from '@/components/ServiceCard';
 
 const REVIEWS_PAGE_SIZE = 6;
@@ -68,6 +70,7 @@ export default function ProviderDetailPage({ params }) {
   const [selectedPackageId, setSelectedPackageId] = useState(null);
   const [descExpanded, setDescExpanded] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
+  const [addToEventOpen, setAddToEventOpen] = useState(false);
 
   const [reviews, setReviews] = useState([]);
   const [reviewsPage, setReviewsPage] = useState(1);
@@ -386,6 +389,14 @@ export default function ProviderDetailPage({ params }) {
               </Button>
               <Button
                 variant="outline"
+                className="w-full mb-3 !border-primary !text-primary hover:!bg-primary-light"
+                icon={PartyPopper}
+                onClick={() => setAddToEventOpen(true)}
+              >
+                Agregar a mi evento
+              </Button>
+              <Button
+                variant="outline"
                 className={`w-full ${fav ? '!border-primary !bg-primary-light !text-primary' : ''}`}
                 icon={Heart}
                 onClick={handleFav}
@@ -420,6 +431,14 @@ export default function ProviderDetailPage({ params }) {
         <Button
           iconOnly
           variant="outline"
+          icon={PartyPopper}
+          aria-label="Agregar a mi evento"
+          className="!text-primary !border-primary"
+          onClick={() => setAddToEventOpen(true)}
+        />
+        <Button
+          iconOnly
+          variant="outline"
           icon={Heart}
           aria-label={fav ? 'Guardado en favoritos' : 'Guardar en favoritos'}
           className={fav ? '!text-primary' : '!text-gray-500'}
@@ -427,6 +446,14 @@ export default function ProviderDetailPage({ params }) {
         />
       </div>
       <div className="lg:hidden h-20" />
+
+      <AddToMyEventModal
+        open={addToEventOpen}
+        onClose={() => setAddToEventOpen(false)}
+        serviceId={provider.id}
+        packageId={selectedPackageId}
+        extras={provider.extras}
+      />
     </div>
   );
 }

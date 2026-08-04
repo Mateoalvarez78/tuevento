@@ -35,13 +35,16 @@ export default function ProviderGallery({ images = [], name, categorySlug }) {
   return (
     <>
       <div className="grid grid-cols-4 gap-2 rounded-2xl overflow-hidden h-[380px] md:h-[460px]">
-        <button
-          type="button"
-          className="col-span-2 row-span-2 relative overflow-hidden text-left"
-          onClick={() => setLightbox(true)}
-        >
-          <img src={imgs[safeActive]} alt={`${name} - principal`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-          <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors" />
+        <div className="col-span-2 row-span-2 relative overflow-hidden">
+          <button
+            type="button"
+            className="absolute inset-0 w-full h-full text-left"
+            onClick={() => setLightbox(true)}
+            aria-label={`Ver ${name} en pantalla completa`}
+          >
+            <img src={imgs[safeActive]} alt={`${name} - principal`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+            <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors" />
+          </button>
           {imgs.length > 1 && (
             <>
               <Button
@@ -58,7 +61,7 @@ export default function ProviderGallery({ images = [], name, categorySlug }) {
               />
             </>
           )}
-        </button>
+        </div>
 
         {imgs.slice(0, 4).map((img, i) => (
           <button
