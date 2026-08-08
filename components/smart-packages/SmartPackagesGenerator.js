@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, CalendarHeart, ListChecks, Sparkles, Pencil, RefreshCw, TriangleAlert, CheckCircle2 } from 'lucide-react';
+import { Check, CalendarHeart, ListChecks, Sparkles, RefreshCw, TriangleAlert, CheckCircle2 } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import EmptyState from '@/components/EmptyState';
 import EventStepForm from './EventStepForm';
 import CategoriesStepForm from './CategoriesStepForm';
+import EventSummary from './EventSummary';
 import ProposalCard from './ProposalCard';
 import { categoryService } from '@/services/categoryService';
 import { smartPackagesService } from '@/services/smartPackagesService';
@@ -18,8 +19,6 @@ import {
   DEFAULT_PREFERENCE, PROFILE_ORDER, validateEventStep, validateCategoriesStep,
   buildSimulatePayload, hasNoResultsAtAll,
 } from '@/lib/smartPackages';
-import { formatCurrency } from '@/utils/formatters';
-import { safeFormatDate } from '@/lib/date';
 
 const STEPS = [
   { label: 'Tu evento', icon: CalendarHeart },
@@ -165,7 +164,10 @@ export default function SmartPackagesGenerator() {
   const noResultsAtAll = useMemo(() => status === 'success' && hasNoResultsAtAll(result?.proposals), [status, result]);
 
   return (
-    <div className="max-w-5xl mx-auto">
+    // Paso de resultados un poco más ancho que el formulario (max-w-6xl vs.
+    // max-w-5xl): con 3 columnas lado a lado, el ancho del formulario dejaba
+    // las cards apretadas en pantallas de escritorio medianas (~1024-1280px).
+    <div className={step === 2 ? 'max-w-6xl mx-auto' : 'max-w-5xl mx-auto'}>
       {step < 2 && (
         <>
           {/* Indicador de pasos — mismo patrón visual que BookingWizard */}
@@ -236,14 +238,14 @@ export default function SmartPackagesGenerator() {
       {step === 2 && (
         <div ref={resultsRef}>
           {/* Resumen del evento, siempre visible y editable, incluso con resultados */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 mb-6">
-            <p className="text-sm text-gray-600">
-              <strong className="text-gray-900">{formatCurrency(Number(eventData.budget))}</strong> · {totalGuests} invitados · {safeFormatDate(eventData.eventDate)}
-            </p>
-            <Button variant="ghost" size="sm" icon={Pencil} onClick={handleEditSearch} disabled={status === 'loading'}>
-              Editar búsqueda
-            </Button>
-          </div>
+          <EventSummary
+            budget={eventData.budget}
+            totalGuests={totalGuests}
+            eventDate={eventData.eventDate}
+            location={eventData.location}
+            onEdit={handleEditSearch}
+            editDisabled={status === 'loading'}
+          />
 
           {status === 'loading' && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -290,7 +292,7 @@ export default function SmartPackagesGenerator() {
                   ¡Listo! Guardamos esta propuesta en tu evento. Redirigiendo…
                 </div>
               )}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {PROFILE_ORDER.map((profile) => {
                   const proposal = result.proposals.find((p) => p.profile === profile);
                   return proposal ? (
