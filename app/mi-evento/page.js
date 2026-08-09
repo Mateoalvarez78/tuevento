@@ -18,6 +18,7 @@ import AppIcon from '@/components/AppIcon';
 import EmptyState from '@/components/EmptyState';
 import MyEventItemCard from '@/components/my-event/MyEventItemCard';
 import EditGeneralDataModal from '@/components/my-event/EditGeneralDataModal';
+import EditItemModal from '@/components/my-event/EditItemModal';
 import ChangeServiceModal from '@/components/my-event/ChangeServiceModal';
 import { formatCurrency } from '@/utils/formatters';
 import { safeFormatDate } from '@/lib/date';
@@ -33,12 +34,13 @@ export default function MiEventoPage() {
   const access = useRequireRole(['client']);
   const {
     event, status, loadError, conflict, dismissConflict, lastOperation,
-    createEvent, updateEvent, removeItem, replaceItem, revalidateEvent,
+    createEvent, updateEvent, updateItem, removeItem, replaceItem, revalidateEvent,
     mutatingKeys,
   } = useMyEvent();
 
   const [editOpen, setEditOpen] = useState(false);
   const [changeItem, setChangeItem] = useState(null);
+  const [editItem, setEditItem] = useState(null);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
 
@@ -212,6 +214,7 @@ export default function MiEventoPage() {
                 item={item}
                 onRemove={removeItem}
                 onOpenChange={setChangeItem}
+                onOpenEdit={setEditItem}
               />
             ))}
           </div>
@@ -225,6 +228,7 @@ export default function MiEventoPage() {
       </div>
 
       <EditGeneralDataModal open={editOpen} onClose={() => setEditOpen(false)} event={event} onSave={updateEvent} />
+      <EditItemModal open={!!editItem} onClose={() => setEditItem(null)} event={event} item={editItem} onSave={updateItem} />
       <ChangeServiceModal open={!!changeItem} onClose={() => setChangeItem(null)} event={event} item={changeItem} onReplace={replaceItem} />
     </div>
   );

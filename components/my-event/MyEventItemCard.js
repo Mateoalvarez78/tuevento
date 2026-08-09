@@ -5,7 +5,7 @@
 // precio de línea es SIEMPRE quote_snapshot.amounts.estimated_total.
 
 import { useState } from 'react';
-import { RefreshCw, Trash2, TriangleAlert, CheckCircle2 } from 'lucide-react';
+import { Pencil, RefreshCw, Trash2, TriangleAlert, CheckCircle2 } from 'lucide-react';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
 import Badge from '@/components/Badge';
@@ -29,7 +29,7 @@ const INVALID_REASON_LABELS = {
   celiacs_exceed_effective_guests: 'La cantidad de celíacos supera a los invitados',
 };
 
-export default function MyEventItemCard({ event, item, onRemove, onOpenChange }) {
+export default function MyEventItemCard({ event, item, onRemove, onOpenChange, onOpenEdit }) {
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState('');
 
@@ -83,6 +83,9 @@ export default function MyEventItemCard({ event, item, onRemove, onOpenChange })
             {amounts ? formatCurrency(amounts.estimated_total) : '—'}
           </p>
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" icon={Pencil} onClick={() => onOpenEdit(item)}>
+              Editar opciones
+            </Button>
             <Button size="sm" variant="outline" icon={RefreshCw} onClick={() => onOpenChange(item)}>
               Cambiar
             </Button>

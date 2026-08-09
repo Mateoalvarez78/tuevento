@@ -29,7 +29,7 @@ const PROFILE_ICONS = { economica: Wallet, equilibrada: Scale, premium: Gem };
  * (ver components/smart-packages/SmartPackagesGenerator.js#handleSelect,
  * que usa hooks/useAcceptProposal.js). Comportamiento sin cambios.
  */
-export default function ProposalCard({ proposal, budget, onSelect, selecting = false, disabled = false }) {
+export default function ProposalCard({ proposal, budget, onSelect, selecting = false, disabled = false, onEditPackage, onChangeProvider }) {
   const { profile, totalPrice, remainingBudget, overBudget, recommended, categories, missingCategories } = proposal;
   const pct = budgetSharePct(totalPrice, budget);
   const barPct = budgetBarWidthPct(totalPrice, budget);
@@ -92,7 +92,12 @@ export default function ProposalCard({ proposal, budget, onSelect, selecting = f
 
       <div>
         {categories.map((cat) => (
-          <CategoryLineItem key={cat.categoryId} category={cat} />
+          <CategoryLineItem
+            key={cat.categoryId}
+            category={cat}
+            onEditPackage={onEditPackage ? () => onEditPackage(proposal.profile, cat) : undefined}
+            onChangeProvider={onChangeProvider ? () => onChangeProvider(proposal.profile, cat) : undefined}
+          />
         ))}
       </div>
 

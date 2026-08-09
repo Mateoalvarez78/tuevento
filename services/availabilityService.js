@@ -168,4 +168,26 @@ export const availabilityService = {
       remainingGuestCapacity: d.remainingGuestCapacity,
     };
   },
+
+  /**
+   * POST /services/:id/quote-preview — cotización real server-side de UNA
+   * combinación paquete/extras/cantidades, SIN persistir nada (público, sin
+   * auth, ya usado por "Mi evento" — ver eventonow-back/src/modules/
+   * my-events/README.md). Nunca calcula precio acá: solo reenvía `event`/
+   * `item` y devuelve `quote_snapshot`/`available`/`reasonCode` tal cual.
+   *
+   * OJO: `quote_snapshot.amounts.estimated_total` NO incluye traslado
+   * (buildQuoteSnapshot todavía no lo calcula, a diferencia del motor de
+   * Smart Packages) — un caller que reemplace un subtotal que sí incluía
+   * traslado (ej. lib/smartPackages.js#applyProposalOverrides) debe
+   * recomponerlo sumando el travelCost original, nunca asumir que este
+   * `estimated_total` es el subtotal completo de esa categoría.
+   *
+   * @param {string} serviceId
+   * @param {{event: object, item: object}} payload - mismo shape que el body real
+   */
+  async quotePreview(serviceId, payload) {
+    const res = await api.post(`/services/${serviceId}/quote-preview`, payload);
+    return res.data;
+  },
 };

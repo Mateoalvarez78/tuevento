@@ -55,6 +55,7 @@ function serializeCategoriesForIntent(categories) {
     categoryName: c.categoryName,
     serviceId: c.serviceId,
     packageId: c.packageId || null,
+    extrasSelected: c.extrasSelected || [],
   }));
 }
 
@@ -82,6 +83,11 @@ function buildImportItems(categories) {
   return categories.map((c) => ({
     service_id: c.serviceId,
     ...(c.packageId ? { package_id: c.packageId } : {}),
+    // extras_selected explícito (siempre, incluso []) — nunca omitido en
+    // silencio: la configuración vigente puede incluir "sin extras" a
+    // propósito (el usuario los deseleccionó todos), y eso también hay que
+    // importarlo tal cual.
+    extras_selected: c.extrasSelected || [],
   }));
 }
 

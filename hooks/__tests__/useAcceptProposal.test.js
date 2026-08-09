@@ -31,7 +31,7 @@ function makeDeps(overrides = {}) {
 }
 
 const CATEGORIES = [
-  { categoryId: 'cat-1', categoryName: 'Catering', serviceId: 'svc-1', packageId: 'pkg-1' },
+  { categoryId: 'cat-1', categoryName: 'Catering', serviceId: 'svc-1', packageId: 'pkg-1', extrasSelected: [{ id: 'extra-1', quantity: 1 }] },
   { categoryId: 'cat-2', categoryName: 'DJ', serviceId: 'svc-2', packageId: null },
 ];
 const EVENT_DATA = { eventType: 'Cumpleaños', budget: '100000', adults: '40', children: '0', eventDate: '2027-01-01', location: null };
@@ -78,7 +78,12 @@ describe('useAcceptProposal — con sesión, un solo POST atómico', () => {
     expect(deps.createEvent).toHaveBeenCalledWith(expect.objectContaining({ event_type: 'Cumpleaños', adults_count: 40, event_date: '2027-01-01' }));
     expect(deps.importItems).toHaveBeenCalledTimes(1); // UN solo POST, nunca uno por categoría
     expect(deps.importItems).toHaveBeenCalledWith(
-      { items: [{ service_id: 'svc-1', package_id: 'pkg-1' }, { service_id: 'svc-2' }] },
+      {
+        items: [
+          { service_id: 'svc-1', package_id: 'pkg-1', extras_selected: [{ id: 'extra-1', quantity: 1 }] },
+          { service_id: 'svc-2', extras_selected: [] },
+        ],
+      },
       1 // version del evento recién creado
     );
     expect(outcome).toEqual(imported);
@@ -104,10 +109,27 @@ describe('useAcceptProposal — con sesión, un solo POST atómico', () => {
     expect(deps.importItems).toHaveBeenCalledWith(
       {
         event_patch: expect.objectContaining({ event_type: 'Cumpleaños', adults_count: 40 }),
-        items: [{ service_id: 'svc-1', package_id: 'pkg-1' }],
+        items: [{ service_id: 'svc-1', package_id: 'pkg-1', extras_selected: [{ id: 'extra-1', quantity: 1 }] }],
       },
       5
     );
+  });
+
+  test('extras_selected viaja siempre explícito, incluso [] cuando la categoría no trae ninguno (nunca undefined)', async () => {
+    const deps = makeDeps({
+      user: CLIENT,
+      event: { id: 'evt-9', version: 5 },
+      importItems: vi.fn().mockResolvedValue({ id: 'evt-9', version: 6, items: [] }),
+    });
+    const { result } = renderHook(() => useAcceptProposal(deps));
+
+    await act(async () => {
+      await result.current.acceptProposal({ eventData: EVENT_DATA, profile: 'economica', categories: [CATEGORIES[1]] });
+    });
+
+    const [payload] = deps.importItems.mock.calls[0];
+    expect(payload.items[0]).toHaveProperty('extras_selected', []);
+    expect(JSON.stringify(payload)).not.toContain('undefined');
   });
 
   test('si un componente no está disponible, la propuesta completa se rechaza — no queda "parcialmente" guardada', async () => {

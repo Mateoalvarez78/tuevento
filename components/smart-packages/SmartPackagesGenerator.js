@@ -10,6 +10,8 @@ import EventStepForm from './EventStepForm';
 import CategoriesStepForm from './CategoriesStepForm';
 import EventSummary from './EventSummary';
 import ProposalCard from './ProposalCard';
+import PackagePickerModal from './PackagePickerModal';
+import ProviderPickerModal from './ProviderPickerModal';
 import { categoryService } from '@/services/categoryService';
 import { smartPackagesService } from '@/services/smartPackagesService';
 import { useAcceptProposal } from '@/hooks/useAcceptProposal';
@@ -17,7 +19,7 @@ import { useApp } from '@/lib/AppContext';
 import { useMyEvent } from '@/lib/MyEventContext';
 import {
   DEFAULT_PREFERENCE, PROFILE_ORDER, validateEventStep, validateCategoriesStep,
-  buildSimulatePayload, hasNoResultsAtAll,
+  buildSimulatePayload, hasNoResultsAtAll, applyProposalOverrides,
 } from '@/lib/smartPackages';
 
 const STEPS = [
@@ -51,6 +53,16 @@ export default function SmartPackagesGenerator() {
   const [errorMessage, setErrorMessage] = useState('');
   const [selectingProfile, setSelectingProfile] = useState(null);
   const resultsRef = useRef(null);
+
+  // Overrides de categoría (paquete/extras y/o proveedor) elegidos por el
+  // usuario ANTES de aceptar una propuesta — independiente por perfil
+  // (economica/equilibrada/premium), nunca se mezclan entre sí ni se pierden
+  // al cambiar de tab (ver lib/smartPackages.js#applyProposalOverrides).
+  const [packageOverrides, setPackageOverrides] = useState({});
+  // { type: 'package'|'provider', profile, category } | null — un solo
+  // estado para los dos selectores (nunca ambos abiertos a la vez), así
+  // comparten el mismo handler de "aplicar" sin duplicar lógica.
+  const [pickerTarget, setPickerTarget] = useState(null);
 
   const { user } = useApp();
   const { event: myEvent, status: myEventStatus, createEvent, importItems } = useMyEvent();
@@ -97,6 +109,7 @@ export default function SmartPackagesGenerator() {
     setStatus('loading');
     setErrorMessage('');
     setStep(2);
+    setPackageOverrides({}); // una simulación nueva invalida cualquier elección de paquete previa
     try {
       const payload = buildSimulatePayload({ ...eventData, ...categoriesData });
       const res = await smartPackagesService.simulate(payload);
@@ -143,6 +156,12 @@ export default function SmartPackagesGenerator() {
         categories: proposal.categories.map((c) => ({
           categoryId: c.categoryId, categoryName: c.categoryName,
           serviceId: c.serviceId, packageId: c.packageId,
+          // Los extras que el usuario ya eligió en PackagePickerModal (ver
+          // lib/smartPackages.js#applyProposalOverrides) — nunca el estado
+          // original del motor si el usuario lo cambió. `[]` explícito
+          // cuando no hay extras (nunca undefined, mismo contrato que
+          // items/import).
+          extrasSelected: c.extrasSelected || [],
         })),
       });
       // updatedEvent === null: no había sesión, acceptProposal ya redirigió
@@ -162,6 +181,28 @@ export default function SmartPackagesGenerator() {
 
   const totalGuests = (Number(eventData.adults) || 0) + (Number(eventData.children) || 0);
   const noResultsAtAll = useMemo(() => status === 'success' && hasNoResultsAtAll(result?.proposals), [status, result]);
+
+  // Propuestas tal como se muestran/aceptan: la respuesta original del motor
+  // con los overrides de paquete ya aplicados (ver PackagePickerModal.js) —
+  // nunca se muta `result`, así que "Editar búsqueda" o una simulación nueva
+  // siempre parten de datos limpios.
+  const displayProposals = useMemo(() => {
+    if (!result) return [];
+    const budgetN = Number(eventData.budget) || 0;
+    return result.proposals.map((p) => applyProposalOverrides(p, budgetN, packageOverrides[p.profile]));
+  }, [result, eventData.budget, packageOverrides]);
+
+  // Compartido por PackagePickerModal (paquete/extras) y ProviderPickerModal
+  // (proveedor) — ambos producen el mismo shape de override (ver
+  // lib/smartPackages.js#buildServiceOverride/buildProviderOverride), así
+  // que aplicarlo es idéntico sin importar cuál lo generó.
+  const handleApplyCategoryOverride = (categoryId, override) => {
+    if (!pickerTarget) return;
+    setPackageOverrides((prev) => ({
+      ...prev,
+      [pickerTarget.profile]: { ...prev[pickerTarget.profile], [categoryId]: override },
+    }));
+  };
 
   return (
     // Paso de resultados un poco más ancho que el formulario (max-w-6xl vs.
@@ -294,7 +335,7 @@ export default function SmartPackagesGenerator() {
               )}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {PROFILE_ORDER.map((profile) => {
-                  const proposal = result.proposals.find((p) => p.profile === profile);
+                  const proposal = displayProposals.find((p) => p.profile === profile);
                   return proposal ? (
                     <ProposalCard
                       key={profile}
@@ -303,6 +344,8 @@ export default function SmartPackagesGenerator() {
                       onSelect={() => handleSelect(proposal)}
                       selecting={selectingProfile === profile}
                       disabled={selectingProfile != null}
+                      onEditPackage={(p, category) => setPickerTarget({ type: 'package', profile: p, category })}
+                      onChangeProvider={(p, category) => setPickerTarget({ type: 'provider', profile: p, category })}
                     />
                   ) : null;
                 })}
@@ -311,6 +354,22 @@ export default function SmartPackagesGenerator() {
           )}
         </div>
       )}
+
+      <PackagePickerModal
+        open={pickerTarget?.type === 'package'}
+        onClose={() => setPickerTarget(null)}
+        category={pickerTarget?.type === 'package' ? pickerTarget.category : null}
+        totalGuests={totalGuests}
+        eventFormData={eventData}
+        onApply={handleApplyCategoryOverride}
+      />
+      <ProviderPickerModal
+        open={pickerTarget?.type === 'provider'}
+        onClose={() => setPickerTarget(null)}
+        category={pickerTarget?.type === 'provider' ? pickerTarget.category : null}
+        eventFormData={eventData}
+        onApply={handleApplyCategoryOverride}
+      />
     </div>
   );
 }

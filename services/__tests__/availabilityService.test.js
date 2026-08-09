@@ -39,3 +39,32 @@ describe('availabilityService.getPublicAvailability', () => {
     expect(url).not.toContain('extraHours');
   });
 });
+
+describe('availabilityService.quotePreview', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn().mockResolvedValue({
+      status: 200, ok: true,
+      json: async () => ({ success: true, data: { available: true, quote_snapshot: { amounts: { estimated_total: 45000 } } } }),
+    });
+  });
+
+  afterEach(() => {
+    global.fetch = ORIGINAL_FETCH;
+    vi.restoreAllMocks();
+  });
+
+  test('llama a POST /services/:id/quote-preview con el body event/item tal cual', async () => {
+    const payload = { event: { event_date: '2027-01-01', adults_count: 40 }, item: { package_id: 'pkg-2' } };
+    await availabilityService.quotePreview('service-1', payload);
+    const [url, options] = global.fetch.mock.calls[0];
+    expect(url).toContain('/services/service-1/quote-preview');
+    expect(options.method).toBe('POST');
+    expect(JSON.parse(options.body)).toEqual(payload);
+  });
+
+  test('devuelve la respuesta tal cual (available/quote_snapshot), sin recalcular nada', async () => {
+    const result = await availabilityService.quotePreview('service-1', { event: {}, item: {} });
+    expect(result.available).toBe(true);
+    expect(result.quote_snapshot.amounts.estimated_total).toBe(45000);
+  });
+});
