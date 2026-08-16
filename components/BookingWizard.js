@@ -12,6 +12,7 @@ import Button from '@/components/Button';
 import Input from '@/components/Input';
 import LocationPicker from '@/components/LocationPicker';
 import { safeFormatDate, addHoursToTime, todayStr } from '@/lib/date';
+import { shouldShowGuestCapacityFields } from '@/lib/packagePricingField';
 
 const EVENT_TYPES = ['Cumpleaños', 'Casamiento', 'Empresarial', 'Infantil', 'Fiesta privada', 'Otro'];
 const STEPS = [
@@ -65,6 +66,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
     packageId: initialPackageId || provider.packages[1]?.id || provider.packages[0]?.id,
     extras: [],
     extraHours: 0,
+    units: 1,
   });
   const [contactData, setContactData] = useState({
     name: user?.name || '',
@@ -79,6 +81,14 @@ export default function BookingWizard({ provider, initialPackageId }) {
   const selectedPkg = provider.packages.find((p) => p.packageId === packageData.packageId) || provider.packages.find((p) => p.id === packageData.packageId) || provider.packages[0];
   const isDurationPkgForAvailability = !!selectedPkg?.isDurationPackage;
   const hasCeliacOption = !!selectedPkg?.offersCeliacMenu;
+  const isPerUnit = !!selectedPkg?.isPerUnit;
+  const isCustomQuote = !!selectedPkg?.isCustomQuote;
+  // ¿Corresponde pedir adultos/niños en absoluto? Mismo criterio EXACTO que
+  // el backend (pricing-schema.js#shouldValidateGuestCapacity) — nunca
+  // hardcodeado por categoría/slug: una categoría 'unused' (ej. fotografía)
+  // no pide invitados salvo que el paquete elegido sea per_person igual
+  // (caso Barra, puede variar por paquete).
+  const showGuestFields = shouldShowGuestCapacityFields(selectedPkg?.pricingModel, provider.guestUsageMode);
 
   // Si el menú/paquete elegido cambia y deja de ofrecer la opción celíaca,
   // se limpia el checkbox y la cantidad — nunca queda un conteo celíaco
@@ -146,9 +156,22 @@ export default function BookingWizard({ provider, initialPackageId }) {
   const celiacsN = hasCeliacOption && eventData.wantsCeliac && !celiacsError ? rawCeliacsN : 0;
   const standardAdultsN = adultsN - celiacsN;
 
-  const subtotalAdults = perPerson ? standardAdultsN * adultPrice : adultPrice;
+  // per_unit/custom_quote nunca participan de la rama adulto/niño — su
+  // subtotal se resuelve aparte (subtotalUnits) o no existe (custom_quote).
+  const subtotalAdults = (isPerUnit || isCustomQuote) ? 0 : (perPerson ? standardAdultsN * adultPrice : adultPrice);
   const subtotalCeliacs = perPerson ? celiacsN * celiacUnitPrice : 0;
   const subtotalChildren = perPerson ? childrenN * childPrice : 0;
+
+  // Cantidad de unidades (castillos/tortas/pizzas por unidad) — acotada al
+  // mínimo/máximo declarado por el paquete, mismo criterio de default (1)
+  // que calculateQuote en el backend.
+  const minUnits = selectedPkg?.minUnits || 1;
+  const maxUnitsAllowed = selectedPkg?.maxUnits || null;
+  const unitsN = isPerUnit ? Math.max(minUnits, Number(packageData.units) || 1) : 0;
+  const unitPrice = selectedPkg?.unitPrice || 0;
+  const unitLabelSingular = selectedPkg?.unitLabelSingular || 'unidad';
+  const unitLabelPlural = selectedPkg?.unitLabelPlural || 'unidades';
+  const subtotalUnits = isPerUnit ? unitsN * unitPrice : 0;
 
   // Paquete de duración fija (ej. salón de fiestas): precio fijo + horas extra.
   const isDurationPkg = !!selectedPkg?.isDurationPackage;
@@ -160,7 +183,9 @@ export default function BookingWizard({ provider, initialPackageId }) {
     ? addHoursToTime(eventData.time, Number(selectedPkg.durationHours) + extraHoursN)
     : null;
 
-  const totalEstimated = subtotalAdults + subtotalCeliacs + subtotalChildren + extrasTotal + extraHoursAmount;
+  // Nunca $0 para un paquete de presupuesto personalizado — `null` es la
+  // señal explícita (mismo criterio que calculateQuote en el backend).
+  const totalEstimated = isCustomQuote ? null : (subtotalAdults + subtotalCeliacs + subtotalChildren + subtotalUnits + extrasTotal + extraHoursAmount);
 
   const stepValid = () => {
     if (step === 0) {
@@ -177,9 +202,15 @@ export default function BookingWizard({ provider, initialPackageId }) {
         typeof eventData.location.lng === 'number' && Number.isFinite(eventData.location.lng) &&
         eventData.location.locationToken
       );
-      return eventData.date && eventData.time && hasValidLocation && eventData.eventType && adultsN >= 1 && !celiacsError;
+      // Adultos solo es obligatorio si esta categoría/paquete efectivamente
+      // usa la cantidad de invitados (nunca hardcodeado — ver showGuestFields).
+      const guestsOk = !showGuestFields || adultsN >= 1;
+      return eventData.date && eventData.time && hasValidLocation && eventData.eventType && guestsOk && !celiacsError;
     }
-    if (step === 1) return provider.packages.length === 0 || !!packageData.packageId;
+    // custom_quote nunca puede confirmarse desde acá — no hay un monto que
+    // el backend pueda aceptar (rechazaría con 400 CUSTOM_QUOTE_REQUIRED).
+    // El proveedor debe contactarse directamente (ver aviso en el paso 1).
+    if (step === 1) return provider.packages.length === 0 || (!!packageData.packageId && !isCustomQuote);
     if (step === 2) return contactData.name && contactData.phone && contactData.email;
     return true;
   };
@@ -213,6 +244,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
         children:   childrenN,
         celiacs:    celiacsN,
         extraHours: isDurationPkg ? extraHoursN : undefined,
+        units:      isPerUnit ? unitsN : undefined,
         date:       eventData.date,
         time:       eventData.time,
         eventType:  eventData.eventType,
@@ -340,16 +372,18 @@ export default function BookingWizard({ provider, initialPackageId }) {
               {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Adultos *</label>
-              <Input type="number" min="1" icon={Users} placeholder="Cantidad de adultos" value={eventData.adults} onChange={(e) => setEventData({ ...eventData, adults: e.target.value })} />
+          {showGuestFields && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Adultos *</label>
+                <Input type="number" min="1" icon={Users} placeholder="Cantidad de adultos" value={eventData.adults} onChange={(e) => setEventData({ ...eventData, adults: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Niños <span className="text-gray-400 font-normal">(opcional)</span></label>
+                <Input type="number" min="0" icon={Users} placeholder="Cantidad de niños" value={eventData.children} onChange={(e) => setEventData({ ...eventData, children: e.target.value })} />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Niños <span className="text-gray-400 font-normal">(opcional)</span></label>
-              <Input type="number" min="0" icon={Users} placeholder="Cantidad de niños" value={eventData.children} onChange={(e) => setEventData({ ...eventData, children: e.target.value })} />
-            </div>
-          </div>
+          )}
 
           {hasCeliacOption && (
             <div className="rounded-xl border border-gray-200 p-4 space-y-2">
@@ -382,8 +416,8 @@ export default function BookingWizard({ provider, initialPackageId }) {
       {/* Step 1: Package */}
       {step === 1 && (
         <div>
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Seleccioná un {isDurationPkg ? 'paquete' : 'menú'}</h3>
-          <PackageSelector packages={provider.packages} selectedId={packageData.packageId} onSelect={(id) => setPackageData({ ...packageData, packageId: id, extraHours: 0 })} />
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Seleccioná un paquete</h3>
+          <PackageSelector packages={provider.packages} selectedId={packageData.packageId} onSelect={(id) => setPackageData({ ...packageData, packageId: id, extraHours: 0, units: 1 })} />
 
           {isDurationPkg && selectedPkg?.allowsExtraHours && (
             <div className="mt-6 p-4 rounded-2xl border border-gray-200 bg-gray-50">
@@ -421,6 +455,48 @@ export default function BookingWizard({ provider, initialPackageId }) {
                   Fin estimado: {estimatedEnd.time}hs{estimatedEnd.dayOffset > 0 ? ' (día siguiente)' : ''}
                 </p>
               )}
+            </div>
+          )}
+
+          {isPerUnit && (
+            <div className="mt-6 p-4 rounded-2xl border border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-800 capitalize">Cantidad de {unitLabelPlural}</h4>
+                  <p className="text-xs text-gray-500">
+                    ${Number(unitPrice).toLocaleString('es-UY')} por {unitLabelSingular}
+                    {maxUnitsAllowed ? ` · máximo ${maxUnitsAllowed}` : ''}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPackageData({ ...packageData, units: Math.max(minUnits, unitsN - 1) })}
+                    disabled={unitsN <= minUnits}
+                    aria-label={`Restar ${unitLabelSingular}`}
+                    className="w-8 h-8 rounded-full border border-gray-300 text-gray-600 font-bold hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    −
+                  </button>
+                  <span className="w-6 text-center font-semibold text-gray-900">{unitsN}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPackageData({ ...packageData, units: maxUnitsAllowed ? Math.min(maxUnitsAllowed, unitsN + 1) : unitsN + 1 })}
+                    disabled={!!maxUnitsAllowed && unitsN >= maxUnitsAllowed}
+                    aria-label={`Sumar ${unitLabelSingular}`}
+                    className="w-8 h-8 rounded-full border border-gray-300 text-gray-600 font-bold hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isCustomQuote && (
+            <div className="mt-6 flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <AppIcon icon={AlertTriangle} size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <p>Este paquete requiere presupuesto personalizado. Contactá al proveedor directamente para cotizarlo — no se puede reservar automáticamente desde acá.</p>
             </div>
           )}
 
@@ -479,11 +555,16 @@ export default function BookingWizard({ provider, initialPackageId }) {
             </div>
             {selectedPkg && (
               <div className="flex justify-between">
-                <span className="text-gray-500">{isDurationPkg ? 'Paquete' : 'Menú'}</span>
+                <span className="text-gray-500">Paquete</span>
                 <span className="font-medium text-gray-900">{selectedPkg.name}</span>
               </div>
             )}
-            {isDurationPkg ? (
+            {isPerUnit ? (
+              <div className="flex justify-between">
+                <span className="text-gray-500 capitalize">{unitLabelPlural}</span>
+                <span className="font-medium text-gray-900">{unitsN} × ${unitPrice.toLocaleString('es-UY')} = ${subtotalUnits.toLocaleString('es-UY')}</span>
+              </div>
+            ) : isDurationPkg ? (
               <>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Duración</span>
@@ -564,14 +645,23 @@ export default function BookingWizard({ provider, initialPackageId }) {
               </span>
             </div>
             <div className="h-px bg-gray-200" />
-            <div className="flex justify-between text-base">
-              <span className="font-semibold text-gray-800">Total estimado</span>
-              <span className="font-bold text-primary">${totalEstimated.toLocaleString('es-UY')}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Seña sugerida (30%)</span>
-              <span className="font-semibold text-gray-800">${Math.round(totalEstimated * 0.3).toLocaleString('es-UY')}</span>
-            </div>
+            {totalEstimated != null ? (
+              <>
+                <div className="flex justify-between text-base">
+                  <span className="font-semibold text-gray-800">Total estimado</span>
+                  <span className="font-bold text-primary">${totalEstimated.toLocaleString('es-UY')}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Seña sugerida (30%)</span>
+                  <span className="font-semibold text-gray-800">${Math.round(totalEstimated * 0.3).toLocaleString('es-UY')}</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between text-base">
+                <span className="font-semibold text-gray-800">Total estimado</span>
+                <span className="font-bold text-gray-500">Presupuesto personalizado</span>
+              </div>
+            )}
           </div>
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
             <strong>¿Cómo funciona?</strong> Tu solicitud llega al proveedor. Si acepta, te contactará para coordinar el pago de la seña y confirmar la reserva.

@@ -30,7 +30,7 @@ const PROFILE_ICONS = { economica: Wallet, equilibrada: Scale, premium: Gem };
  * que usa hooks/useAcceptProposal.js). Comportamiento sin cambios.
  */
 export default function ProposalCard({ proposal, budget, onSelect, selecting = false, disabled = false, onEditPackage, onChangeProvider }) {
-  const { profile, totalPrice, remainingBudget, overBudget, recommended, categories, missingCategories } = proposal;
+  const { profile, totalPrice, remainingBudget, overBudget, recommended, categories, missingCategories, hasCustomQuoteCategories } = proposal;
   const pct = budgetSharePct(totalPrice, budget);
   const barPct = budgetBarWidthPct(totalPrice, budget);
   const ProfileIcon = PROFILE_ICONS[profile];
@@ -79,6 +79,13 @@ export default function ProposalCard({ proposal, budget, onSelect, selecting = f
           <p className="mt-2 text-xs text-gray-500">
             <span className="font-semibold text-gray-700">{pct}%</span> de tu presupuesto · Te quedan <span className="font-semibold text-gray-700">{formatCurrency(roundForDisplay(remainingBudget))}</span>
           </p>
+        )}
+
+        {hasCustomQuoteCategories && (
+          <div className="mt-2 flex items-start gap-1.5 text-xs text-gray-500">
+            <AppIcon icon={TriangleAlert} size={13} className="mt-0.5 shrink-0 text-gray-400" aria-hidden="true" />
+            <span>Este total no incluye servicios con presupuesto personalizado — contactá a esos proveedores para cotizarlos.</span>
+          </div>
         )}
       </div>
 

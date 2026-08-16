@@ -38,11 +38,26 @@ export default function PackageSelector({ packages, selectedId, onSelect }) {
             </div>
 
             <div className="mb-2">
-              <span className={`text-2xl font-bold ${selected ? 'text-primary' : 'text-gray-900'}`}>
-                ${(pkg.adultPrice ?? pkg.price).toLocaleString('es-UY')}
-              </span>
-              {pkg.priceUnit && (
-                <span className="text-xs text-gray-500 ml-1">{pkg.priceUnit}</span>
+              {pkg.isCustomQuote ? (
+                <span className={`text-xl font-bold ${selected ? 'text-primary' : 'text-gray-900'}`}>
+                  Presupuesto personalizado
+                </span>
+              ) : pkg.isPerUnit ? (
+                <>
+                  <span className={`text-2xl font-bold ${selected ? 'text-primary' : 'text-gray-900'}`}>
+                    ${(pkg.unitPrice ?? 0).toLocaleString('es-UY')}
+                  </span>
+                  <span className="text-xs text-gray-500 ml-1">por {pkg.unitLabelSingular || 'unidad'}</span>
+                </>
+              ) : (
+                <>
+                  <span className={`text-2xl font-bold ${selected ? 'text-primary' : 'text-gray-900'}`}>
+                    ${(pkg.adultPrice ?? pkg.price).toLocaleString('es-UY')}
+                  </span>
+                  {pkg.priceUnit && (
+                    <span className="text-xs text-gray-500 ml-1">{pkg.priceUnit}</span>
+                  )}
+                </>
               )}
               {pkg.hasChildPrice && (
                 <div className="text-xs text-gray-500 mt-1">

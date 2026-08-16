@@ -167,6 +167,10 @@ export const bookingService = {
       children_count:  children,
       celiacs_count:   celiacs,
       extra_hours:     data.extraHours != null ? Number(data.extraHours) : undefined,
+      // Cantidad de unidades — solo tiene sentido para paquetes per_unit
+      // (castillos/tortas/pizzas por unidad, ver pricing-schema.js en el
+      // backend); el resto de los modelos nunca lo manda.
+      units_count:     data.units != null ? Number(data.units) : undefined,
       event_date:      data.date     || data.event_date,
       event_time:      data.time     || data.event_time || undefined,
       event_type:      data.eventType || data.event_type || undefined,

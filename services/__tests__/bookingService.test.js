@@ -94,6 +94,25 @@ describe('bookingService.create', () => {
     expect(body.event_location_details).toBeUndefined();
   });
 
+  test('manda units_count para paquetes per_unit (castillos/tortas/pizzas)', async () => {
+    await bookingService.create({
+      serviceId: 'service-1', packageId: 'pkg-castillo', units: 2,
+      date: '2027-01-01', locationDetails: { locationToken: 't' },
+    });
+    const [, options] = global.fetch.mock.calls[0];
+    const body = JSON.parse(options.body);
+    expect(body.units_count).toBe(2);
+  });
+
+  test('sin units: no manda units_count (undefined, no 0 forzado)', async () => {
+    await bookingService.create({
+      serviceId: 'service-1', adults: 2, date: '2027-01-01', locationDetails: { locationToken: 't' },
+    });
+    const [, options] = global.fetch.mock.calls[0];
+    const body = JSON.parse(options.body);
+    expect(body.units_count).toBeUndefined();
+  });
+
   test('propaga un 409 AVAILABILITY_CONFLICT con reasonCode', async () => {
     global.fetch.mockResolvedValue({
       status: 409, ok: false,

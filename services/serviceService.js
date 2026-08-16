@@ -24,6 +24,28 @@ function mapService(s) {
     categoryId:    s.category_id    || '',
     categoryLabel: s.category_name  || '',
     categoryEmoji: s.category_emoji || '',
+    // Configuración administrable del campo de subcategoría (Admin >
+    // Configuración del catálogo) — viene resuelta directo en la fila del
+    // servicio (JOIN a categories, ver services.service.js#getMyServices),
+    // nunca hardcodeada por categoryId/slug acá. Solo `getMyServices`
+    // selecciona estas 4 columnas hoy (es el único endpoint que alimenta
+    // MenuManager.js); en otros mapeos de service quedan en sus defaults
+    // seguros ("deshabilitado") si el SQL de origen no las trae.
+    packageOptionsEnabled: !!s.category_package_options_enabled,
+    packageOptionRequired: s.category_package_option_required !== false,
+    packageOptionLabel:    s.category_package_option_label || '',
+    packageOptionHelpText: s.category_package_option_help_text || '',
+    // Modelo comercial declarativo (Admin > Configuración del catálogo) —
+    // reemplaza el hardcode isSalon/isCatering que tenía MenuManager.js.
+    // Mismas 4 columnas que packageOptions* de arriba: solo getMyServices
+    // las trae (JOIN a categories), con defaults seguros en el resto.
+    pricingAllowedModels: s.category_pricing_allowed_models || ['per_person'],
+    pricingDefaultModel:  s.category_pricing_default_model || 'per_person',
+    guestUsageMode:       s.category_guest_usage_mode || 'price',
+    capacityBasis:        s.category_capacity_basis || 'total_guests',
+    categoryUnitLabelSingular: s.category_unit_label_singular || '',
+    categoryUnitLabelPlural:   s.category_unit_label_plural || '',
+    supportsDietaryRestrictions: !!s.category_supports_dietary_restrictions,
     description:   s.description || '',
     priceType:     s.price_type || 'per_event',
     priceFrom:     parseFloat(s.price_from) || 0,
@@ -79,6 +101,29 @@ function mapMenu(p) {
     allowsExtraHours:  !!p.allows_extra_hours,
     extraHourPrice:    p.extra_hour_price != null ? parseFloat(p.extra_hour_price) : null,
     maxExtraHours:     p.max_extra_hours != null ? parseInt(p.max_extra_hours) : null,
+    // Modelo comercial declarativo — `pricingModel` es el campo NUEVO
+    // autoritativo (nunca se vuelve a inferir por regex/duration_hours acá,
+    // a diferencia de providerService.js#mapPackages que sí lo hacía antes
+    // de esta fase). `null` en un paquete histórico se resuelve en
+    // lib/packagePricingField.js si hiciera falta mostrarlo igual.
+    pricingModel:  p.pricing_model || null,
+    unitPrice:     p.unit_price != null ? parseFloat(p.unit_price) : null,
+    unitLabelSingular: p.unit_label_singular || null,
+    unitLabelPlural:   p.unit_label_plural || null,
+    minUnits:      p.min_units != null ? parseInt(p.min_units) : null,
+    maxUnits:      p.max_units != null ? parseInt(p.max_units) : null,
+    // Etiqueta de unidad heredada de la subcategoría (si el paquete no tiene
+    // la suya propia) — mismo LEFT JOIN sin filtrar por is_active que
+    // subcategoryName/Slug, ver comentario debajo.
+    subcategoryUnitLabelSingular: p.subcategory_unit_label_singular || null,
+    subcategoryUnitLabelPlural:   p.subcategory_unit_label_plural || null,
+    // Fase B.1 — subcategoryName/Slug vienen de un LEFT JOIN en el backend
+    // SIN filtrar por is_active: siguen resueltos aunque la subcategoría ya
+    // esté inactiva (necesario para poder mostrarla como "ya no disponible"
+    // en vez de perderla del formulario de edición).
+    subcategoryId:   p.subcategory_id || null,
+    subcategoryName: p.subcategory_name || null,
+    subcategorySlug: p.subcategory_slug || null,
     _raw: p,
   };
 }
@@ -97,11 +142,23 @@ function toMenuBody(d) {
   if (d.minGuests     !== undefined) body.min_guests = d.minGuests;
   if (d.maxGuests     !== undefined) body.max_guests = d.maxGuests;
   if (d.sortOrder     !== undefined) body.sort_order = d.sortOrder;
+  // Fase B.1 — omitido por completo (nunca `undefined` explícito ni `''`)
+  // para categorías sin subcategorías: MenuManager solo setea esta clave
+  // cuando la categoría del servicio efectivamente tiene subcategorías
+  // activas. `''` (defensivo, no debería llegar por la validación del
+  // formulario) se traduce a `null`, nunca viaja como string vacío.
+  if (d.subcategoryId !== undefined) body.subcategory_id = d.subcategoryId === '' ? null : d.subcategoryId;
   if (d.isActive      !== undefined) body.is_active = d.isActive;
   if (d.durationHours    !== undefined) body.duration_hours = d.durationHours;
   if (d.allowsExtraHours !== undefined) body.allows_extra_hours = d.allowsExtraHours;
   if (d.extraHourPrice   !== undefined) body.extra_hour_price = d.extraHourPrice;
   if (d.maxExtraHours    !== undefined) body.max_extra_hours = d.maxExtraHours;
+  if (d.pricingModel  !== undefined) body.pricing_model = d.pricingModel;
+  if (d.unitPrice     !== undefined) body.unit_price = d.unitPrice;
+  if (d.unitLabelSingular !== undefined) body.unit_label_singular = d.unitLabelSingular || null;
+  if (d.unitLabelPlural   !== undefined) body.unit_label_plural = d.unitLabelPlural || null;
+  if (d.minUnits      !== undefined) body.min_units = d.minUnits;
+  if (d.maxUnits      !== undefined) body.max_units = d.maxUnits;
   return body;
 }
 
