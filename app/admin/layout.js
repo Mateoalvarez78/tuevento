@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  Layers,
 } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { href: '/admin',            label: 'Overview',    icon: LayoutDashboard, exact: true },
   { href: '/admin/proveedores',label: 'Proveedores', icon: Users },
   { href: '/admin/servicios',  label: 'Servicios',   icon: Briefcase },
+  { href: '/admin/catalogo',   label: 'Catálogo',    icon: Layers },
   { href: '/admin/resenas',    label: 'Reseñas',     icon: Star },
 ];
 
