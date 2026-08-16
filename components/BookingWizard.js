@@ -12,7 +12,8 @@ import Button from '@/components/Button';
 import Input from '@/components/Input';
 import LocationPicker from '@/components/LocationPicker';
 import { safeFormatDate, addHoursToTime, todayStr } from '@/lib/date';
-import { shouldShowGuestCapacityFields } from '@/lib/packagePricingField';
+import { shouldShowGuestCapacityFields, isModelCheckoutEnabled, getPricingModelLabel } from '@/lib/packagePricingField';
+import { pricingCapabilitiesService } from '@/services/pricingCapabilitiesService';
 
 const EVENT_TYPES = ['Cumpleaños', 'Casamiento', 'Empresarial', 'Infantil', 'Fiesta privada', 'Otro'];
 const STEPS = [
@@ -51,6 +52,11 @@ export default function BookingWizard({ provider, initialPackageId }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [requestNumber, setRequestNumber] = useState('');
+  // Capacidades de pricing del backend — única fuente de verdad sobre qué
+  // modelos se pueden contratar hoy. `null` mientras no se resolvió: los
+  // modelos que dependen de un flag quedan bloqueados hasta saberlo, los que
+  // no dependen de ninguno (per_person/fixed_package) nunca se bloquean.
+  const [pricingCapabilities, setPricingCapabilities] = useState(null);
 
   const [eventData, setEventData] = useState({
     date: '', time: '', eventType: '', adults: '', children: '',
@@ -82,6 +88,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
   const isDurationPkgForAvailability = !!selectedPkg?.isDurationPackage;
   const hasCeliacOption = !!selectedPkg?.offersCeliacMenu;
   const isPerUnit = !!selectedPkg?.isPerUnit;
+  const isPerHour = !!selectedPkg?.isPerHour;
   const isCustomQuote = !!selectedPkg?.isCustomQuote;
   // ¿Corresponde pedir adultos/niños en absoluto? Mismo criterio EXACTO que
   // el backend (pricing-schema.js#shouldValidateGuestCapacity) — nunca
@@ -89,6 +96,24 @@ export default function BookingWizard({ provider, initialPackageId }) {
   // no pide invitados salvo que el paquete elegido sea per_person igual
   // (caso Barra, puede variar por paquete).
   const showGuestFields = shouldShowGuestCapacityFields(selectedPkg?.pricingModel, provider.guestUsageMode);
+
+  // ¿Este paquete se puede contratar HOY por el flujo normal? Depende de los
+  // flags del backend (per_unit/per_hour) y de que este canal lo soporte —
+  // nunca de una copia local de esa configuración.
+  const checkoutEnabled = !selectedPkg
+    || isModelCheckoutEnabled(selectedPkg.pricingModel, pricingCapabilities);
+
+  // Capacidades: una sola consulta al montar. Si falla, `pricingCapabilities`
+  // queda en null y el guard es el más restrictivo — nunca se habilita un
+  // modelo por no haber podido preguntar.
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve()
+      .then(() => pricingCapabilitiesService.get())
+      .then((caps) => { if (!cancelled) setPricingCapabilities(caps); })
+      .catch(() => { /* silencioso: el guard ya asume lo restrictivo */ });
+    return () => { cancelled = true; };
+  }, []);
 
   // Si el menú/paquete elegido cambia y deja de ofrecer la opción celíaca,
   // se limpia el checkbox y la cantidad — nunca queda un conteo celíaco
@@ -210,7 +235,10 @@ export default function BookingWizard({ provider, initialPackageId }) {
     // custom_quote nunca puede confirmarse desde acá — no hay un monto que
     // el backend pueda aceptar (rechazaría con 400 CUSTOM_QUOTE_REQUIRED).
     // El proveedor debe contactarse directamente (ver aviso en el paso 1).
-    if (step === 1) return provider.packages.length === 0 || (!!packageData.packageId && !isCustomQuote);
+    // No se puede avanzar con un paquete que el backend va a rechazar:
+    // custom_quote nunca es checkout directo, y per_unit/per_hour solo si su
+    // flag está encendido y este canal los soporta.
+    if (step === 1) return provider.packages.length === 0 || (!!packageData.packageId && !isCustomQuote && checkoutEnabled);
     if (step === 2) return contactData.name && contactData.phone && contactData.email;
     return true;
   };
@@ -497,6 +525,19 @@ export default function BookingWizard({ provider, initialPackageId }) {
             <div className="mt-6 flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
               <AppIcon icon={AlertTriangle} size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
               <p>Este paquete requiere presupuesto personalizado. Contactá al proveedor directamente para cotizarlo — no se puede reservar automáticamente desde acá.</p>
+            </div>
+          )}
+
+          {/* Modelo todavía no habilitado para contratar (per_unit/per_hour
+              con su flag apagado, o no soportado por este canal). Se avisa
+              acá en vez de dejar avanzar y que el backend rechace al final. */}
+          {!isCustomQuote && !checkoutEnabled && (
+            <div className="mt-6 flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <AppIcon icon={AlertTriangle} size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <p>
+                Este paquete se cobra {getPricingModelLabel(selectedPkg?.pricingModel).toLowerCase()} y todavía
+                no se puede reservar en línea. Contactá al proveedor para coordinarlo.
+              </p>
             </div>
           )}
 

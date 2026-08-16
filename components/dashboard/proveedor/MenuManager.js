@@ -25,6 +25,7 @@ const EMPTY = {
   durationHours: '', allowsExtraHours: false, extraHourPrice: '', maxExtraHours: '',
   offersCeliacMenu: false, celiacUnitPrice: '', celiacDescription: '',
   unitPrice: '', unitLabelSingular: '', unitLabelPlural: '', minUnits: '', maxUnits: '',
+  hourlyPrice: '', defaultBillableHours: '',
   subcategoryId: '',
 };
 // Subcategoría persistida ORIGINAL del paquete en edición (id + name tal
@@ -127,6 +128,8 @@ export default function MenuManager({ service, onClose, onChanged }) {
       unitLabelSingular: m.unitLabelSingular || '',
       unitLabelPlural: m.unitLabelPlural || '',
       minUnits: m.minUnits ?? '', maxUnits: m.maxUnits ?? '',
+      hourlyPrice: m.hourlyPrice ?? '',
+      defaultBillableHours: m.defaultBillableHours ?? '',
       subcategoryId: m.subcategoryId || '',
     });
   };
@@ -177,7 +180,7 @@ export default function MenuManager({ service, onClose, onChanged }) {
         childAgeLimit: pricingFields.showChildPrice ? (Number(form.childAgeLimit) || 14) : null,
         minGuests: showGuestCapacityFields && form.minGuests !== '' ? Number(form.minGuests) : null,
         maxGuests: showGuestCapacityFields && form.maxGuests !== '' ? Number(form.maxGuests) : null,
-        durationHours: pricingFields.showDuration ? Number(form.durationHours) : null,
+        durationHours: pricingFields.showDuration && form.durationHours !== '' ? Number(form.durationHours) : null,
         allowsExtraHours: pricingFields.showExtraHours ? form.allowsExtraHours : false,
         extraHourPrice: pricingFields.showExtraHours && form.allowsExtraHours ? Number(form.extraHourPrice) : null,
         maxExtraHours: pricingFields.showExtraHours && form.allowsExtraHours ? Number(form.maxExtraHours) : null,
@@ -191,6 +194,9 @@ export default function MenuManager({ service, onClose, onChanged }) {
         unitLabelPlural: pricingFields.showUnitFields ? (form.unitLabelPlural.trim() || null) : null,
         minUnits: pricingFields.showUnitFields && form.minUnits !== '' ? Number(form.minUnits) : null,
         maxUnits: pricingFields.showUnitFields && form.maxUnits !== '' ? Number(form.maxUnits) : null,
+        hourlyPrice: pricingFields.showHourlyPrice ? Number(form.hourlyPrice) : null,
+        defaultBillableHours: pricingFields.showDefaultBillableHours && form.defaultBillableHours !== ''
+          ? Number(form.defaultBillableHours) : null,
       };
       // Fase B.1 — solo viaja si la categoría efectivamente tiene
       // subcategorías activas (`subcategoryRequired`); para el resto de las
@@ -322,52 +328,76 @@ export default function MenuManager({ service, onClose, onChanged }) {
                 </div>
               )}
 
-              {pricingFields.showDuration && (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">Precio del paquete *</label>
-                      <Input type="number" min="0" placeholder="0" value={form.adultPrice}
-                        onChange={(e) => setForm({ ...form, adultPrice: e.target.value })} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">Duración (horas) *</label>
-                      <Input type="number" min="0.5" step="0.5" icon={Clock} placeholder="Ej: 5" value={form.durationHours}
-                        onChange={(e) => setForm({ ...form, durationHours: e.target.value })} />
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500 -mt-1">
-                    Definí cuánto cuesta este bloque de horas. El cliente podrá agregar horas extra si habilitás esa opción.
-                  </p>
-                  <label className="flex items-center gap-2 text-sm text-gray-700 pt-1">
-                    <input type="checkbox" className="rounded border-gray-300 text-primary focus:ring-primary/30"
-                      checked={form.allowsExtraHours}
-                      onChange={(e) => setForm({ ...form, allowsExtraHours: e.target.checked })} />
-                    Permitir horas extra
-                  </label>
-                  {form.allowsExtraHours && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">Precio hora extra *</label>
-                        <Input type="number" min="0" placeholder="0" value={form.extraHourPrice}
-                          onChange={(e) => setForm({ ...form, extraHourPrice: e.target.value })} />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">Máximo de horas extra *</label>
-                        <Input type="number" min="1" placeholder="Ej: 2" value={form.maxExtraHours}
-                          onChange={(e) => setForm({ ...form, maxExtraHours: e.target.value })} />
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {pricingFields.showAdultPrice && !pricingFields.showDuration && !pricingFields.showChildPrice && (
+              {/* Precio cerrado (fixed_package). Las horas incluidas son un
+                  atributo OPCIONAL de este mismo modelo, no otro modelo. */}
+              {pricingFields.showAdultPrice && !pricingFields.showChildPrice && (
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Precio del paquete *</label>
                   <Input type="number" min="0" placeholder="0" value={form.adultPrice}
                     onChange={(e) => setForm({ ...form, adultPrice: e.target.value })} />
                 </div>
+              )}
+
+              {pricingFields.showDuration && (
+                <>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Horas incluidas (opcional)</label>
+                    <Input type="number" min="0.5" step="0.5" icon={Clock} placeholder="Ej: 5" value={form.durationHours}
+                      onChange={(e) => setForm({ ...form, durationHours: e.target.value })} />
+                  </div>
+                  <p className="text-xs text-gray-500 -mt-1">
+                    Dejalo vacío si el precio no cubre un bloque de horas (ej. una decoración).
+                    Si lo completás, el precio de arriba cubre esas horas y podés habilitar horas extra.
+                  </p>
+                  {form.durationHours !== '' && (
+                    <>
+                      <label className="flex items-center gap-2 text-sm text-gray-700 pt-1">
+                        <input type="checkbox" className="rounded border-gray-300 text-primary focus:ring-primary/30"
+                          checked={form.allowsExtraHours}
+                          onChange={(e) => setForm({ ...form, allowsExtraHours: e.target.checked })} />
+                        Permitir horas extra
+                      </label>
+                      {form.allowsExtraHours && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">Precio hora extra *</label>
+                            <Input type="number" min="0" placeholder="0" value={form.extraHourPrice}
+                              onChange={(e) => setForm({ ...form, extraHourPrice: e.target.value })} />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">Máximo de horas extra *</label>
+                            <Input type="number" min="1" placeholder="Ej: 2" value={form.maxExtraHours}
+                              onChange={(e) => setForm({ ...form, maxExtraHours: e.target.value })} />
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* Tarifa REAL por hora (per_hour): la cantidad de horas la
+                  elige el cliente al reservar, acá solo se define el precio
+                  unitario y, opcionalmente, una duración de referencia. */}
+              {pricingFields.showHourlyPrice && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">Precio por hora *</label>
+                      <Input type="number" min="0" placeholder="0" value={form.hourlyPrice}
+                        onChange={(e) => setForm({ ...form, hourlyPrice: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">Duración sugerida (opcional)</label>
+                      <Input type="number" min="0.5" step="0.5" icon={Clock} placeholder="Ej: 6" value={form.defaultBillableHours}
+                        onChange={(e) => setForm({ ...form, defaultBillableHours: e.target.value })} />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 -mt-1">
+                    El total se calcula multiplicando el precio por hora por la cantidad de horas que elija el cliente.
+                    La duración sugerida solo sirve para mostrar un precio de referencia.
+                  </p>
+                </>
               )}
 
               {pricingFields.showChildPrice && (

@@ -112,6 +112,10 @@ function mapMenu(p) {
     unitLabelPlural:   p.unit_label_plural || null,
     minUnits:      p.min_units != null ? parseInt(p.min_units) : null,
     maxUnits:      p.max_units != null ? parseInt(p.max_units) : null,
+    // per_hour: tarifa real por hora + duración de referencia (nunca las
+    // horas realmente contratadas, que las elige el cliente al reservar).
+    hourlyPrice:   p.hourly_price != null ? parseFloat(p.hourly_price) : null,
+    defaultBillableHours: p.default_billable_hours != null ? parseFloat(p.default_billable_hours) : null,
     // Etiqueta de unidad heredada de la subcategoría (si el paquete no tiene
     // la suya propia) — mismo LEFT JOIN sin filtrar por is_active que
     // subcategoryName/Slug, ver comentario debajo.
@@ -159,6 +163,8 @@ function toMenuBody(d) {
   if (d.unitLabelPlural   !== undefined) body.unit_label_plural = d.unitLabelPlural || null;
   if (d.minUnits      !== undefined) body.min_units = d.minUnits;
   if (d.maxUnits      !== undefined) body.max_units = d.maxUnits;
+  if (d.hourlyPrice   !== undefined) body.hourly_price = d.hourlyPrice;
+  if (d.defaultBillableHours !== undefined) body.default_billable_hours = d.defaultBillableHours;
   return body;
 }
 

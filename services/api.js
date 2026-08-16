@@ -4,6 +4,12 @@
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
+// Identifica a este cliente ante el backend (header X-Client-Platform). No es
+// una credencial ni autoriza nada: solo declara qué UI está pidiendo, para
+// que el backend no ofrezca un modelo de precio que esta app no sabe
+// configurar. Se envía desde `request()`, nunca desde un servicio puntual.
+export const CLIENT_PLATFORM = 'web';
+
 // Origen del backend (sin el sufijo /api) para servir estáticos como /uploads/...
 const ASSET_ORIGIN = BASE_URL.replace(/\/api\/?$/, '');
 
@@ -38,6 +44,14 @@ async function request(path, options = {}) {
   const headers = {
     ...(token && { Authorization: `Bearer ${token}` }),
     ...(!isFormData && { 'Content-Type': 'application/json' }),
+    // Canal cliente — el backend lo usa para decidir qué modelos de precio
+    // puede contratar este cliente según lo que sabe renderizar (ver
+    // src/utils/clientChannel.js y pricing-flags.js del backend). Va acá, en
+    // la capa común, y NO request por request: un endpoint que se olvidara de
+    // mandarlo caería al conjunto más restrictivo y rompería una contratación
+    // válida. No habilita ningún modelo por sí solo — la autorización sigue
+    // siendo 100% server-side.
+    'X-Client-Platform': CLIENT_PLATFORM,
     ...options.headers,
   };
 
