@@ -227,4 +227,26 @@ describe('serviceService — modelo comercial declarativo (pricing_model/unit_pr
     expect(menu.pricingModel).toBeNull();
     expect(menu.unitPrice).toBeNull();
   });
+  test('unit_step y capacity_weight_per_unit viajan al backend cuando el proveedor los declara', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ status: 201, ok: true, json: async () => mockPackageResponse() });
+    await serviceService.createPackage('svc-1', {
+      name: 'Cupcakes', pricingModel: 'per_unit', unitPrice: 120,
+      minUnits: 12, maxUnits: 240, unitStep: 12, capacityWeightPerUnit: 0,
+    });
+    const [, options] = global.fetch.mock.calls[0];
+    const body = JSON.parse(options.body);
+    expect(body.unit_step).toBe(12);
+    // 0 es un peso real y debe viajar: `undefined` significaría "no lo
+    // toques", que es otra cosa.
+    expect(body.capacity_weight_per_unit).toBe(0);
+  });
+
+  test('sin declararlos: no viajan (undefined, nunca un default inventado)', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ status: 201, ok: true, json: async () => mockPackageResponse() });
+    await serviceService.createPackage('svc-1', { name: 'Castillo', pricingModel: 'per_unit', unitPrice: 8000 });
+    const [, options] = global.fetch.mock.calls[0];
+    const body = JSON.parse(options.body);
+    expect('unit_step' in body).toBe(false);
+    expect('capacity_weight_per_unit' in body).toBe(false);
+  });
 });

@@ -171,6 +171,10 @@ export const bookingService = {
       // (castillos/tortas/pizzas por unidad, ver pricing-schema.js en el
       // backend); el resto de los modelos nunca lo manda.
       units_count:     data.units != null ? Number(data.units) : undefined,
+      // Horas CONTRATADAS — solo per_hour (tarifa real por hora: DJ, mozos).
+      // Distinto de `extra_hours` de arriba, que son horas ADICIONALES sobre
+      // las ya incluidas en un fixed_package: nunca se suman entre sí.
+      billable_hours:  data.billableHours != null ? Number(data.billableHours) : undefined,
       event_date:      data.date     || data.event_date,
       event_time:      data.time     || data.event_time || undefined,
       event_type:      data.eventType || data.event_type || undefined,

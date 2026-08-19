@@ -112,6 +112,13 @@ function mapPackages(packages) {
       unitLabelPlural:   p.unit_label_plural || null,
       minUnits:      p.min_units != null ? parseInt(p.min_units) : null,
       maxUnits:      p.max_units != null ? parseInt(p.max_units) : null,
+      // Incremento comercial de la cantidad (ej. cupcakes por docena). Se
+      // cuenta DESDE minUnits, nunca desde cero — ver
+      // lib/packageQuantityField.js#validateUnitsSelection.
+      unitStep:      p.unit_step != null ? parseInt(p.unit_step) : null,
+      // Cuánta capacidad del proveedor consume CADA unidad. Opt-in: `null`
+      // significa "no aplica", nunca se deriva de la cantidad.
+      capacityWeightPerUnit: p.capacity_weight_per_unit != null ? parseInt(p.capacity_weight_per_unit) : null,
       // Per-person menus multiply by headcount; per-event menus are a flat rate.
       perPerson,
       minGuests:     p.min_guests != null ? parseInt(p.min_guests) : null,

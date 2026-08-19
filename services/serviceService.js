@@ -112,6 +112,10 @@ function mapMenu(p) {
     unitLabelPlural:   p.unit_label_plural || null,
     minUnits:      p.min_units != null ? parseInt(p.min_units) : null,
     maxUnits:      p.max_units != null ? parseInt(p.max_units) : null,
+    // Incremento comercial de la cantidad (ej. cupcakes por docena) y peso
+    // de capacidad por unidad. Ambos opt-in: null = no aplica.
+    unitStep:      p.unit_step != null ? parseInt(p.unit_step) : null,
+    capacityWeightPerUnit: p.capacity_weight_per_unit != null ? parseInt(p.capacity_weight_per_unit) : null,
     // per_hour: tarifa real por hora + duración de referencia (nunca las
     // horas realmente contratadas, que las elige el cliente al reservar).
     hourlyPrice:   p.hourly_price != null ? parseFloat(p.hourly_price) : null,
@@ -163,6 +167,8 @@ function toMenuBody(d) {
   if (d.unitLabelPlural   !== undefined) body.unit_label_plural = d.unitLabelPlural || null;
   if (d.minUnits      !== undefined) body.min_units = d.minUnits;
   if (d.maxUnits      !== undefined) body.max_units = d.maxUnits;
+  if (d.unitStep      !== undefined) body.unit_step = d.unitStep;
+  if (d.capacityWeightPerUnit !== undefined) body.capacity_weight_per_unit = d.capacityWeightPerUnit;
   if (d.hourlyPrice   !== undefined) body.hourly_price = d.hourlyPrice;
   if (d.defaultBillableHours !== undefined) body.default_billable_hours = d.defaultBillableHours;
   return body;
