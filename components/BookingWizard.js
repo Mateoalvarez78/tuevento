@@ -14,6 +14,10 @@ import LocationPicker from '@/components/LocationPicker';
 import { safeFormatDate, addHoursToTime, todayStr } from '@/lib/date';
 import { shouldShowGuestCapacityFields, isModelCheckoutEnabled, getPricingModelLabel } from '@/lib/packagePricingField';
 import { pricingCapabilitiesService } from '@/services/pricingCapabilitiesService';
+import {
+  getInitialUnits, getInitialBillableHours, validateUnitsSelection,
+  validateBillableHoursSelection, formatHoursLabel,
+} from '@/lib/packageQuantityField';
 
 const EVENT_TYPES = ['Cumpleaños', 'Casamiento', 'Empresarial', 'Infantil', 'Fiesta privada', 'Otro'];
 const STEPS = [
@@ -73,6 +77,11 @@ export default function BookingWizard({ provider, initialPackageId }) {
     extras: [],
     extraHours: 0,
     units: 1,
+    // Horas CONTRATADAS (per_hour). `null` = todavía no se resolvió el
+    // paquete; el efecto de abajo la preselecciona con la duración de
+    // referencia. Nunca se confunde con extraHours, que son horas
+    // ADICIONALES sobre las ya incluidas en un fixed_package.
+    billableHours: null,
   });
   const [contactData, setContactData] = useState({
     name: user?.name || '',
@@ -114,6 +123,21 @@ export default function BookingWizard({ provider, initialPackageId }) {
       .catch(() => { /* silencioso: el guard ya asume lo restrictivo */ });
     return () => { cancelled = true; };
   }, []);
+
+  // Al cambiar de paquete se re-preseleccionan cantidad y horas contratadas
+  // con los valores del paquete NUEVO — nunca se arrastra la cantidad del
+  // anterior, que puede violar su mínimo/paso (ej. pasar de un castillo
+  // suelto a cupcakes por docena dejaría "1 cupcake", una cantidad que ese
+  // proveedor no vende).
+  useEffect(() => {
+    if (!selectedPkg) return;
+    setPackageData((prev) => ({
+      ...prev,
+      units: getInitialUnits(selectedPkg),
+      billableHours: getInitialBillableHours(selectedPkg),
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPkg?.id]);
 
   // Si el menú/paquete elegido cambia y deja de ofrecer la opción celíaca,
   // se limpia el checkbox y la cantidad — nunca queda un conteo celíaco
@@ -192,11 +216,27 @@ export default function BookingWizard({ provider, initialPackageId }) {
   // que calculateQuote en el backend.
   const minUnits = selectedPkg?.minUnits || 1;
   const maxUnitsAllowed = selectedPkg?.maxUnits || null;
-  const unitsN = isPerUnit ? Math.max(minUnits, Number(packageData.units) || 1) : 0;
+  const unitStep = selectedPkg?.unitStep && selectedPkg.unitStep > 1 ? selectedPkg.unitStep : 1;
+  const unitsN = isPerUnit ? (Number(packageData.units) || minUnits) : 0;
   const unitPrice = selectedPkg?.unitPrice || 0;
   const unitLabelSingular = selectedPkg?.unitLabelSingular || 'unidad';
   const unitLabelPlural = selectedPkg?.unitLabelPlural || 'unidades';
   const subtotalUnits = isPerUnit ? unitsN * unitPrice : 0;
+  // Se VALIDA, nunca se clampea: si la cantidad no respeta mínimo/máximo/
+  // paso, el paso queda inválido y se muestra el motivo — cobrar una
+  // cantidad distinta de la elegida sería peor que frenar el avance.
+  const unitsCheck = isPerUnit ? validateUnitsSelection(unitsN, selectedPkg || {}) : { valid: true };
+  const unitsError = unitsCheck.valid ? null : unitsCheck.message;
+
+  // Horas CONTRATADAS (per_hour) — tarifa real por hora. Otro eje que las
+  // horas extra de un fixed_package: nunca se suman entre sí.
+  const hourlyPrice = selectedPkg?.hourlyPrice || 0;
+  const billableHoursN = isPerHour ? Number(packageData.billableHours) : 0;
+  const billableHoursCheck = isPerHour
+    ? validateBillableHoursSelection(billableHoursN)
+    : { valid: true };
+  const billableHoursError = billableHoursCheck.valid ? null : billableHoursCheck.message;
+  const subtotalHours = isPerHour && billableHoursCheck.valid ? billableHoursN * hourlyPrice : 0;
 
   // Paquete de duración fija (ej. salón de fiestas): precio fijo + horas extra.
   const isDurationPkg = !!selectedPkg?.isDurationPackage;
@@ -210,7 +250,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
 
   // Nunca $0 para un paquete de presupuesto personalizado — `null` es la
   // señal explícita (mismo criterio que calculateQuote en el backend).
-  const totalEstimated = isCustomQuote ? null : (subtotalAdults + subtotalCeliacs + subtotalChildren + subtotalUnits + extrasTotal + extraHoursAmount);
+  const totalEstimated = isCustomQuote ? null : (subtotalAdults + subtotalCeliacs + subtotalChildren + subtotalUnits + subtotalHours + extrasTotal + extraHoursAmount);
 
   const stepValid = () => {
     if (step === 0) {
@@ -238,7 +278,10 @@ export default function BookingWizard({ provider, initialPackageId }) {
     // No se puede avanzar con un paquete que el backend va a rechazar:
     // custom_quote nunca es checkout directo, y per_unit/per_hour solo si su
     // flag está encendido y este canal los soporta.
-    if (step === 1) return provider.packages.length === 0 || (!!packageData.packageId && !isCustomQuote && checkoutEnabled);
+    if (step === 1) {
+      return provider.packages.length === 0
+        || (!!packageData.packageId && !isCustomQuote && checkoutEnabled && !unitsError && !billableHoursError);
+    }
     if (step === 2) return contactData.name && contactData.phone && contactData.email;
     return true;
   };
@@ -273,6 +316,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
         celiacs:    celiacsN,
         extraHours: isDurationPkg ? extraHoursN : undefined,
         units:      isPerUnit ? unitsN : undefined,
+        billableHours: isPerHour ? billableHoursN : undefined,
         date:       eventData.date,
         time:       eventData.time,
         eventType:  eventData.eventType,
@@ -493,14 +537,16 @@ export default function BookingWizard({ provider, initialPackageId }) {
                   <h4 className="text-sm font-semibold text-gray-800 capitalize">Cantidad de {unitLabelPlural}</h4>
                   <p className="text-xs text-gray-500">
                     ${Number(unitPrice).toLocaleString('es-UY')} por {unitLabelSingular}
+                    {minUnits > 1 ? ` · mínimo ${minUnits}` : ''}
                     {maxUnitsAllowed ? ` · máximo ${maxUnitsAllowed}` : ''}
+                    {unitStep > 1 ? ` · de a ${unitStep}` : ''}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setPackageData({ ...packageData, units: Math.max(minUnits, unitsN - 1) })}
-                    disabled={unitsN <= minUnits}
+                    onClick={() => setPackageData({ ...packageData, units: Math.max(minUnits, unitsN - unitStep) })}
+                    disabled={unitsN - unitStep < minUnits}
                     aria-label={`Restar ${unitLabelSingular}`}
                     className="w-8 h-8 rounded-full border border-gray-300 text-gray-600 font-bold hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
@@ -509,8 +555,8 @@ export default function BookingWizard({ provider, initialPackageId }) {
                   <span className="w-6 text-center font-semibold text-gray-900">{unitsN}</span>
                   <button
                     type="button"
-                    onClick={() => setPackageData({ ...packageData, units: maxUnitsAllowed ? Math.min(maxUnitsAllowed, unitsN + 1) : unitsN + 1 })}
-                    disabled={!!maxUnitsAllowed && unitsN >= maxUnitsAllowed}
+                    onClick={() => setPackageData({ ...packageData, units: unitsN + unitStep })}
+                    disabled={!!maxUnitsAllowed && unitsN + unitStep > maxUnitsAllowed}
                     aria-label={`Sumar ${unitLabelSingular}`}
                     className="w-8 h-8 rounded-full border border-gray-300 text-gray-600 font-bold hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
@@ -518,6 +564,40 @@ export default function BookingWizard({ provider, initialPackageId }) {
                   </button>
                 </div>
               </div>
+              {unitsError && (
+                <p className="mt-3 text-xs text-red-600">{unitsError}</p>
+              )}
+            </div>
+          )}
+
+          {/* Horas CONTRATADAS (per_hour) — tarifa real por hora. NO se
+              muestra junto a las horas extra de un fixed_package: son ejes
+              distintos y ofrecerlos juntos sugiere que se suman. */}
+          {isPerHour && (
+            <div className="mt-6 p-4 rounded-2xl border border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-800">Horas contratadas</h4>
+                  <p className="text-xs text-gray-500">
+                    ${Number(hourlyPrice).toLocaleString('es-UY')} por hora
+                    {selectedPkg?.defaultBillableHours ? ` · sugerido ${formatHoursLabel(selectedPkg.defaultBillableHours)}` : ''}
+                  </p>
+                </div>
+                <div className="w-28">
+                  <Input
+                    type="number"
+                    min="0.5"
+                    max="24"
+                    step="0.5"
+                    aria-label="Horas contratadas"
+                    value={packageData.billableHours ?? ''}
+                    onChange={(e) => setPackageData({ ...packageData, billableHours: e.target.value })}
+                  />
+                </div>
+              </div>
+              {billableHoursError && (
+                <p className="mt-3 text-xs text-red-600">{billableHoursError}</p>
+              )}
             </div>
           )}
 
@@ -604,6 +684,13 @@ export default function BookingWizard({ provider, initialPackageId }) {
               <div className="flex justify-between">
                 <span className="text-gray-500 capitalize">{unitLabelPlural}</span>
                 <span className="font-medium text-gray-900">{unitsN} × ${unitPrice.toLocaleString('es-UY')} = ${subtotalUnits.toLocaleString('es-UY')}</span>
+              </div>
+            ) : isPerHour ? (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Horas contratadas</span>
+                <span className="font-medium text-gray-900">
+                  {formatHoursLabel(billableHoursN)} × ${hourlyPrice.toLocaleString('es-UY')} = ${subtotalHours.toLocaleString('es-UY')}
+                </span>
               </div>
             ) : isDurationPkg ? (
               <>
