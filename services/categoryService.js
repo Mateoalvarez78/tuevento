@@ -8,13 +8,43 @@ import { getCategoryIcon } from '@/utils/icons';
 // In-memory cache to avoid repeated requests within the session
 let _cache = null;
 
+// Normalizadores defensivos de la configuración declarativa (migración
+// 021). No alcanza con `|| null`: una respuesta vieja, un endpoint sin
+// migrar o un array vacío tienen que distinguirse de "la categoría dice
+// que solo permite per_person". Confundirlos es exactamente cómo un
+// formulario termina cayendo en silencio a "por persona".
+const asModelList = (v) => (Array.isArray(v) && v.length && v.every((m) => typeof m === "string" && m)
+  ? [...v]
+  : null);
+const asText = (v) => (typeof v === "string" && v.trim() ? v.trim() : null);
+const asFlag = (v) => (v == null ? null : !!v);
+
 function mapCategory(c) {
+  // Las siete columnas declarativas viajan en el contrato público de
+  // /categories (categories.service.js hace SELECT c.*). Se exponen en
+  // camelCase para que ningún consumidor tenga que leer `_raw`.
+  const pricingAllowedModels = asModelList(c.pricing_allowed_models);
+  const pricingDefaultModel = asText(c.pricing_default_model);
+  const guestUsageMode = asText(c.guest_usage_mode);
+
   return {
     id:    c.slug || c.id,   // slug — usado por filtros del catálogo
     categoryId: c.id,        // UUID real — necesario para crear servicios
     label: c.name,
     icon:  getCategoryIcon(c.slug || c.id), // componente Lucide, no emoji
     count: parseInt(c.service_count) || 0,
+    pricingAllowedModels,
+    pricingDefaultModel,
+    guestUsageMode,
+    capacityBasis: asText(c.capacity_basis),
+    unitLabelSingular: asText(c.unit_label_singular),
+    unitLabelPlural: asText(c.unit_label_plural),
+    supportsDietaryRestrictions: asFlag(c.supports_dietary_restrictions),
+    // Señal EXPLÍCITA de "esta categoría no tiene configuración comercial
+    // utilizable". El formulario la usa para avisar en vez de inventar un
+    // default — ver regla UX 12 (fallar visible, nunca volver callado a
+    // per_person). Es distinto de "configurada como per_person".
+    hasPricingConfig: !!(pricingAllowedModels && pricingDefaultModel && guestUsageMode),
     _raw: c,
   };
 }
