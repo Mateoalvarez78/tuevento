@@ -24,6 +24,13 @@ export function mapServiceToProvider(s) {
     category:        s.category_slug  || '',
     categoryLabel:   s.category_name  || '',
     categoryEmoji:   s.category_emoji || '',
+    // Uso de la cantidad de invitados (Admin > Configuración del catálogo) —
+    // el cliente (BookingWizard/checkout) lo usa para decidir si pide
+    // adultos/niños en absoluto (ej. fotografía = 'unused', nunca los pide),
+    // nunca hardcodeado por categoría/slug acá. Solo a nivel categoría (sin
+    // override de subcategoría) — ver services.service.js#getServiceWithDetails.
+    guestUsageMode:  s.category_guest_usage_mode || 'price',
+    capacityBasis:   s.category_capacity_basis || 'total_guests',
     rating:          parseFloat(s.rating_avg)     || 0,
     reviewCount:     parseInt(s.total_reviews)    || 0,
     priceFrom:       parseFloat(s.price_from)     || 0,
@@ -69,6 +76,15 @@ function mapPackages(packages) {
     const offersCeliacMenu = !!p.offers_celiac_menu;
     const celiacUnitPrice = p.celiac_unit_price != null ? parseFloat(p.celiac_unit_price) : null;
     const priceUnit = p.price_unit || '';
+    // Modelo comercial declarativo — `pricing_model` es el campo NUEVO
+    // autoritativo (ver pricing-schema.js en el backend); el regex sobre
+    // `price_unit` queda SOLO como red de seguridad para una fila que, por
+    // algún motivo, no lo tenga seteado (no debería pasar tras la migración
+    // 021, que hizo backfill de todas las filas existentes).
+    const pricingModel = p.pricing_model || null;
+    const perPerson = pricingModel
+      ? pricingModel === 'per_person'
+      : (/persona|person/i.test(priceUnit) || childPrice != null);
     return {
       id:            p.id,
       name:          p.name,
@@ -85,8 +101,26 @@ function mapPackages(packages) {
       celiacUnitPrice,
       celiacDescription: p.celiac_description || '',
       hasCeliacOption: offersCeliacMenu,
+      pricingModel,
+      isPerUnit:     pricingModel === 'per_unit',
+      isPerHour:     pricingModel === 'per_hour',
+      isCustomQuote: pricingModel === 'custom_quote',
+      unitPrice:     p.unit_price != null ? parseFloat(p.unit_price) : null,
+      hourlyPrice:   p.hourly_price != null ? parseFloat(p.hourly_price) : null,
+      defaultBillableHours: p.default_billable_hours != null ? parseFloat(p.default_billable_hours) : null,
+      unitLabelSingular: p.unit_label_singular || null,
+      unitLabelPlural:   p.unit_label_plural || null,
+      minUnits:      p.min_units != null ? parseInt(p.min_units) : null,
+      maxUnits:      p.max_units != null ? parseInt(p.max_units) : null,
+      // Incremento comercial de la cantidad (ej. cupcakes por docena). Se
+      // cuenta DESDE minUnits, nunca desde cero — ver
+      // lib/packageQuantityField.js#validateUnitsSelection.
+      unitStep:      p.unit_step != null ? parseInt(p.unit_step) : null,
+      // Cuánta capacidad del proveedor consume CADA unidad. Opt-in: `null`
+      // significa "no aplica", nunca se deriva de la cantidad.
+      capacityWeightPerUnit: p.capacity_weight_per_unit != null ? parseInt(p.capacity_weight_per_unit) : null,
       // Per-person menus multiply by headcount; per-event menus are a flat rate.
-      perPerson:     /persona|person/i.test(priceUnit) || childPrice != null,
+      perPerson,
       minGuests:     p.min_guests != null ? parseInt(p.min_guests) : null,
       maxGuests:     p.max_guests != null ? parseInt(p.max_guests) : null,
       priceUnit,

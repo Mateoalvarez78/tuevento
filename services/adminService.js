@@ -5,6 +5,7 @@ import { api, buildQuery } from './api';
 import { providerService, mapAdminProvider } from './providerService';
 import { serviceService } from './serviceService';
 import { reviewService } from './reviewService';
+import { categoryService } from './categoryService';
 
 export const adminService = {
   /** Aggregated platform stats for the admin overview page. */
@@ -91,5 +92,19 @@ export const adminService = {
     getAll:  (filters) => reviewService.admin.getAll(filters),
     hide:    (id)      => reviewService.admin.hide(id),
     restore: (id)      => reviewService.admin.restore(id),
+  },
+
+  // ── Configuración del catálogo (categorías + subcategorías) ──────────────
+  categories: {
+    getAll:               ()                       => categoryService.admin.getAll(),
+    create:               (data)                    => categoryService.admin.create(data),
+    update:               (id, data)                => categoryService.admin.update(id, data),
+    remove:               (id)                      => categoryService.admin.remove(id),
+    reorder:              (orderedIds)              => categoryService.admin.reorder(orderedIds),
+    getSubcategories:     (categoryId)              => categoryService.admin.getSubcategories(categoryId),
+    createSubcategory:    (data)                    => categoryService.admin.createSubcategory(data),
+    updateSubcategory:    (id, data)                => categoryService.admin.updateSubcategory(id, data),
+    removeSubcategory:    (id)                      => categoryService.admin.removeSubcategory(id),
+    reorderSubcategories: (categoryId, orderedIds)  => categoryService.admin.reorderSubcategories(categoryId, orderedIds),
   },
 };

@@ -125,11 +125,20 @@ export default function EditItemModal({ open, onClose, event, item, onSave }) {
         </div>
       )}
 
-      {!loading && !loadError && detail && (
+      {!loading && !loadError && detail && (() => {
+        // Campos particulares dirigidos por el MODELO de precio del paquete
+        // elegido — nunca los mismos 4 campos fijos para cualquier
+        // categoría (antes: Adultos/Niños/Celíacos/Horas extra siempre
+        // visibles, aunque el servicio fuera un DJ o una cabina de fotos).
+        const selectedPackage = detail.packages.find((p) => p.id === packageId) || null;
+        const showPersonFields = !!selectedPackage?.perPerson;
+        const showExtraHoursField = !!selectedPackage?.isDurationPackage;
+        const showQuantityFields = showPersonFields || showExtraHoursField;
+        return (
         <div className="space-y-6">
           {detail.packages.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-gray-800 mb-3">Elegí tu {detail.packages.some((p) => p.isDurationPackage) ? 'paquete' : 'menú'}</h4>
+              <h4 className="text-sm font-semibold text-gray-800 mb-3">Elegí tu paquete</h4>
               <PackageSelector packages={detail.packages} selectedId={packageId} onSelect={setPackageId} />
             </div>
           )}
@@ -154,28 +163,38 @@ export default function EditItemModal({ open, onClose, event, item, onSave }) {
             </div>
           )}
 
-          <div>
-            <h4 className="text-sm font-semibold text-gray-800 mb-1">Cantidades particulares</h4>
-            <p className="text-xs text-gray-500 mb-3">Dejá el campo vacío para usar la cantidad general del evento.</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="edit-item-adults" className="block text-xs font-medium text-gray-700 mb-1.5">Adultos (general: {event.adults_count})</label>
-                <Input id="edit-item-adults" type="number" min="0" placeholder="Usar general" value={adults} onChange={(e) => setAdults(e.target.value)} />
-              </div>
-              <div>
-                <label htmlFor="edit-item-children" className="block text-xs font-medium text-gray-700 mb-1.5">Niños (general: {event.children_count})</label>
-                <Input id="edit-item-children" type="number" min="0" placeholder="Usar general" value={children} onChange={(e) => setChildren(e.target.value)} />
-              </div>
-              <div>
-                <label htmlFor="edit-item-celiacs" className="block text-xs font-medium text-gray-700 mb-1.5">Celíacos (general: {event.celiacs_count})</label>
-                <Input id="edit-item-celiacs" type="number" min="0" placeholder="Usar general" value={celiacs} onChange={(e) => setCeliacs(e.target.value)} />
-              </div>
-              <div>
-                <label htmlFor="edit-item-extra-hours" className="block text-xs font-medium text-gray-700 mb-1.5">Horas extra (general: {event.extra_hours})</label>
-                <Input id="edit-item-extra-hours" type="number" min="0" placeholder="Usar general" value={extraHours} onChange={(e) => setExtraHours(e.target.value)} />
+          {showQuantityFields && (
+            <div>
+              <h4 className="text-sm font-semibold text-gray-800 mb-1">Cantidades particulares</h4>
+              <p className="text-xs text-gray-500 mb-3">Dejá el campo vacío para usar la cantidad general del evento.</p>
+              <div className="grid grid-cols-2 gap-3">
+                {showPersonFields && (
+                  <>
+                    <div>
+                      <label htmlFor="edit-item-adults" className="block text-xs font-medium text-gray-700 mb-1.5">Adultos (general: {event.adults_count})</label>
+                      <Input id="edit-item-adults" type="number" min="0" placeholder="Usar general" value={adults} onChange={(e) => setAdults(e.target.value)} />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-item-children" className="block text-xs font-medium text-gray-700 mb-1.5">Niños (general: {event.children_count})</label>
+                      <Input id="edit-item-children" type="number" min="0" placeholder="Usar general" value={children} onChange={(e) => setChildren(e.target.value)} />
+                    </div>
+                    {selectedPackage?.offersCeliacMenu && (
+                      <div>
+                        <label htmlFor="edit-item-celiacs" className="block text-xs font-medium text-gray-700 mb-1.5">Celíacos (general: {event.celiacs_count})</label>
+                        <Input id="edit-item-celiacs" type="number" min="0" placeholder="Usar general" value={celiacs} onChange={(e) => setCeliacs(e.target.value)} />
+                      </div>
+                    )}
+                  </>
+                )}
+                {showExtraHoursField && (
+                  <div>
+                    <label htmlFor="edit-item-extra-hours" className="block text-xs font-medium text-gray-700 mb-1.5">Horas extra (general: {event.extra_hours})</label>
+                    <Input id="edit-item-extra-hours" type="number" min="0" placeholder="Usar general" value={extraHours} onChange={(e) => setExtraHours(e.target.value)} />
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          )}
 
           <div>
             <label htmlFor="edit-item-notes" className="block text-xs font-medium text-gray-700 mb-1.5">Observación para este servicio</label>
@@ -192,7 +211,8 @@ export default function EditItemModal({ open, onClose, event, item, onSave }) {
             <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{saveError}</div>
           )}
         </div>
-      )}
+        );
+      })()}
     </Modal>
   );
 }

@@ -94,6 +94,55 @@ describe('bookingService.create', () => {
     expect(body.event_location_details).toBeUndefined();
   });
 
+  test('manda units_count para paquetes per_unit (castillos/tortas/pizzas)', async () => {
+    await bookingService.create({
+      serviceId: 'service-1', packageId: 'pkg-castillo', units: 2,
+      date: '2027-01-01', locationDetails: { locationToken: 't' },
+    });
+    const [, options] = global.fetch.mock.calls[0];
+    const body = JSON.parse(options.body);
+    expect(body.units_count).toBe(2);
+  });
+
+  test('sin units: no manda units_count (undefined, no 0 forzado)', async () => {
+    await bookingService.create({
+      serviceId: 'service-1', adults: 2, date: '2027-01-01', locationDetails: { locationToken: 't' },
+    });
+    const [, options] = global.fetch.mock.calls[0];
+    const body = JSON.parse(options.body);
+    expect(body.units_count).toBeUndefined();
+  });
+
+  test('manda billable_hours para paquetes per_hour (DJ, mozos por hora)', async () => {
+    await bookingService.create({
+      serviceId: 'service-1', packageId: 'pkg-dj', billableHours: 6,
+      date: '2027-01-01', locationDetails: { locationToken: 't' },
+    });
+    const [, options] = global.fetch.mock.calls[0];
+    const body = JSON.parse(options.body);
+    expect(body.billable_hours).toBe(6);
+    // Horas CONTRATADAS y horas EXTRA son ejes distintos: mandar una
+    // nunca implica la otra.
+    expect(body.extra_hours).toBeUndefined();
+  });
+
+  test('medias horas viajan como decimal, no se redondean', async () => {
+    await bookingService.create({
+      serviceId: 'service-1', packageId: 'pkg-dj', billableHours: 2.5,
+      date: '2027-01-01', locationDetails: { locationToken: 't' },
+    });
+    const [, options] = global.fetch.mock.calls[0];
+    expect(JSON.parse(options.body).billable_hours).toBe(2.5);
+  });
+
+  test('sin billableHours: no manda billable_hours (undefined, no 0 forzado)', async () => {
+    await bookingService.create({
+      serviceId: 'service-1', adults: 2, date: '2027-01-01', locationDetails: { locationToken: 't' },
+    });
+    const [, options] = global.fetch.mock.calls[0];
+    expect(JSON.parse(options.body).billable_hours).toBeUndefined();
+  });
+
   test('propaga un 409 AVAILABILITY_CONFLICT con reasonCode', async () => {
     global.fetch.mockResolvedValue({
       status: 409, ok: false,

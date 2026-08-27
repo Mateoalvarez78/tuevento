@@ -70,6 +70,7 @@ export default function CategoryLineItem({ category, onEditPackage, onChangeProv
   const {
     categoryName, categorySlug, providerName, providerVerified, serviceTitle, packageName,
     includes, subtotal, rating, reviewCount, capacity, servicePrimaryImage, extrasSelected,
+    requiresCustomQuote,
   } = category;
   const extrasCount = extrasSelected?.length || 0;
   const personalizeLabel = extrasCount > 0
@@ -118,8 +119,15 @@ export default function CategoryLineItem({ category, onEditPackage, onChangeProv
         <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Paquete seleccionado</p>
         <div className="flex items-start justify-between gap-3">
           <p className="text-sm font-bold text-gray-900 min-w-0 truncate">{packageName}</p>
-          <p className="text-sm font-bold text-gray-900 shrink-0 whitespace-nowrap">{formatCurrency(roundForDisplay(subtotal))}</p>
+          {requiresCustomQuote ? (
+            <p className="text-xs font-semibold text-amber-600 shrink-0 whitespace-nowrap">Presupuesto personalizado</p>
+          ) : (
+            <p className="text-sm font-bold text-gray-900 shrink-0 whitespace-nowrap">{formatCurrency(roundForDisplay(subtotal))}</p>
+          )}
         </div>
+        {requiresCustomQuote && (
+          <p className="text-xs text-gray-400 mt-0.5">Contactá al proveedor para cotizar este servicio.</p>
+        )}
         {visibleIncludes.length > 0 && (
           <p className="text-xs text-gray-400 mt-0.5 truncate">
             {visibleIncludes.join(' · ')}{extraIncludesCount > 0 ? ` +${extraIncludesCount}` : ''}
