@@ -55,6 +55,9 @@ function mapService(s) {
     minGuests:     s.min_guests || null,
     maxGuests:     s.max_guests || null,
     durationHours: s.duration_hours || null,
+    // Cuántas opciones activas tiene. Decide si `price_from` sigue siendo
+    // editable: con paquetes activos es una proyección del backend.
+    activePackagesCount: parseInt(s.active_packages_count) || 0,
     // Capacidad/disponibilidad propia (opcional, hereda del proveedor por defecto)
     useProviderCapacity:      s.use_provider_capacity !== false,
     maxConcurrentEvents:      s.max_concurrent_events != null ? parseInt(s.max_concurrent_events) : null,
