@@ -12,9 +12,6 @@ import { getCategoryIcon } from '@/utils/icons';
 import { safeFormatDate } from '@/lib/date';
 import { serviceService } from '@/services/serviceService';
 import { categoryService } from '@/services/categoryService';
-import {
-  resolveServicePriceTypeOptions, omittedServiceFields,
-} from '@/lib/packagePricingField';
 import { assetUrl } from '@/services/api';
 import ServiceStatusBadge from '@/components/ServiceStatusBadge';
 import EmptyState from '@/components/EmptyState';
@@ -45,17 +42,23 @@ const EMPTY_FORM = {
   duration_minutes: '', preparation_minutes: '0', cleanup_minutes: '0', minimum_booking_notice_hours: '',
 };
 
-// Resolución declarativa compartida por ALTA y EDICIÓN: una sola función
-// para los dos caminos, para que no puedan divergir.
-function resolveForCategory(categories, categoryId, currentPriceType) {
-  const category = categories.find((c) => c.categoryId === categoryId) || null;
-  return resolveServicePriceTypeOptions({
-    allowedPricingModels: category?.pricingAllowedModels,
-    defaultPricingModel: category?.pricingDefaultModel,
-    guestUsageMode: category?.guestUsageMode,
-    capacityBasis: category?.capacityBasis,
-    currentPriceType,
-  });
+// La MODALIDAD DE COBRO ya no se resuelve acá: pertenece al PAQUETE
+// (service_packages.pricing_model) y se elige en MenuManager. Este modal
+// administra la ficha general del servicio.
+//
+// Lo único que sigue dependiendo de la categoría es si tiene sentido pedir
+// invitados — eso es CAPACIDAD del servicio (guest_usage_mode), no precio.
+function findCategory(categories, categoryId) {
+  return categories.find((c) => c.categoryId === categoryId) || null;
+}
+
+// `price`/`capacity` usan los invitados (para cobrar o para limitar);
+// `recommendation`/`unused` no los necesitan en la ficha general. Sin
+// configuración se muestran, que es el comportamiento histórico: nunca se
+// restringe por falta de datos.
+function showsGuestFields(category) {
+  const mode = category?.guestUsageMode;
+  return mode == null || mode === 'price' || mode === 'capacity';
 }
 
 function serviceToForm(s) {
@@ -126,17 +129,8 @@ export default function ProviderServicesPage() {
   });
 
   const openCreate = () => setDrawer({ editing: null, form: { ...EMPTY_FORM } });
-  const openEdit = (s) => {
-    // La categoría pudo reconfigurarse después de crear el servicio: dejar
-    // seleccionada una modalidad que ya no ofrece haría fallar el guardado
-    // recién al apretar el botón. Si no hay configuración, NO se toca nada.
-    const form = serviceToForm(s);
-    const r = resolveForCategory(categories, form.category_id, form.price_type);
-    setDrawer({
-      editing: s,
-      form: r.configAvailable ? { ...form, price_type: r.priceType } : form,
-    });
-  };
+  // Abrir a editar ya no recalcula ninguna modalidad: el servicio no tiene.
+  const openEdit = (s) => setDrawer({ editing: s, form: serviceToForm(s) });
 
   const handleSave = async () => {
     const f = drawer.form;
@@ -145,22 +139,15 @@ export default function ProviderServicesPage() {
     const price = Number(f.price_from);
     if (!Number.isFinite(price) || price < 0) { showToast('Ingresá un precio base válido', 'error'); return; }
 
-    // Los campos que la categoría/modalidad vigente no usa se EXCLUYEN del
-    // payload, pero nunca se borran del estado mientras se edita: perder en
-    // silencio la capacidad de un servicio existente sería peor que
-    // mandarla de más.
-    const resolution = resolveForCategory(categories, f.category_id, f.price_type);
-    if (!resolution.configAvailable) {
-      showToast('Esta categoría todavía no tiene configuración de precios. No se puede guardar.', 'error');
-      return;
-    }
-    const omitidos = omittedServiceFields(resolution);
-
     const payload = {
       category_id: f.category_id,
       title: f.title.trim(),
       description: f.description.trim(),
-      price_type: resolution.priceType,
+      // `price_type` NO viaja: la modalidad de cobro es del PAQUETE
+      // (service_packages.pricing_model) y el backend deriva este enum legacy
+      // de la configuración declarativa de la categoría
+      // (pricing-schema#resolveServicePriceType). El frontend no decide
+      // modalidades de cobro.
       price_from: price,
       min_guests: f.min_guests !== '' ? Number(f.min_guests) : null,
       max_guests: f.max_guests !== '' ? Number(f.max_guests) : null,
@@ -175,12 +162,15 @@ export default function ProviderServicesPage() {
       minimumBookingNoticeHours: f.use_provider_capacity ? null : (f.minimum_booking_notice_hours !== '' ? Number(f.minimum_booking_notice_hours) : null),
     };
 
-    // Los campos que la modalidad vigente no usa se EXCLUYEN borrando la
-    // clave, nunca mandando `null`: services.service.js#update aplica
-    // cualquier valor !== undefined, así que un null explícito
-    // SOBREESCRIBIRÍA con NULL el dato ya guardado. Borrar la clave deja la
-    // columna intacta — editar no puede perder información en silencio.
-    omitidos.forEach((campo) => { delete payload[campo]; });
+    // Los invitados solo se excluyen si la categoría declara que no los usa.
+    // Se BORRA la clave, nunca se manda `null`: services.service.js#update
+    // aplica cualquier valor !== undefined, así que un null explícito
+    // sobreescribiría con NULL el dato ya guardado — editar no puede perder
+    // información en silencio.
+    if (!showsGuestFields(findCategory(categories, f.category_id))) {
+      delete payload.min_guests;
+      delete payload.max_guests;
+    }
 
     setSaving(true);
     try {
@@ -428,23 +418,21 @@ function ServiceDrawer({ drawer, setDrawer, categories, saving, onSave, onClose 
   const { editing, form } = drawer;
   const setForm = (patch) => setDrawer({ ...drawer, form: { ...form, ...patch } });
 
-  // Única fuente de todo lo condicional de abajo. Ningún `if` por slug ni
-  // por nombre visible: sale de la configuración declarativa de la
-  // categoría (migración 021), resuelta por el mismo helper que usa
-  // openEdit — crear y editar comparten exactamente esta resolución.
-  const r = resolveForCategory(categories, form.category_id, form.price_type);
+  // La categoría solo decide si tiene sentido pedir invitados (capacidad
+  // del servicio). La modalidad de cobro es del PAQUETE y se elige en
+  // "Menús" — ningún `if` por slug acá.
+  const selectedCategory = findCategory(categories, form.category_id);
+  const showGuests = showsGuestFields(selectedCategory);
+  const guestsAreCapacity = selectedCategory?.guestUsageMode === 'capacity';
   const categoriaElegida = !!form.category_id;
+  // Con opciones activas, `price_from` lo proyecta el backend.
+  const tieneOpcionesActivas = (editing?.activePackagesCount || 0) > 0;
 
-  // Cambiar de categoría recalcula las opciones y reemplaza la modalidad si
-  // dejó de ofrecerse. Los valores ocultos NO se borran del estado acá: se
-  // excluyen del payload al guardar (ver handleSave), para no perder datos
-  // de un servicio existente mientras se lo está editando.
+  // Cambiar de categoría no remapea nada: los valores del formulario se
+  // conservan y, si la categoría nueva no usa invitados, se excluyen del
+  // payload al guardar (nunca se borran del estado mientras se edita).
   const onCategoryChange = (categoryId) => {
-    const siguiente = resolveForCategory(categories, categoryId, form.price_type);
-    setForm({
-      category_id: categoryId,
-      ...(siguiente.configAvailable ? { price_type: siguiente.priceType } : {}),
-    });
+    setForm({ category_id: categoryId });
   };
   const toggleZone = (z) => {
     const has = form.zones.includes(z);
@@ -498,78 +486,69 @@ function ServiceDrawer({ drawer, setDrawer, categories, saving, onSave, onClose 
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Modalidad</label>
-            <select
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:bg-gray-50 disabled:text-gray-400"
-              value={r.priceType || ''}
-              onChange={(e) => setForm({ price_type: e.target.value })}
-              disabled={!r.configAvailable || r.options.length <= 1}
-            >
-              {r.options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
-            </select>
+        {/* `price_from` es EDITABLE solo mientras el servicio no tenga
+            opciones activas. En cuanto las tiene, el backend lo proyecta desde
+            la opción más barata y el proveedor no puede sobrescribirlo — así
+            que se muestra de solo lectura en vez de un input que no manda.
+            Compatibilidad transitoria: la política definitiva (price_from
+            NULL en borradores + exigir opción activa para publicar) necesita
+            migración y queda para una fase posterior. */}
+        {tieneOpcionesActivas ? (
+          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+            <p className="text-xs font-semibold text-gray-600">Precio desde</p>
+            <p className="text-lg font-semibold text-gray-900">
+              ${Number(form.price_from || 0).toLocaleString('es-UY')}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Se calcula automáticamente a partir de tus opciones activas. Para cambiarlo,
+              editá el precio en <span className="font-medium">Menús</span>.
+            </p>
           </div>
+        ) : (
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">{r.priceLabel}</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Precio de referencia temporal *</label>
             <Input type="number" min="0" placeholder="0" value={form.price_from} onChange={(e) => setForm({ price_from: e.target.value })} />
-          </div>
-        </div>
-
-        {/* Cómo se calcula el precio, y aviso explícito cuando la categoría
-            admite modelos que la ficha del servicio no puede representar
-            (por unidad / a presupuesto): esos se configuran en los paquetes. */}
-        {categoriaElegida && r.configAvailable && r.priceHelp && (
-          <p className="text-xs text-gray-500 -mt-2">{r.priceHelp}</p>
-        )}
-
-        {/* Regla UX 12: si la configuración no llegó, se avisa y se bloquea.
-            Nunca se vuelve en silencio a "por persona". */}
-        {categoriaElegida && !r.configAvailable && (
-          <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-            <AppIcon icon={AlertTriangle} size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
-            <p>
-              Esta categoría todavía no tiene configuración de precios cargada.
-              No podemos determinar qué modalidades corresponden, así que el
-              servicio no se puede guardar hasta que se configure.
+            <p className="text-xs text-gray-500 mt-1">
+              Se utiliza mientras el servicio no tenga opciones o paquetes activos.
+              Al agregar un paquete, el precio &ldquo;Desde&rdquo; se calculará automáticamente.
             </p>
           </div>
         )}
 
-        {/* Invitados: los decide guest_usage_mode, nunca el slug.
-              price       → mínimo/máximo, participan del precio
-              capacity    → capacidad, NO multiplica el precio
-              recommendation / unused → no se piden acá (la recomendación
-              por paquete se define en el formulario de paquetes) */}
-        {(r.showGuestFields || r.showDurationHours) && (
-          <div className="grid grid-cols-3 gap-3">
-            {r.showGuestFields && (
-              <>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">
-                    {r.guestUsageMode === 'capacity' ? 'Capacidad mín.' : 'Mín. invitados'}
-                  </label>
-                  <Input type="number" min="0" value={form.min_guests} onChange={(e) => setForm({ min_guests: e.target.value })} />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">
-                    {r.guestUsageMode === 'capacity' ? 'Capacidad máx.' : 'Máx. invitados'}
-                  </label>
-                  <Input type="number" min="0" value={form.max_guests} onChange={(e) => setForm({ max_guests: e.target.value })} />
-                </div>
-              </>
-            )}
-            {r.showDurationHours && (
+        {/* Invitados y duración generales del servicio. Los invitados los
+            decide guest_usage_mode de la categoría, nunca el slug: una
+            categoría que no los usa (fotografía, decoración) no los pide.
+            Esto es CAPACIDAD del servicio, no precio — el precio por
+            persona vive en el paquete que lo use. */}
+        <div className="grid grid-cols-3 gap-3">
+          {showGuests && (
+            <>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Duración (hs)</label>
-                <Input type="number" min="0" step="0.5" value={form.duration_hours} onChange={(e) => setForm({ duration_hours: e.target.value })} />
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  {guestsAreCapacity ? 'Capacidad mín.' : 'Mín. invitados'}
+                </label>
+                <Input type="number" min="0" value={form.min_guests} onChange={(e) => setForm({ min_guests: e.target.value })} />
               </div>
-            )}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  {guestsAreCapacity ? 'Capacidad máx.' : 'Máx. invitados'}
+                </label>
+                <Input type="number" min="0" value={form.max_guests} onChange={(e) => setForm({ max_guests: e.target.value })} />
+              </div>
+            </>
+          )}
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Duración (hs)</label>
+            <Input type="number" min="0" step="0.5" value={form.duration_hours} onChange={(e) => setForm({ duration_hours: e.target.value })} />
           </div>
-        )}
+        </div>
 
-        {categoriaElegida && r.configAvailable && r.guestHelp && (
-          <p className="text-xs text-gray-500 -mt-2">{r.guestHelp}</p>
+        {categoriaElegida && showGuests && (
+          <p className="text-xs text-gray-500 -mt-2">
+            {guestsAreCapacity
+              ? 'La cantidad de invitados limita la capacidad del servicio; no multiplica el precio.'
+              : 'Rango de invitados que atendés con este servicio.'}
+          </p>
         )}
 
         <div>
