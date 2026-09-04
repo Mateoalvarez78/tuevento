@@ -8,15 +8,21 @@ export default function PackageSelector({ packages, selectedId, onSelect }) {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {packages.map((pkg) => {
         const selected = selectedId === pkg.id;
+        // El backend marca no seleccionable lo que este canal no sabe
+        // contratar (ej. una opción con adicionales obligatorios en una app
+        // que no los muestra). Se ve, pero no se puede elegir: ocultarla
+        // dejaría al cliente sin entender por qué desapareció.
+        const bloqueada = pkg.selectable === false;
         return (
           <button
             key={pkg.id}
-            onClick={() => onSelect(pkg.id)}
+            disabled={bloqueada}
+            onClick={() => !bloqueada && onSelect(pkg.id)}
             className={`relative text-left p-5 rounded-2xl border-2 transition-all duration-200 focus:outline-none ${
               selected
                 ? 'border-primary bg-primary-light shadow-md'
                 : 'border-gray-200 bg-white hover:border-primary/40 hover:shadow-sm'
-            } ${pkg.popular ? 'ring-2 ring-primary/20' : ''}`}
+            } ${pkg.popular ? 'ring-2 ring-primary/20' : ''} ${bloqueada ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
             {pkg.popular && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -86,13 +92,27 @@ export default function PackageSelector({ packages, selectedId, onSelect }) {
             <p className="text-xs text-gray-500 mb-3 leading-relaxed">{pkg.description}</p>
 
             <ul className="space-y-1.5">
-              {pkg.includes.map((item, i) => (
-                <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
+              {(pkg.inclusions?.length ? pkg.inclusions : pkg.includes.map((t) => ({ name: t }))).map((item, i) => (
+                <li key={item.id || i} className="flex items-start gap-2 text-xs text-gray-600">
                   <AppIcon icon={Check} size={13} className="text-primary shrink-0 mt-0.5" aria-hidden="true" />
-                  {item}
+                  {item.quantity ? `${item.quantity} ${item.name}` : item.name}
                 </li>
               ))}
             </ul>
+
+            {!!pkg.modifierGroups?.length && (
+              <p className="text-xs text-gray-500 mt-3 pt-2 border-t border-gray-100">
+                {pkg.modifierGroups.some((g) => g.isRequired)
+                  ? 'Vas a poder elegir cómo configurarlo'
+                  : 'Podés sumarle adicionales'}
+              </p>
+            )}
+
+            {bloqueada && (
+              <p className="text-xs text-gray-500 mt-3 pt-2 border-t border-gray-100">
+                Esta opción requiere elegir adicionales. Reservala desde la web.
+              </p>
+            )}
           </button>
         );
       })}

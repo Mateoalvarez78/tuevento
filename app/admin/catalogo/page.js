@@ -43,7 +43,7 @@ function CategoryFormModal({ category, onClose, onSaved }) {
     packageOptionLabel: category?.packageOptionLabel || '',
     packageOptionHelpText: category?.packageOptionHelpText || '',
     // Modelo comercial declarativo (reemplaza el hardcode isSalon/isCatering
-    // que tenía MenuManager.js) — ver lib/packagePricingField.js.
+    // que tenía el constructor de opciones) — ver lib/packagePricingField.js.
     pricingAllowedModels: category?.pricingAllowedModels || ['per_person'],
     pricingDefaultModel: category?.pricingDefaultModel || 'per_person',
     guestUsageMode: category?.guestUsageMode || 'price',

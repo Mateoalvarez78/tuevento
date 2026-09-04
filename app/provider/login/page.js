@@ -63,7 +63,7 @@ export default function ProviderLoginPage() {
           </h2>
           <div className="space-y-4">
             {[
-              { icon: Store,       text: 'Publicá y administrá tus servicios y menús' },
+              { icon: Store,       text: 'Publicá y administrá tus servicios y opciones' },
               { icon: CalendarDays,text: 'Reservas y calendario centralizados' },
               { icon: Wallet,      text: 'Ingresos, comisiones y estado de pagos' },
               { icon: BarChart3,   text: 'Métricas de rendimiento de tu negocio' },

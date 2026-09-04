@@ -15,7 +15,7 @@ import { categoryService } from '@/services/categoryService';
 import { assetUrl } from '@/services/api';
 import ServiceStatusBadge from '@/components/ServiceStatusBadge';
 import EmptyState from '@/components/EmptyState';
-import MenuManager from '@/components/dashboard/proveedor/MenuManager';
+import OptionsManager from '@/components/dashboard/proveedor/OptionsManager';
 import ServiceImageManager from '@/components/dashboard/proveedor/ServiceImageManager';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
@@ -43,7 +43,7 @@ const EMPTY_FORM = {
 };
 
 // La MODALIDAD DE COBRO ya no se resuelve acá: pertenece al PAQUETE
-// (service_packages.pricing_model) y se elige en MenuManager. Este modal
+// (service_packages.pricing_model) y se elige en el constructor de opciones. Este modal
 // administra la ficha general del servicio.
 //
 // Lo único que sigue dependiendo de la categoría es si tiene sentido pedir
@@ -99,6 +99,8 @@ export default function ProviderServicesPage() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [busyId, setBusyId] = useState(null);
   const [menuService, setMenuService] = useState(null);
+  // Servicio recién creado, para ofrecer agregarle su primera opción.
+  const [siguientePaso, setSiguientePaso] = useState(null);
   const [imageService, setImageService] = useState(null);
 
   const reload = useCallback(async () => {
@@ -178,8 +180,11 @@ export default function ProviderServicesPage() {
         await serviceService.update(drawer.editing.id, payload);
         showToast('Servicio actualizado', 'success');
       } else {
-        await serviceService.create(payload);
-        showToast('Servicio creado como borrador', 'success');
+        const creado = await serviceService.create(payload);
+        // Un servicio sin opciones no le dice al cliente qué puede contratar
+        // ni cuánto cuesta. En vez de devolver al listado en silencio, se
+        // ofrece el siguiente paso — sin obligar.
+        setSiguientePaso(creado);
       }
       setDrawer(null);
       await reload();
@@ -345,7 +350,28 @@ export default function ProviderServicesPage() {
         </Modal>
       )}
 
-      {menuService && <MenuManager service={menuService} onClose={() => setMenuService(null)} onChanged={reload} />}
+      {menuService && <OptionsManager service={menuService} onClose={() => setMenuService(null)} onChanged={reload} />}
+
+      {siguientePaso && (
+        <Modal
+          open
+          onClose={() => setSiguientePaso(null)}
+          size="sm"
+          title="Servicio creado"
+          footer={(
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" onClick={() => setSiguientePaso(null)}>Continuar después</Button>
+              <Button onClick={() => { setMenuService(siguientePaso); setSiguientePaso(null); }}>
+                Agregar primera opción
+              </Button>
+            </div>
+          )}
+        >
+          <p className="text-sm text-gray-600">
+            Ahora agregá una opción para explicar qué puede contratar el cliente y cuánto cuesta.
+          </p>
+        </Modal>
+      )}
       {imageService && <ServiceImageManager service={imageService} onClose={() => setImageService(null)} onChanged={reload} />}
     </>
   );
@@ -391,7 +417,7 @@ function ServiceRow({ service: s, busy, onEdit, onImages, onMenus, onSubmit, onP
       <div className="flex items-center gap-1.5 flex-wrap mt-3 pt-3 border-t border-gray-50">
         <Button variant="outline" size="sm" icon={Pencil} onClick={onEdit}>Editar</Button>
         <Button variant="outline" size="sm" icon={ImageIcon} className="!text-primary !border-primary/30 hover:!bg-primary-light" onClick={onImages}>Fotos</Button>
-        <Button variant="outline" size="sm" icon={ClipboardList} className="!text-primary !border-primary/30 hover:!bg-primary-light" onClick={onMenus}>Menús</Button>
+        <Button variant="outline" size="sm" icon={ClipboardList} className="!text-primary !border-primary/30 hover:!bg-primary-light" onClick={onMenus}>Opciones</Button>
         {s.status === 'active' && (
           <Button variant="ghost" size="sm" icon={Eye} href={`/proveedor/${s.id}`} target="_blank">Ver público</Button>
         )}
@@ -501,7 +527,7 @@ function ServiceDrawer({ drawer, setDrawer, categories, saving, onSave, onClose 
             </p>
             <p className="text-xs text-gray-500 mt-1">
               Se calcula automáticamente a partir de tus opciones activas. Para cambiarlo,
-              editá el precio en <span className="font-medium">Menús</span>.
+              editá el precio en <span className="font-medium">Opciones</span>.
             </p>
           </div>
         ) : (
@@ -611,7 +637,7 @@ function ServiceDrawer({ drawer, setDrawer, categories, saving, onSave, onClose 
 
         {editing && (
           <p className="text-xs text-gray-400">
-            Para cambiar fotos o menús, usá los botones "Fotos" y "Menús" de la lista. El estado de publicación se cambia con las acciones de cada tarjeta.
+            Para cambiar fotos u opciones, usá los botones &ldquo;Fotos&rdquo; y &ldquo;Opciones&rdquo; de la lista. El estado de publicación se cambia con las acciones de cada tarjeta.
           </p>
         )}
       </div>

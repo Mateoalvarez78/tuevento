@@ -7,6 +7,10 @@ import { bookingService } from '@/services/bookingService';
 import { availabilityService } from '@/services/availabilityService';
 import { Check, CalendarDays, Users, Package, User, ClipboardList, CheckCircle, AlertTriangle } from 'lucide-react';
 import PackageSelector from './PackageSelector';
+import {
+  describeGroupRule, groupInputType, formatDelta, isItemSelected, toggleItem,
+  canSelectMore, validateSelection, modifiersSubtotal, toModifierPayload, defaultSelection,
+} from '@/lib/modifierSelection';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
@@ -75,6 +79,9 @@ export default function BookingWizard({ provider, initialPackageId }) {
   const [packageData, setPackageData] = useState({
     packageId: initialPackageId || provider.packages[1]?.id || provider.packages[0]?.id,
     extras: [],
+    // Adicionales agrupados: [{ groupId, itemId }]. Sin cantidad — en el MVP
+    // cada item se elige o no se elige.
+    modifiers: [],
     extraHours: 0,
     units: 1,
     // Horas CONTRATADAS (per_hour). `null` = todavía no se resolvió el
@@ -238,6 +245,12 @@ export default function BookingWizard({ provider, initialPackageId }) {
   const billableHoursError = billableHoursCheck.valid ? null : billableHoursCheck.message;
   const subtotalHours = isPerHour && billableHoursCheck.valid ? billableHoursN * hourlyPrice : 0;
 
+  // Adicionales agrupados: suma de los price_delta elegidos. PROVISIONAL —
+  // el total que se cobra lo calcula el backend y se revalida al reservar.
+  const grupos = selectedPkg?.modifierGroups || [];
+  const modifiersTotal = modifiersSubtotal(grupos, packageData.modifiers);
+  const modifierProblemas = validateSelection(grupos, packageData.modifiers);
+
   // Paquete de duración fija (ej. salón de fiestas): precio fijo + horas extra.
   const isDurationPkg = !!selectedPkg?.isDurationPackage;
   const maxExtraHours = selectedPkg?.maxExtraHours || 0;
@@ -250,7 +263,7 @@ export default function BookingWizard({ provider, initialPackageId }) {
 
   // Nunca $0 para un paquete de presupuesto personalizado — `null` es la
   // señal explícita (mismo criterio que calculateQuote en el backend).
-  const totalEstimated = isCustomQuote ? null : (subtotalAdults + subtotalCeliacs + subtotalChildren + subtotalUnits + subtotalHours + extrasTotal + extraHoursAmount);
+  const totalEstimated = isCustomQuote ? null : (subtotalAdults + subtotalCeliacs + subtotalChildren + subtotalUnits + subtotalHours + extrasTotal + extraHoursAmount + modifiersTotal);
 
   const stepValid = () => {
     if (step === 0) {
@@ -279,8 +292,11 @@ export default function BookingWizard({ provider, initialPackageId }) {
     // custom_quote nunca es checkout directo, y per_unit/per_hour solo si su
     // flag está encendido y este canal los soporta.
     if (step === 1) {
+      // Un grupo obligatorio sin elegir hace que el backend rechace la
+      // reserva: el botón no debe invitar a ese rechazo.
       return provider.packages.length === 0
-        || (!!packageData.packageId && !isCustomQuote && checkoutEnabled && !unitsError && !billableHoursError);
+        || (!!packageData.packageId && !isCustomQuote && checkoutEnabled && !unitsError
+            && !billableHoursError && modifierProblemas.length === 0);
     }
     if (step === 2) return contactData.name && contactData.phone && contactData.email;
     return true;
@@ -322,6 +338,9 @@ export default function BookingWizard({ provider, initialPackageId }) {
         eventType:  eventData.eventType,
         message:    contactData.message,
         extras:     packageData.extras.map((id) => ({ id, quantity: 1 })),
+        // Solo ids: el backend resuelve el precio y revalida min/max,
+        // obligatorios y doble cobro dentro de la misma transacción.
+        modifierSelections: toModifierPayload(packageData.modifiers),
         // Ubicación del evento: solo llega acá si stepValid() ya confirmó
         // que viene de una selección real de Google Places con un
         // location_token vigente.
@@ -489,7 +508,16 @@ export default function BookingWizard({ provider, initialPackageId }) {
       {step === 1 && (
         <div>
           <h3 className="text-lg font-bold text-gray-900 mb-4">Seleccioná un paquete</h3>
-          <PackageSelector packages={provider.packages} selectedId={packageData.packageId} onSelect={(id) => setPackageData({ ...packageData, packageId: id, extraHours: 0, units: 1 })} />
+          <PackageSelector packages={provider.packages} selectedId={packageData.packageId} onSelect={(id) => {
+              const elegida = provider.packages.find((p) => p.id === id);
+              setPackageData({
+                ...packageData, packageId: id, extraHours: 0, units: 1, extras: [],
+                // Un grupo obligatorio de cupo 1 arranca con su primera
+                // alternativa marcada: el cliente ve un precio coherente en
+                // vez de un error apenas elige la opción.
+                modifiers: defaultSelection(elegida?.modifierGroups),
+              });
+            }} />
 
           {isDurationPkg && selectedPkg?.allowsExtraHours && (
             <div className="mt-6 p-4 rounded-2xl border border-gray-200 bg-gray-50">
@@ -618,6 +646,65 @@ export default function BookingWizard({ provider, initialPackageId }) {
                 Este paquete se cobra {getPricingModelLabel(selectedPkg?.pricingModel).toLowerCase()} y todavía
                 no se puede reservar en línea. Contactá al proveedor para coordinarlo.
               </p>
+            </div>
+          )}
+
+          {grupos.length > 0 && (
+            <div className="mt-6 space-y-5">
+              {grupos.map((g) => {
+                const tipo = groupInputType(g);
+                const elegidos = packageData.modifiers.filter((m) => m.groupId === g.id).length;
+                const problema = modifierProblemas.find((p) => p.groupId === g.id);
+                return (
+                  <div key={g.id}>
+                    <div className="flex items-baseline justify-between gap-2 mb-1">
+                      <h4 className="text-sm font-semibold text-gray-800">{g.name}</h4>
+                      <span className={`text-xs ${g.isRequired ? 'text-primary font-semibold' : 'text-gray-500'}`}>
+                        {describeGroupRule(g)}
+                      </span>
+                    </div>
+                    {g.description && <p className="text-xs text-gray-500 mb-2">{g.description}</p>}
+
+                    <div className="space-y-2">
+                      {g.items.map((it) => {
+                        const marcado = isItemSelected(packageData.modifiers, g.id, it.id);
+                        // Al llegar al tope, lo no marcado se deshabilita —
+                        // la misma regla que valida el backend.
+                        const tope = !marcado && !canSelectMore(packageData.modifiers, g);
+                        return (
+                          <label
+                            key={it.id}
+                            className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                              marcado ? 'border-primary bg-primary-light' : 'border-gray-200 hover:border-gray-300'
+                            } ${tope ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <input
+                                type={tipo}
+                                name={`grupo-${g.id}`}
+                                checked={marcado}
+                                disabled={tope}
+                                onChange={() => setPackageData((prev) => ({
+                                  ...prev, modifiers: toggleItem(prev.modifiers, g, it.id),
+                                }))}
+                                className="w-4 h-4 accent-primary shrink-0"
+                              />
+                              <span className="text-sm font-medium text-gray-800 truncate">{it.name}</span>
+                            </div>
+                            <span className={`text-sm font-semibold shrink-0 ${it.priceDelta === 0 ? 'text-success' : 'text-gray-900'}`}>
+                              {formatDelta(it.priceDelta, (n) => `$${n.toLocaleString('es-UY')}`)}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    {problema && elegidos === 0 && (
+                      <p className="text-xs text-danger mt-1.5">{problema.message}</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -756,6 +843,18 @@ export default function BookingWizard({ provider, initialPackageId }) {
                 <span className="font-medium text-gray-900">+${extrasTotal.toLocaleString('es-UY')}</span>
               </div>
             )}
+            {/* Una variante "Incluido" también se lista: el cliente la eligió
+                y tiene que verla, aunque sume $0. */}
+            {packageData.modifiers.length > 0 && grupos.map((g) => g.items
+              .filter((it) => isItemSelected(packageData.modifiers, g.id, it.id))
+              .map((it) => (
+                <div key={it.id} className="flex justify-between">
+                  <span className="text-gray-500 truncate mr-2">{it.name}</span>
+                  <span className="font-medium text-gray-900 shrink-0">
+                    {formatDelta(it.priceDelta, (n) => `$${n.toLocaleString('es-UY')}`)}
+                  </span>
+                </div>
+              )))}
             <div className="h-px bg-gray-200" />
             <div className="flex justify-between">
               <span className="text-gray-500">Fecha</span>

@@ -180,6 +180,10 @@ export const bookingService = {
       event_type:      data.eventType || data.event_type || undefined,
       message:         data.message  || undefined,
       extras_selected: data.extras   || data.extras_selected || [],
+      // Adicionales agrupados: solo group_id/item_id. El backend resuelve el
+      // precio y revalida min/max, obligatorios y doble cobro — nunca se
+      // manda un importe desde acá.
+      modifier_selections: data.modifierSelections || data.modifier_selections || [],
       // El backend nunca confía en placeId/lat/lng/location_source sueltos
       // (se pueden falsificar) — la única prueba válida de que la dirección
       // salió de Google Places es el location_token firmado que devolvió

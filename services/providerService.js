@@ -126,6 +126,29 @@ function mapPackages(packages) {
       priceUnit,
       description:   p.description || '',
       includes:      Array.isArray(p.includes) ? p.includes : [],
+      // Inclusiones estructuradas. El backend las deriva de `includes` cuando
+      // la opción todavía no tiene filas propias, así que acá siempre hay una
+      // sola forma que leer. `includes` se conserva para no romper a nadie.
+      inclusions:    Array.isArray(p.inclusions) ? p.inclusions.map((i) => ({
+        id: i.id, name: i.name,
+        quantity: i.quantity == null ? null : Number(i.quantity),
+        description: i.description || '',
+      })) : [],
+      // Grupos de adicionales. Llegan vacíos si el canal no los soporta o si
+      // el flag está apagado: el cliente no recibe lo que no sabe renderizar.
+      modifierGroups: Array.isArray(p.modifier_groups) ? p.modifier_groups.map((g) => ({
+        id: g.id, name: g.name, description: g.description || '',
+        minSelections: Number(g.min_selections || 0),
+        maxSelections: g.max_selections == null ? null : Number(g.max_selections),
+        isRequired: !!g.is_required,
+        items: (g.items || []).map((it) => ({
+          id: it.id, extraId: it.extra_id, name: it.name,
+          priceDelta: Number(it.price_delta || 0),
+        })),
+      })) : [],
+      // El backend decide si esta opción se puede contratar desde este canal.
+      // El frontend no lo recalcula: solo lo respeta.
+      selectable: p.selectable !== false,
       // Paquete de duración fija (ej. salón de fiestas) — se detecta por dato,
       // no por categoría: si tiene duración, es de este tipo.
       isDurationPackage: p.duration_hours != null,

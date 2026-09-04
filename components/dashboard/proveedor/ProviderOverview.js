@@ -112,7 +112,7 @@ export default function ProviderOverview({ provider, services = [], onCreateServ
           <EmptyState
             icon={Rocket}
             title="Empecemos con tu primer servicio"
-            description="Publicá un servicio con sus menús para empezar a recibir reservas de clientes."
+            description="Publicá un servicio con sus opciones para empezar a recibir reservas de clientes."
             cta="Crear mi primer servicio"
             onCta={onCreateService}
           />

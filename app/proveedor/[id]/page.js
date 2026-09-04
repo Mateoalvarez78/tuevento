@@ -244,7 +244,7 @@ export default function ProviderDetailPage({ params }) {
             {/* Packages */}
             {provider.packages?.length > 0 && (
               <div className="mb-8">
-                <h2 className="text-lg font-bold text-gray-900 mb-4">Menús disponibles</h2>
+                <h2 className="text-lg font-bold text-gray-900 mb-4">Opciones disponibles</h2>
                 <PackageSelector
                   packages={provider.packages}
                   selectedId={selectedPackageId}

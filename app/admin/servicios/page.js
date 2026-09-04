@@ -141,7 +141,7 @@ function DetailDrawer({ serviceId, onClose }) {
 
           {service.packages?.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Menús / paquetes</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Opciones</p>
               <div className="space-y-2">
                 {service.packages.map((p) => (
                   <div key={p.id} className="bg-gray-800/60 border border-gray-800 rounded-xl p-3 flex items-center justify-between">
