@@ -82,6 +82,10 @@ export default function OptionBuilder({ service, option, onClose, onSaved }) {
   const [grupos, setGrupos] = useState([]);
   const [extras, setExtras] = useState([]);
   const [cargandoExtras, setCargandoExtras] = useState(false);
+  // El backend responde 404 en estos endpoints cuando la funcionalidad no
+  // está habilitada. En ese caso las secciones no se muestran: ofrecer
+  // botones que no van a funcionar es peor que no ofrecerlos.
+  const [adicionalesDisponibles, setAdicionalesDisponibles] = useState(true);
 
   // ── Subcategoría ────────────────────────────────────────────────────────
   const { subcategories, status: subStatus, reload: recargarSubcategorias } =
@@ -164,8 +168,11 @@ export default function OptionBuilder({ service, option, onClose, onSaved }) {
       setGrupos(grp);
       setExtras(ext.filter((e) => e.isActive));
     } catch (err) {
-      // 404 = el flag está apagado. No es un error del proveedor.
-      if (err?.status !== 404) showToast(err?.message || 'No se pudieron cargar los adicionales', 'error');
+      // 404 = la funcionalidad no está habilitada. No es un error del
+      // proveedor, así que no se le muestra un toast: se ocultan las
+      // secciones que dependen de ella.
+      if (err?.status === 404) setAdicionalesDisponibles(false);
+      else showToast(err?.message || 'No se pudieron cargar los adicionales', 'error');
     } finally {
       setCargandoExtras(false);
     }
@@ -175,6 +182,12 @@ export default function OptionBuilder({ service, option, onClose, onSaved }) {
   // cargar cuando existe su id.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { cargarDetalle(packageId); }, [packageId]);
+
+  // Si la sección abierta deja de estar disponible, se vuelve a Información
+  // en vez de dejar el panel vacío.
+  useEffect(() => {
+    if (!adicionalesDisponibles && (seccion === 'incluye' || seccion === 'adicionales')) setSeccion('info');
+  }, [adicionalesDisponibles, seccion]);
 
   const set = (campo, valor) => { setForm((f) => ({ ...f, [campo]: valor })); setSucio(true); };
 
@@ -209,8 +222,12 @@ export default function OptionBuilder({ service, option, onClose, onSaved }) {
         : await serviceService.createPackage(service.id, payload);
       if (!packageId) {
         setPackageId(guardada.id);
-        showToast('Opción creada. Ahora podés agregar qué incluye y sus adicionales.', 'success');
-        setSeccion('incluye');
+        if (adicionalesDisponibles) {
+          showToast('Opción creada. Ahora podés agregar qué incluye y sus adicionales.', 'success');
+          setSeccion('incluye');
+        } else {
+          showToast('Opción creada', 'success');
+        }
       } else {
         showToast('Opción guardada', 'success');
       }
@@ -345,7 +362,7 @@ export default function OptionBuilder({ service, option, onClose, onSaved }) {
 
           {/* Navegación de secciones */}
           <nav className="sm:w-44 shrink-0 flex sm:flex-col gap-1 overflow-x-auto sm:overflow-visible -mx-1 px-1">
-            {SECCIONES.map((s) => {
+            {SECCIONES.filter((s) => adicionalesDisponibles || (s.id !== 'incluye' && s.id !== 'adicionales')).map((s) => {
               const bloqueada = !packageId && (s.id === 'incluye' || s.id === 'adicionales');
               const activa = seccion === s.id;
               return (
