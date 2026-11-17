@@ -114,7 +114,11 @@ export default function ProviderLoginPage() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-sm font-semibold text-gray-700">Contraseña</label>
-                <a href="#" className="text-xs text-primary hover:underline">¿La olvidaste?</a>
+                {/* Sin recuperación automática de contraseña todavía: antes era
+                    un `href="#"` inerte. Ver app/login/page.js. */}
+                <Link href="/contacto" className="text-xs text-primary hover:underline">
+                  ¿La olvidaste?
+                </Link>
               </div>
               <div className="relative">
                 <Input type={showPass ? 'text' : 'password'} required autoComplete="current-password" icon={Lock} className="pr-10"

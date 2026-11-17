@@ -10,6 +10,7 @@ import { Eye, EyeOff, Mail, Lock, Phone, UserCircle, Check } from 'lucide-react'
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
+import { BRAND, BRAND_MONOGRAM, LEGAL_PAGES_REACHABLE } from '@/lib/site';
 
 // Alta de cuenta de CLIENTE únicamente. Eventonow es un marketplace curado:
 // los proveedores no se autoregistran, se dan de alta desde el panel de admin.
@@ -48,18 +49,21 @@ function RegistroForm() {
         />
         <div className="relative z-10">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-              <span className="text-white font-bold text-sm">TE</span>
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center" aria-hidden="true">
+              <span className="text-white font-bold text-sm">{BRAND_MONOGRAM}</span>
             </div>
-            <span className="font-bold text-2xl text-white">TuEvento</span>
+            <span className="font-bold text-2xl text-white">{BRAND}</span>
           </Link>
         </div>
         <div className="relative z-10">
           <div className="grid grid-cols-1 gap-4">
             {[
-              'Gratis para empezar',
-              'Acceso a miles de proveedores verificados',
-              'Gestión de reservas en un solo lugar',
+              // "Acceso a miles de proveedores verificados" se cambió: el
+              // número no era verificable (ver app/page.js). El resto de las
+              // afirmaciones sí son ciertas y comprobables en el producto.
+              'Crear tu cuenta es gratis',
+              'Proveedores dados de alta y revisados por nuestro equipo',
+              'Tus reservas y solicitudes en un solo lugar',
               'Soporte en español',
             ].map((text) => (
               <div key={text} className="flex items-center gap-3 text-white">
@@ -78,10 +82,10 @@ function RegistroForm() {
         <div className="w-full max-w-md">
           <div className="lg:hidden flex justify-center mb-8">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-                <span className="text-white font-bold text-sm">TE</span>
+              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center" aria-hidden="true">
+                <span className="text-white font-bold text-sm">{BRAND_MONOGRAM}</span>
               </div>
-              <span className="font-bold text-2xl text-gray-900">TuEvento</span>
+              <span className="font-bold text-2xl text-gray-900">{BRAND}</span>
             </Link>
           </div>
 
@@ -121,11 +125,27 @@ function RegistroForm() {
               </div>
             </div>
 
+            {/* Los dos enlaces apuntaban a `#`: se aceptaban documentos que no
+                existían. Ahora llevan a las páginas reales.
+                NOTA: esto sigue siendo un aviso, NO una aceptación registrada.
+                Guardar qué versión de los Términos aceptó cada usuario exige
+                decidir dónde se versiona el documento y agregar columnas a
+                `users` — queda documentado como pendiente, no improvisado acá. */}
+            {/* Los enlaces solo aparecen si las páginas realmente se sirven
+                (misma compuerta que decide su 404 y su presencia en el footer).
+                Con la compuerta cerrada en producción, enlazarlos daría dos
+                enlaces rotos en el formulario de registro. */}
             <p className="text-xs text-gray-400">
-              Al registrarte aceptás los{' '}
-              <a href="#" className="text-primary hover:underline">Términos y condiciones</a>{' '}
-              y la{' '}
-              <a href="#" className="text-primary hover:underline">Política de privacidad</a>.
+              {LEGAL_PAGES_REACHABLE ? (
+                <>
+                  Al registrarte aceptás los{' '}
+                  <Link href="/terminos" className="text-primary hover:underline">Términos y condiciones</Link>{' '}
+                  y la{' '}
+                  <Link href="/privacidad" className="text-primary hover:underline">Política de privacidad</Link>.
+                </>
+              ) : (
+                <>Al registrarte aceptás los términos de uso de {BRAND}.</>
+              )}
             </p>
 
             <Button type="submit" className="w-full" size="lg" loading={loading}>

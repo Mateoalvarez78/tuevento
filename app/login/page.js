@@ -9,6 +9,7 @@ import { safeInternalPath } from '@/lib/nextPath';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
+import { BRAND, BRAND_MONOGRAM } from '@/lib/site';
 
 function LoginForm() {
   const router = useRouter();
@@ -37,6 +38,20 @@ function LoginForm() {
     }
   };
 
+  // Atajo de demo, SOLO para desarrollo. Antes estaba siempre visible en el
+  // login productivo, con la credencial en el HTML: le decía a cualquier
+  // visitante (incluido un revisor de la pasarela de pago) que esto es un
+  // entorno de demostración y no un comercio en operación.
+  //
+  // La condición es falsa por defecto: `NEXT_PUBLIC_SHOW_DEMO_LOGIN` no está
+  // definida en ningún entorno, así que hay que declararla explícitamente con
+  // el literal 'true' para que el bloque aparezca. Se exige ADEMÁS que no sea
+  // un build de producción, para que definirla por error en Vercel no alcance
+  // para publicarla.
+  const showDemoLogin =
+    process.env.NODE_ENV !== 'production' &&
+    process.env.NEXT_PUBLIC_SHOW_DEMO_LOGIN === 'true';
+
   const fillDemo = () => setForm({ email: 'valentina@example.com', password: '123456' });
 
   return (
@@ -50,23 +65,25 @@ function LoginForm() {
         />
         <div className="relative z-10">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-              <span className="text-white font-bold text-sm">TE</span>
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center" aria-hidden="true">
+              <span className="text-white font-bold text-sm">{BRAND_MONOGRAM}</span>
             </div>
-            <span className="font-bold text-2xl text-white">TuEvento</span>
+            <span className="font-bold text-2xl text-white">{BRAND}</span>
           </Link>
         </div>
+        {/* Acá había un testimonio firmado por "Valentina López — Casamiento ·
+            Mar del Plata", con avatar de i.pravatar.cc (generador de retratos
+            aleatorios) y citando una ciudad argentina en un marketplace
+            uruguayo. Se reemplaza por una descripción del servicio, que no
+            necesita ser atribuida a nadie para ser cierta. */}
         <div className="relative z-10">
-          <blockquote className="text-white text-xl font-light italic leading-relaxed mb-6">
-            "Encontré el catering perfecto para mi casamiento en menos de 10 minutos."
-          </blockquote>
-          <div className="flex items-center gap-3">
-            <img src="https://i.pravatar.cc/48?img=47" alt="Valentina" className="w-12 h-12 rounded-full ring-2 ring-white/30" />
-            <div>
-              <p className="text-white font-semibold">Valentina López</p>
-              <p className="text-white/60 text-sm">Casamiento – Mar del Plata</p>
-            </div>
-          </div>
+          <p className="text-white text-xl font-light leading-relaxed mb-3">
+            Pedí disponibilidad, compará propuestas y contratá cada servicio de
+            tu evento por separado.
+          </p>
+          <p className="text-white/60 text-sm">
+            Catering, música, fotografía, decoración y más, en todo Uruguay.
+          </p>
         </div>
       </div>
 
@@ -76,23 +93,25 @@ function LoginForm() {
           {/* Mobile logo */}
           <div className="lg:hidden flex justify-center mb-8">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-                <span className="text-white font-bold text-sm">TE</span>
+              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center" aria-hidden="true">
+                <span className="text-white font-bold text-sm">{BRAND_MONOGRAM}</span>
               </div>
-              <span className="font-bold text-2xl text-gray-900">TuEvento</span>
+              <span className="font-bold text-2xl text-gray-900">{BRAND}</span>
             </Link>
           </div>
 
-          <h1 className="text-2xl font-extrabold text-gray-900 mb-2">Entrá a Eventonow y organizá tu evento ideal</h1>
+          <h1 className="text-2xl font-extrabold text-gray-900 mb-2">Entrá a {BRAND} y organizá tu evento</h1>
           <p className="text-gray-500 mb-6 text-sm">Ingresá con tu cuenta para buscar y contratar servicios.</p>
 
-          {/* Demo (solo cliente) */}
-          <div className="bg-primary-light border border-primary/20 rounded-2xl p-4 mb-6">
-            <p className="text-xs font-semibold text-primary mb-2">Demo rápida:</p>
-            <Button variant="outline" size="sm" className="w-full" onClick={fillDemo}>
-              Completar cuenta de cliente demo
-            </Button>
-          </div>
+          {/* Demo: nunca en producción — ver showDemoLogin arriba. */}
+          {showDemoLogin && (
+            <div className="bg-primary-light border border-primary/20 rounded-2xl p-4 mb-6">
+              <p className="text-xs font-semibold text-primary mb-2">Demo rápida (solo desarrollo):</p>
+              <Button variant="outline" size="sm" className="w-full" onClick={fillDemo}>
+                Completar cuenta de cliente demo
+              </Button>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
@@ -113,7 +132,13 @@ function LoginForm() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-sm font-semibold text-gray-700">Contraseña</label>
-                <a href="#" className="text-xs text-primary hover:underline">¿La olvidaste?</a>
+                {/* No existe recuperación automática de contraseña todavía, así
+                    que este enlace apuntaba a `#` y no hacía nada. Hoy
+                    recuperar el acceso se resuelve escribiéndonos, que es
+                    exactamente lo que dice y hace ahora. */}
+                <Link href="/contacto" className="text-xs text-primary hover:underline">
+                  ¿La olvidaste?
+                </Link>
               </div>
               <div className="relative">
                 <Input

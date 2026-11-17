@@ -8,6 +8,7 @@ import { useApp } from '@/lib/AppContext';
 import { useMyEvent } from '@/lib/MyEventContext';
 import { Menu, X, Heart, Calendar, ChevronDown, LogOut, LayoutDashboard, ShieldCheck, PartyPopper } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
+import { BRAND, BRAND_MONOGRAM, PROVIDER_CONTACT_MAILTO } from '@/lib/site';
 
 const DROPDOWN_MOTION = {
   initial: { opacity: 0, y: -6 },
@@ -44,11 +45,11 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
-              <span className="text-white font-bold text-sm">TE</span>
+            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center" aria-hidden="true">
+              <span className="text-white font-bold text-sm">{BRAND_MONOGRAM}</span>
             </div>
             <span className="font-bold text-xl text-gray-900 group-hover:text-primary transition-colors duration-200">
-              Tu<span className="text-primary">Evento</span>
+              {BRAND}
             </span>
           </Link>
 
@@ -82,12 +83,17 @@ export default function Navbar() {
               )}
             </Link>
 
-            <Link
-              href="/catalogo"
+            {/* El alta de proveedores es CURADA: la evalúa el equipo, no hay
+                autoservicio. Antes este enlace apuntaba a /catalogo, o sea que
+                un proveedor aterrizaba en el listado de compra sin ninguna vía
+                de alta. Va al canal real — un `<a>` y no `next/link` porque es
+                un mailto: externo. */}
+            <a
+              href={PROVIDER_CONTACT_MAILTO}
               className="text-sm font-medium text-gray-600 hover:text-primary transition-colors duration-200"
             >
-              Publicar mi servicio
-            </Link>
+              Quiero ser proveedor
+            </a>
 
             {user ? (
               <div className="relative">

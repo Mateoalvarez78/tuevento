@@ -385,12 +385,16 @@ export default function BookingWizard({ provider, initialPackageId }) {
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Consulta enviada</h2>
         <p className="text-gray-500 mb-2">Tu número de solicitud es:</p>
         <div className="text-2xl font-bold text-primary mb-4">{requestNumber}</div>
+        {/* Decía "Te llegará un email de confirmación a {email}". El backend NO
+            tiene ninguna capacidad de enviar correo (sin dependencia de mailer;
+            `notifications` solo escribe filas in-app), así que ese correo no se
+            enviaba nunca. Ahora describe el canal que sí existe. */}
         <p className="text-sm text-gray-500 max-w-sm mb-3">
           <strong>{provider.name}</strong> revisará la disponibilidad y te responderá en {provider.responseTime.replace('Responde en ', '')}.
-          Te llegará un email de confirmación a <strong>{contactData.email}</strong>.
+          Vas a ver la respuesta en <strong>Mis reservas</strong>.
         </p>
         <p className="text-sm text-gray-500 max-w-sm mb-8 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5">
-          No se realizará ningún cobro hasta que el proveedor confirme tu reserva.
+          No se realiza ningún cobro hasta que el proveedor confirme la disponibilidad.
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <Button onClick={() => router.push('/dashboard/cliente/reservas')}>Ver mis reservas</Button>
@@ -872,17 +876,15 @@ export default function BookingWizard({ provider, initialPackageId }) {
               </span>
             </div>
             <div className="h-px bg-gray-200" />
+            {/* La línea "Seña sugerida (30%)" se retiró: el modelo vigente es
+                que el cliente abona el TOTAL del servicio una vez que el
+                proveedor confirma la disponibilidad — no una seña parcial. El
+                cliente ve un único importe, que es el total. */}
             {totalEstimated != null ? (
-              <>
-                <div className="flex justify-between text-base">
-                  <span className="font-semibold text-gray-800">Total estimado</span>
-                  <span className="font-bold text-primary">${totalEstimated.toLocaleString('es-UY')}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Seña sugerida (30%)</span>
-                  <span className="font-semibold text-gray-800">${Math.round(totalEstimated * 0.3).toLocaleString('es-UY')}</span>
-                </div>
-              </>
+              <div className="flex justify-between text-base">
+                <span className="font-semibold text-gray-800">Total estimado</span>
+                <span className="font-bold text-primary">${totalEstimated.toLocaleString('es-UY')}</span>
+              </div>
             ) : (
               <div className="flex justify-between text-base">
                 <span className="font-semibold text-gray-800">Total estimado</span>
@@ -890,8 +892,16 @@ export default function BookingWizard({ provider, initialPackageId }) {
               </div>
             )}
           </div>
+          {/* Decía: "Si acepta, te contactará para coordinar el pago de la seña"
+              — describía un pago coordinado FUERA de la plataforma, lo contrario
+              del modelo de cobro. Ahora describe el flujo real y no nombra
+              ninguna pasarela (el checkout todavía no está operativo). */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
-            <strong>¿Cómo funciona?</strong> Tu solicitud llega al proveedor. Si acepta, te contactará para coordinar el pago de la seña y confirmar la reserva.
+            <strong>¿Cómo funciona?</strong> Tu solicitud llega al proveedor, que
+            confirma o rechaza la disponibilidad para tu fecha. Si la confirma, la
+            reserva queda pendiente de pago y vas a poder abonar el total desde
+            <strong> Mis reservas</strong>. La reserva queda confirmada cuando el
+            pago se acredita.
           </div>
           {error && (
             <div className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">

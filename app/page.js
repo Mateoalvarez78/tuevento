@@ -1,63 +1,69 @@
 import Link from 'next/link';
-import { ArrowRight, Star, Search, Users, CalendarCheck, Store, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Search, Users, CalendarCheck, Store, CheckCircle2 } from 'lucide-react';
 import EventHero from '@/components/home/EventHero';
 import CategoryCard from '@/components/CategoryCard';
 import FeaturedProviders from '@/components/home/FeaturedProviders';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import { categoryService } from '@/services/categoryService';
+import { BRAND, PROVIDER_CONTACT_MAILTO } from '@/lib/site';
 
 export const metadata = {
-  title: 'TuEvento – Encontrá los mejores servicios para tu evento en Uruguay',
-  description: 'El marketplace líder de Uruguay para contratar proveedores de eventos. Catering, DJ, fotografía, decoración y más.',
+  title: `${BRAND} — Marketplace de servicios para eventos en Uruguay`,
+  description:
+    'Marketplace uruguayo de servicios para eventos. Pedí disponibilidad a proveedores de catering, música, fotografía, decoración y más, y contratá cada servicio por separado.',
+  alternates: { canonical: '/' },
 };
 
-const STATS = [
-  { value: '500+', label: 'Proveedores' },
-  { value: '15K+', label: 'Eventos' },
-  { value: '4.9★', label: 'Rating' },
-  { value: '2 hs', label: 'Respuesta' },
+// La barra de estadísticas ("500+ proveedores", "15K+ eventos", "4.9★",
+// "2 hs de respuesta") se retiró: ninguno de esos números era verificable, y el
+// catálogo real no los respalda. No se reemplazan por cifras reales todavía
+// porque el catálogo está en transición a proveedores reales — una cifra que hay
+// que mantener a mano vuelve a desactualizarse. Lo mismo con el badge
+// "+500 proveedores verificados" que estaba en el hero.
+//
+// Los testimonios firmados por "María Pérez", "Ariel Ruiz" y "Flavia Soto" con
+// avatares de i.pravatar.cc (un generador de retratos aleatorios) también se
+// retiraron: estaban presentados como "Experiencias reales". Cuando existan
+// reseñas reales, el módulo de reseñas ya está implementado y son esas las que
+// corresponde mostrar, con consentimiento.
+
+// Hechos del modelo comercial, verificables contra los Términos. No nombran
+// ninguna pasarela: mientras el checkout no esté operativo y validado, decir
+// "pagás con X" sería anunciar algo que todavía no funciona.
+const PAYMENT_FACTS = [
+  {
+    title: 'Un pago por servicio',
+    desc: 'Si contratás catering y fotografía, son dos reservas y dos pagos independientes, cada uno con su proveedor.',
+  },
+  {
+    title: 'El precio que ves es el total',
+    desc: 'No agregamos cargos al importe que figura en la reserva. Nuestra comisión la asume el proveedor, no vos.',
+  },
+  {
+    title: 'Primero disponibilidad, después pago',
+    desc: 'No se cobra nada hasta que el proveedor confirme tu fecha. Recién entonces la reserva queda disponible para pagar.',
+  },
 ];
 
+// Los tres pasos describen el flujo REAL, en el orden en que ocurre. El paso 3
+// decía "El proveedor confirma, coordinan el pago" — que describía un pago
+// coordinado fuera de la plataforma, lo contrario del modelo de checkout.
 const HOW_IT_WORKS = [
   {
     Icon: Search,
-    title: 'Buscá y descubrí',
-    desc: 'Filtrá por categoría, zona y fecha para encontrar el proveedor ideal para tu evento.',
+    title: 'Buscá y pedí disponibilidad',
+    desc: 'Filtrá por categoría, zona y fecha, y enviale tu solicitud al proveedor que te interese.',
   },
   {
     Icon: Users,
-    title: 'Compará y consultá',
-    desc: 'Revisá portfolios, paquetes y reseñas reales. Enviá tu solicitud en segundos.',
+    title: 'El proveedor responde',
+    desc: 'Confirma o rechaza la disponibilidad para tu fecha. Si confirma, la reserva queda pendiente de pago.',
   },
   {
     Icon: CalendarCheck,
-    title: 'Reservá y disfrutá',
-    desc: 'El proveedor confirma, coordinan el pago y tu evento queda asegurado.',
-  },
-];
-
-const TESTIMONIALS = [
-  {
-    stars: 5,
-    text: 'Encontré el DJ perfecto para mi casamiento en menos de una hora. El proceso fue increíblemente sencillo y el proveedor respondió enseguida.',
-    name: 'María Pérez',
-    role: 'Boda · Montevideo',
-    avatar: 'https://i.pravatar.cc/40?img=47',
-  },
-  {
-    stars: 5,
-    text: 'Organizamos un evento corporativo para 200 personas. TuEvento nos conectó con un catering espectacular. Todo salió perfecto.',
-    name: 'Ariel Ruiz',
-    role: 'Evento Corporativo · Canelones',
-    avatar: 'https://i.pravatar.cc/40?img=51',
-  },
-  {
-    stars: 5,
-    text: 'Los proveedores están muy bien filtrados y verificados. Quedé muy conforme con la fotógrafa que contraté para el cumple de mi hija.',
-    name: 'Flavia Soto',
-    role: 'Cumpleaños · Maldonado',
-    avatar: 'https://i.pravatar.cc/40?img=43',
+    title: 'Pagás y queda confirmada',
+    desc: 'Abonás el total del servicio dentro de la plataforma. La reserva queda confirmada cuando se acredita el pago.',
   },
 ];
 
@@ -84,10 +90,11 @@ export default async function HomePage() {
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
           {/* Headline block — ancho restringido para legibilidad */}
           <div className="max-w-3xl mb-10">
-            {/* Trust badge */}
+            {/* El badge "+500 proveedores verificados en Uruguay" se retiró: la
+                cifra no era verificable. Describir qué es el sitio, sin número,
+                es preferible a un número inventado. */}
             <div className="inline-flex items-center gap-2.5 bg-white/10 backdrop-blur-md border border-white/20 text-white/90 text-xs sm:text-sm font-medium px-4 py-2 rounded-full mb-7">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
-              +500 proveedores verificados en Uruguay
+              Marketplace de servicios para eventos · Uruguay
             </div>
 
             {/* Headline */}
@@ -121,19 +128,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── STATS BAR ──────────────────────────────────────────────────── */}
-      <section className="bg-primary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 divide-x divide-white/20">
-            {STATS.map((s) => (
-              <div key={s.label} className="text-center py-1 sm:py-2">
-                <div className="text-2xl sm:text-3xl font-extrabold text-white">{s.value}</div>
-                <div className="text-xs sm:text-sm text-white/70 mt-0.5">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* La barra de estadísticas se retiró por completo — ver el comentario
+          junto a HOW_IT_WORKS. Ninguna de las cuatro cifras era verificable. */}
 
       {/* ── CATEGORIES ─────────────────────────────────────────────────── */}
       <section className="py-14 sm:py-16 px-4 sm:px-6 lg:px-8">
@@ -193,7 +189,7 @@ export default async function HomePage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14 sm:mb-16">
             <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1.5">Proceso</p>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">¿Cómo funciona TuEvento?</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">¿Cómo funciona {BRAND}?</h2>
             <p className="text-gray-500 max-w-sm mx-auto text-sm">
               Tres simples pasos para que tu evento sea perfecto.
             </p>
@@ -230,57 +226,33 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── TESTIMONIALS ───────────────────────────────────────────────── */}
+      {/* ── CÓMO SE CONTRATA Y SE PAGA ─────────────────────────────────── */}
+      {/* Reemplaza la sección de testimonios inventados y su fila de badges
+          ("VISA · Mastercard · Stripe · Norton Secured": Stripe no está
+          integrado y Norton no existe). En su lugar, lo que un visitante —y un
+          revisor— necesita entender de verdad: cómo se contrata, qué precio se
+          ve y cuándo queda confirmada una reserva. Nada de esto afirma que un
+          medio de pago concreto ya esté disponible. */}
       <section className="py-16 sm:py-20 bg-primary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-              La confianza de miles de organizadores
+              Cómo se contrata y se paga
             </h2>
-            <p className="text-white/70 text-sm">Experiencias reales de quienes confiaron en TuEvento</p>
+            <p className="text-white/70 text-sm max-w-xl mx-auto">
+              Cada servicio se contrata y se abona por separado, directamente en {BRAND}.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-12">
-            {TESTIMONIALS.map((t, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+            {PAYMENT_FACTS.map((fact) => (
               <div
-                key={i}
-                className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 flex flex-col"
+                key={fact.title}
+                className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6"
               >
-                {/* Stars */}
-                <div className="flex gap-0.5 mb-4">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <AppIcon key={s} icon={Star} size={14} className="text-yellow-400 fill-current" aria-hidden="true" />
-                  ))}
-                </div>
-                {/* Quote */}
-                <p className="text-white/90 text-sm leading-relaxed flex-1 mb-5 italic">
-                  "{t.text}"
-                </p>
-                {/* Author */}
-                <div className="flex items-center gap-3">
-                  <img
-                    src={t.avatar}
-                    alt={t.name}
-                    className="w-9 h-9 rounded-full object-cover ring-2 ring-white/30"
-                  />
-                  <div>
-                    <div className="text-white font-semibold text-sm leading-tight">{t.name}</div>
-                    <div className="text-white/60 text-xs">{t.role}</div>
-                  </div>
-                </div>
+                <h3 className="text-white font-semibold text-base mb-2">{fact.title}</h3>
+                <p className="text-white/80 text-sm leading-relaxed">{fact.desc}</p>
               </div>
-            ))}
-          </div>
-
-          {/* Payment logos */}
-          <div className="border-t border-white/20 pt-8 flex flex-wrap items-center justify-center gap-4 sm:gap-10">
-            <span className="text-white/50 text-xs font-semibold uppercase tracking-wider w-full sm:w-auto text-center">
-              Pagos seguros con
-            </span>
-            {['VISA', 'Mastercard', 'Stripe', 'Norton Secured'].map((logo) => (
-              <span key={logo} className="text-white/80 font-bold text-sm sm:text-base tracking-wide">
-                {logo}
-              </span>
             ))}
           </div>
         </div>
@@ -296,11 +268,11 @@ export default async function HomePage() {
             ¿Ofrecés servicios para eventos?
           </h2>
           <p className="text-gray-400 mb-8 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
-            Eventonow es un marketplace curado: nuestro equipo evalúa y da de alta a cada
+            {BRAND} es un marketplace curado: nuestro equipo evalúa y da de alta a cada
             proveedor. Contanos sobre tu negocio y te contactamos.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
-            <Button size="lg" className="shadow-lg shadow-primary/30" href="mailto:hola@eventonow.com?subject=Quiero%20ser%20proveedor">
+            <Button size="lg" className="shadow-lg shadow-primary/30" href={PROVIDER_CONTACT_MAILTO}>
               Quiero ser proveedor <AppIcon icon={ArrowRight} size="button" aria-hidden="true" />
             </Button>
             <Button variant="outline" theme="dark" size="lg" href="/#como-funciona">

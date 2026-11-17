@@ -134,7 +134,11 @@ export default function ClienteDashboard() {
         )}
 
         {/* 7 · Favoritos */}
-        <section>
+        {/* `id` destino del enlace "Favoritos" del menú de usuario del navbar
+            (/dashboard/cliente#favoritos), que hasta ahora apuntaba a un
+            fragmento inexistente y no anclaba a nada. Va en la <section>, que es
+            el contenedor semántico del bloque. */}
+        <section id="favoritos">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-gray-900">Tus favoritos</h2>
             {favProviders.length > 0 && <Link href="/catalogo" className="text-sm font-semibold text-primary hover:underline">Explorar más</Link>}

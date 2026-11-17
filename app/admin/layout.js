@@ -16,10 +16,13 @@ import {
   Menu,
   X,
   Layers,
+  Inbox,
 } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Drawer from '@/components/Drawer';
+import { BRAND, BRAND_MONOGRAM } from '@/lib/site';
+import { useAdminContactNewCount } from '@/hooks/useAdmin';
 
 const NAV_ITEMS = [
   { href: '/admin',            label: 'Overview',    icon: LayoutDashboard, exact: true },
@@ -27,6 +30,10 @@ const NAV_ITEMS = [
   { href: '/admin/servicios',  label: 'Servicios',   icon: Briefcase },
   { href: '/admin/catalogo',   label: 'Catálogo',    icon: Layers },
   { href: '/admin/resenas',    label: 'Reseñas',     icon: Star },
+  // `badge` nombra el contador que corresponde a este ítem. Antes el enlace no
+  // mostraba nada, así que un mensaje nuevo solo se descubría entrando a la
+  // página: nadie se enteraba de que había llegado.
+  { href: '/admin/contacto',   label: 'Mensajes',    icon: Inbox, badge: 'contactNew' },
 ];
 
 export default function AdminLayout({ children }) {
@@ -34,6 +41,7 @@ export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const { newCount: contactNewCount } = useAdminContactNewCount();
 
   // El login del admin vive bajo /admin pero NO debe pasar por el guard/shell.
   const isLoginRoute = pathname === '/admin/login';
@@ -62,15 +70,19 @@ export default function AdminLayout({ children }) {
   const isActive = (item) =>
     item.exact ? pathname === item.href : pathname.startsWith(item.href);
 
+  // Contador por nombre de badge. Si falla la consulta queda en 0 y el sidebar
+  // se renderiza igual: un error del contador nunca puede romper el layout.
+  const badgeCounts = { contactNew: contactNewCount };
+
   const SidebarContent = () => (
     <>
       {/* Brand */}
       <div className="px-5 py-5 border-b border-gray-800 shrink-0">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-white font-bold text-xs">TE</span>
+          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center" aria-hidden="true">
+            <span className="text-white font-bold text-xs">{BRAND_MONOGRAM}</span>
           </div>
-          <span className="text-white font-semibold text-sm">Eventonow</span>
+          <span className="text-white font-semibold text-sm">{BRAND}</span>
         </Link>
         <div className="mt-3 flex items-center gap-2">
           <AppIcon icon={ShieldCheck} size={13} className="text-primary" aria-hidden="true" />
@@ -94,7 +106,17 @@ export default function AdminLayout({ children }) {
             >
               <AppIcon icon={item.icon} size={16} className={active ? 'text-primary' : 'text-gray-500 group-hover:text-gray-300'} aria-hidden="true" />
               {item.label}
-              {active && <AppIcon icon={ChevronRight} size={13} className="ml-auto text-primary/60" aria-hidden="true" />}
+              {/* Badge de pendientes. El texto accesible dice qué significa el
+                  número: un «3» suelto no se entiende con lector de pantalla. */}
+              {item.badge && badgeCounts[item.badge] > 0 && (
+                <span className="ml-auto bg-primary text-white text-xs font-semibold px-1.5 py-0.5 rounded-full leading-none tabular-nums">
+                  {badgeCounts[item.badge]}
+                  <span className="sr-only"> sin atender</span>
+                </span>
+              )}
+              {active && !(item.badge && badgeCounts[item.badge] > 0) && (
+                <AppIcon icon={ChevronRight} size={13} className="ml-auto text-primary/60" aria-hidden="true" />
+              )}
             </Link>
           );
         })}
@@ -149,11 +171,11 @@ export default function AdminLayout({ children }) {
         {/* Mobile top bar */}
         <header className="lg:hidden flex items-center justify-between px-4 h-14 bg-gray-900 border-b border-gray-800 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
-              <span className="text-white font-bold text-xs">TE</span>
+            <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center" aria-hidden="true">
+              <span className="text-white font-bold text-xs">{BRAND_MONOGRAM}</span>
             </div>
             <div>
-              <span className="text-white font-semibold text-sm">Eventonow</span>
+              <span className="text-white font-semibold text-sm">{BRAND}</span>
               <span className="text-primary text-xs font-medium ml-1.5">Admin</span>
             </div>
           </div>
@@ -172,11 +194,19 @@ export default function AdminLayout({ children }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 text-xs font-medium transition-colors ${
+                className={`relative flex-1 flex flex-col items-center justify-center py-2.5 gap-1 text-xs font-medium transition-colors ${
                   active ? 'text-primary' : 'text-gray-500'
                 }`}
               >
                 <AppIcon icon={item.icon} size={20} aria-hidden="true" />
+                {/* Mismo contador en la barra inferior de mobile: el admin usa
+                    esta superficie, no el sidebar, en pantalla chica. */}
+                {item.badge && badgeCounts[item.badge] > 0 && (
+                  <span className="absolute top-1 right-1/2 translate-x-4 bg-primary text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none tabular-nums">
+                    {badgeCounts[item.badge]}
+                    <span className="sr-only"> sin atender</span>
+                  </span>
+                )}
                 <span className="text-[10px]">{item.label}</span>
               </Link>
             );

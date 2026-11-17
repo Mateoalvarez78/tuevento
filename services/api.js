@@ -80,14 +80,14 @@ async function request(path, options = {}) {
   }
 
   if (!res.ok) {
-    throw new ApiError(data.message || 'Error del servidor', res.status, data.code, data.reasonCode);
+    throw new ApiError(data.message || 'Error del servidor', res.status, data.code, data.reasonCode, data.errors);
   }
 
   return data;
 }
 
 export class ApiError extends Error {
-  constructor(message, status, code, reasonCode) {
+  constructor(message, status, code, reasonCode, fieldErrors) {
     super(message);
     this.status = status;
     this.code = code;
@@ -95,6 +95,12 @@ export class ApiError extends Error {
     // fully_booked, guest_capacity_exceeded, etc. — ver
     // eventonow-back/src/modules/availability/availability.service.js).
     if (reasonCode) this.reasonCode = reasonCode;
+    // Errores por campo de un 400 de express-validator: el middleware
+    // `validate` del backend responde { errors: [{ field, message }] } y hasta
+    // ahora ese detalle se descartaba, dejando solo el genérico "Validation
+    // failed". Un formulario necesita saber QUÉ campo falló para marcarlo.
+    // Parámetro opcional al final: ninguna construcción previa cambia de forma.
+    if (Array.isArray(fieldErrors) && fieldErrors.length) this.fieldErrors = fieldErrors;
     this.name = 'ApiError';
   }
 }

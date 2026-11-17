@@ -11,6 +11,7 @@ import AdminHero from '@/components/dashboard/admin/AdminHero';
 import AdminStats from '@/components/dashboard/admin/AdminStats';
 import PlatformStatus from '@/components/dashboard/admin/PlatformStatus';
 import AdminAlerts from '@/components/dashboard/admin/AdminAlerts';
+import ContactInboxCard from '@/components/dashboard/admin/ContactInboxCard';
 import RecentProviders from '@/components/dashboard/admin/RecentProviders';
 import RecentBookings from '@/components/dashboard/admin/RecentBookings';
 import RecentServices from '@/components/dashboard/admin/RecentServices';
@@ -62,6 +63,10 @@ export default function AdminOverviewPage() {
       <AdminHero user={user} />
 
       <AdminAlerts alerts={data.alerts} />
+
+      {/* Mensajes de contacto sin atender. Junto al badge del sidebar, es lo
+          que hace que un mensaje nuevo no pase inadvertido. */}
+      <ContactInboxCard />
 
       <AdminStats stats={data.stats} />
 
