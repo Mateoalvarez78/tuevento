@@ -22,6 +22,11 @@ import Modal from '@/components/Modal';
 import Drawer from '@/components/Drawer';
 import LocationMap from '@/components/LocationMap';
 import { safeFormatDate } from '@/lib/date';
+import { paymentService } from '@/services/paymentService';
+import {
+  onlinePaymentsEnabled, paymentSimulationEnabled, nextPayment, canPayNow, clientCanCancel,
+  paymentErrorMessage, formatDue,
+} from '@/lib/payments';
 
 const EDIT_WINDOW_MS = 30 * 60 * 1000;
 const canEditReview = (b) => b.reviewId && b.reviewCreatedAt && (Date.now() - new Date(b.reviewCreatedAt).getTime()) < EDIT_WINDOW_MS;
@@ -39,16 +44,28 @@ const STATUS_FILTERS = [
 const STATUS_HELP = {
   pending:   'El proveedor está revisando tu consulta. Todavía no se realizó ningún cobro.',
   accepted:  'El proveedor aceptó tu consulta. Pagá la seña para confirmar la reserva.',
-  confirmed: 'Reserva confirmada: la seña ya fue pagada.',
+  confirmed: 'Reserva confirmada: la seña ya fue pagada. El saldo se paga antes del evento.',
   rejected:  'El proveedor no pudo confirmar esta consulta.',
   cancelled: 'Esta reserva fue cancelada.',
   completed: 'El evento ya se realizó.',
 };
 
-// Puede cancelarse mientras está pendiente, aceptada o ya confirmada (regla del backend).
-const CAN_CANCEL = (status) => status === 'pending' || status === 'confirmed';
-// Solo se puede pagar la seña de una reserva aceptada sin pago todavía.
-const CAN_PAY = (b) => b.displayStatus === 'accepted';
+// Cobros online (dLocal Go) o, solo en desarrollo, el simulador de seña.
+const ONLINE_PAYMENTS = onlinePaymentsEnabled();
+const SIMULATION = paymentSimulationEnabled();
+
+// El cliente cancela por su cuenta solo si todavía no pagó nada; con seña o
+// saldo cobrados la cancelación la gestiona el equipo (reembolso manual).
+const CAN_CANCEL = (b) => clientCanCancel(b);
+// Botón de pago: próximo cobro (seña o saldo) dentro de plazo.
+const CAN_PAY = (b) => (ONLINE_PAYMENTS && canPayNow(b))
+  || (SIMULATION && nextPayment(b)?.kind === 'deposit' && canPayNow(b));
+const payLabel = (b) => {
+  const next = nextPayment(b);
+  if (!next) return 'Pagar';
+  if (SIMULATION) return 'Simular pago de la seña';
+  return `Pagar ${next.label.toLowerCase()} · $${next.amount.toLocaleString('es-UY')}`;
+};
 
 export default function ClientReservationsPage() {
   const { showToast } = useApp();
@@ -105,14 +122,22 @@ export default function ClientReservationsPage() {
     return matchSearch && matchStatus;
   });
 
-  const handlePayDeposit = async (b) => {
+  const handlePay = async (b) => {
     setBusyId(b.id);
     try {
-      await bookingService.payDeposit(b.id);
-      showToast('Seña pagada — tu reserva quedó confirmada', 'success');
-      await reload();
+      if (SIMULATION) {
+        await bookingService.payDeposit(b.id);
+        showToast('Seña simulada — tu reserva quedó confirmada', 'success');
+        await reload();
+        return;
+      }
+      const { checkoutUrl } = await paymentService.createCheckout(b.id);
+      // Checkout alojado de dLocal Go. La confirmación llega por el backend;
+      // /pago/exito solo muestra el estado que el backend confirma.
+      window.location.assign(checkoutUrl);
     } catch (e) {
-      showToast(e?.message || 'No se pudo procesar el pago', 'error');
+      showToast(paymentErrorMessage(e), 'error');
+      if (e?.code === 'ALREADY_PAID' || e?.code === 'PAYMENT_DEADLINE_PASSED') await reload();
     } finally {
       setBusyId(null);
     }
@@ -277,12 +302,12 @@ export default function ClientReservationsPage() {
                       size="sm"
                       icon={CreditCard}
                       loading={busyId === b.id}
-                      onClick={() => handlePayDeposit(b)}
+                      onClick={() => handlePay(b)}
                     >
-                      Simular pago aprobado
+                      {payLabel(b)}
                     </Button>
                   )}
-                  {CAN_CANCEL(b.status) && (
+                  {CAN_CANCEL(b) && (
                     <Button
                       variant="danger"
                       size="sm"
@@ -304,8 +329,9 @@ export default function ClientReservationsPage() {
         <BookingDetailDrawer
           booking={selected}
           onClose={() => setSelected(null)}
-          onCancel={CAN_CANCEL(selected.status) ? () => setCancelModal(selected) : null}
-          onPay={CAN_PAY(selected) ? () => handlePayDeposit(selected) : null}
+          onCancel={CAN_CANCEL(selected) ? () => setCancelModal(selected) : null}
+          onPay={CAN_PAY(selected) ? () => handlePay(selected) : null}
+          payLabel={payLabel(selected)}
           paying={busyId === selected.id}
         />
       )}
@@ -346,7 +372,8 @@ export default function ClientReservationsPage() {
   );
 }
 
-function BookingDetailDrawer({ booking: b, onClose, onCancel, onPay, paying }) {
+function BookingDetailDrawer({ booking: b, onClose, onCancel, onPay, paying, payLabel: payButtonLabel }) {
+  const next = nextPayment(b);
   return (
     <Drawer
       open
@@ -357,7 +384,7 @@ function BookingDetailDrawer({ booking: b, onClose, onCancel, onPay, paying }) {
           <div className="w-full space-y-2">
             {onPay && (
               <Button variant="success" className="w-full" icon={CreditCard} loading={paying} onClick={onPay}>
-                Simular pago aprobado
+                {payButtonLabel}
               </Button>
             )}
             {onCancel && (
@@ -415,6 +442,37 @@ function BookingDetailDrawer({ booking: b, onClose, onCancel, onPay, paying }) {
               </span>
             }
           />
+        )}
+        {b.depositAmount > 0 && b.balanceAmount > 0 && b.rawStatus !== 'cancelled' && b.rawStatus !== 'rejected' && (
+          <DetailRow
+            icon={CreditCard}
+            label="Saldo"
+            value={
+              <span className="inline-flex items-center gap-1">
+                ${b.balanceAmount.toLocaleString('es-UY')}
+                <span className={`inline-flex items-center gap-1 ${b.paymentStatus === 'paid' ? 'text-emerald-600' : 'text-amber-500'}`}>
+                  · <AppIcon icon={b.paymentStatus === 'paid' ? CheckCircle : AlertCircle} size={12} aria-hidden="true" />
+                  {b.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente'}
+                </span>
+              </span>
+            }
+          />
+        )}
+        {next?.dueAt && (
+          <DetailRow
+            icon={CalendarClock}
+            label={next.kind === 'deposit' ? 'Plazo para pagar la seña' : 'Plazo para pagar el saldo'}
+            value={
+              <span className={next.overdue ? 'text-red-600 font-semibold' : ''}>
+                {formatDue(next.dueAt)}{next.overdue ? ' · vencido' : ''}
+              </span>
+            }
+          />
+        )}
+        {(b.paymentStatus === 'partial' || b.paymentStatus === 'paid') && b.rawStatus === 'accepted' && (
+          <p className="text-xs text-gray-500">
+            Esta reserva ya tiene un pago. Si necesitás cancelarla, escribinos y la gestionamos con el reembolso que corresponda.
+          </p>
         )}
         {b.packageName && <DetailRow icon={FileText} label="Menú/paquete" value={b.packageName} />}
         {b.message && <DetailRow icon={MessageCircle} label="Tu mensaje" iconClassName="text-gray-400" value={b.message} />}

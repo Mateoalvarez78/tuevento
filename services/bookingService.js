@@ -14,8 +14,12 @@ function normalizeStatus(status) {
 // seña-pagada sin tocar el status crudo del backend (que sigue siendo solo
 // pending/accepted/rejected/cancelled/completed). Úsese solo para badges/color,
 // nunca para lógica de negocio (ahí seguí usando `status`/`rawStatus`).
+//
+// Seña + saldo (eventonow-back, migración 026): la reserva queda confirmada en
+// cuanto se paga la SEÑA (payment_status 'partial'); el saldo se paga después.
+// Por eso "esperando seña" es solo 'unpaid'.
 function computeDisplayStatus(normalizedStatus, paymentStatus) {
-  if (normalizedStatus === 'confirmed' && paymentStatus !== 'paid') return 'accepted';
+  if (normalizedStatus === 'confirmed' && paymentStatus === 'unpaid') return 'accepted';
   return normalizedStatus;
 }
 
@@ -86,6 +90,11 @@ function mapBooking(b) {
     depositAmount:     parseFloat(b.deposit_amount) || 0,
     depositPaid:       b.deposit_paid || false,
     paymentStatus:     b.payment_status || 'unpaid',
+    // Plazos de cobro (migración 026). null cuando los pagos online están apagados.
+    paymentDueAt:      b.payment_due_at || null,
+    balanceDueAt:      b.balance_due_at || null,
+    balanceOverdueAt:  b.balance_overdue_at || null,
+    balanceAmount:     Math.round(((parseFloat(b.total_amount) || 0) - (parseFloat(b.deposit_amount) || 0)) * 100) / 100,
     // Status — normalize accepted→confirmed for legacy UI
     status:            normalizeStatus(b.status),
     rawStatus:         b.status,
@@ -247,8 +256,10 @@ export const bookingService = {
   },
 
   /**
-   * Simula el pago de la seña (sin pasarela real todavía). Solo el cliente
-   * dueño de la reserva puede llamarlo, y solo si está aceptada y sin pago.
+   * SOLO DESARROLLO: simula el pago de la seña. El backend lo rechaza (403)
+   * salvo con PAYMENT_SIMULATION_ENABLED=true fuera de producción y con la
+   * pasarela real apagada; la UI lo muestra solo con
+   * NEXT_PUBLIC_PAYMENT_SIMULATION=true (lib/payments.js).
    */
   async payDeposit(id) {
     const res = await api.post(`/payments/booking/${id}/simulate-deposit`, {});

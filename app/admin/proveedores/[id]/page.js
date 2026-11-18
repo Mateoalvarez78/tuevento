@@ -13,6 +13,7 @@ import ProviderStatusBadge from '@/components/ProviderStatusBadge';
 import ProviderOverviewTab from '@/components/dashboard/admin/proveedores/ProviderOverviewTab';
 import ProviderServicesTab from '@/components/dashboard/admin/proveedores/ProviderServicesTab';
 import ProviderBookingsTab from '@/components/dashboard/admin/proveedores/ProviderBookingsTab';
+import ProviderPaymentAccountTab from '@/components/dashboard/admin/proveedores/ProviderPaymentAccountTab';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Modal from '@/components/Modal';
@@ -22,6 +23,7 @@ const TABS = [
   { value: 'resumen', label: 'Resumen' },
   { value: 'servicios', label: 'Servicios' },
   { value: 'reservas', label: 'Reservas' },
+  { value: 'cobros', label: 'Cobros' },
 ];
 
 function ConfirmModal({ title, description, confirmLabel, confirmVariant, onConfirm, onCancel, requireReason }) {
@@ -182,6 +184,7 @@ export default function AdminProviderDetailPage() {
       {activeTab === 'resumen' && <ProviderOverviewTab provider={provider} />}
       {activeTab === 'servicios' && <ProviderServicesTab services={services} />}
       {activeTab === 'reservas' && <ProviderBookingsTab providerId={id} />}
+      {activeTab === 'cobros' && <ProviderPaymentAccountTab providerId={id} />}
 
       {/* Confirm modal */}
       {modal && (
