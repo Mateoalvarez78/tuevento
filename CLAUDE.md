@@ -19,6 +19,17 @@ Next.js 16 + React 19, JavaScript puro (sin TypeScript), Tailwind v4. Ver la Kno
 - **Sin TypeScript.**
 - **Next.js 16 tiene breaking changes** respecto a versiones anteriores (ver `AGENTS.md` arriba) — confirmar contra `node_modules/next/dist/docs/` antes de asumir un comportamiento de una versión previa (ej. `params` en rutas dinámicas es una `Promise`).
 
+## Pagos (seña + saldo con dLocal Go)
+
+Fuente de verdad del dominio: `eventonow-back/docs/payments/ARCHITECTURE.md` y `eventonow-back/src/modules/payments/CLAUDE.md` (repo del backend).
+
+- **El frontend nunca decide que algo está pagado.** Solo muestra `payment_status` de la reserva y el estado del intento que devuelve la API. `/pago/exito` y `/pago/cancelado` no confían en la URL: consultan `POST /payments/intents/:id/sync`.
+- Toda la lógica de qué cobro toca, plazos y textos vive en `lib/payments.js` (puro, con tests). Las llamadas, en `services/paymentService.js`.
+- Ante `PAYMENT_STATUS_UNKNOWN` o `PAYMENT_UNDER_REVIEW` el mensaje al cliente pide **no volver a pagar** (`paymentErrorMessage`). No reemplazarlo por un genérico.
+- El cliente solo cancela por su cuenta si `payment_status === 'unpaid'`; con dinero cobrado lo gestiona el equipo.
+- Flags públicas: `NEXT_PUBLIC_ONLINE_PAYMENTS_ENABLED=true` muestra el botón de pago real; `NEXT_PUBLIC_PAYMENT_SIMULATION=true` solo en desarrollo y nunca junto con la anterior.
+- Admin: `/admin/pagos` (conciliación) y la pestaña **Cobros** del proveedor (conexión con dLocal Go).
+
 ## Ver también
 
 [`../docs/FRONTEND.md`](../docs/FRONTEND.md) · [`../docs/COMPONENT_LIBRARY.md`](../docs/COMPONENT_LIBRARY.md) · [`../docs/CODING_STANDARDS.md`](../docs/CODING_STANDARDS.md)
