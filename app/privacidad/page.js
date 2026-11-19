@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import LegalDocument, { legalMetadata } from '@/components/legal/LegalDocument';
-import { BRAND, CONTACT_EMAIL, LEGAL_PAGES_REACHABLE, legalIdentityRows } from '@/lib/site';
+import { legalMetadata } from '@/components/legal/LegalDocument';
+import LegalDraftLayout from '@/components/legal/LegalDraftLayout';
+import { LEGAL_DOCS } from '@/lib/legalDocs';
+import { BRAND, CONTACT_EMAIL, CONTACT_REACHABLE, LEGAL_PAGES_REACHABLE, legalIdentityRows } from '@/lib/site';
 
 export const metadata = legalMetadata({
   title: 'Política de privacidad',
@@ -23,20 +25,43 @@ export const metadata = legalMetadata({
 //   · Revisión de un abogado uruguayo, incluido el encuadre en la Ley 18.331 y
 //     si corresponde inscribir la base ante la URCDP. NO se afirma que la base
 //     esté inscripta, porque no hay evidencia de que lo esté.
+const SECTIONS = [
+  { id: 'responsable', title: 'Responsable del tratamiento' },
+  { id: 'datos', title: 'Qué datos tratamos' },
+  { id: 'finalidades', title: 'Para qué usamos esos datos' },
+  { id: 'destinatarios', title: 'Con quién se comparten' },
+  { id: 'transferencias', title: 'Transferencias internacionales' },
+  { id: 'cookies', title: 'Cookies y tecnologías similares' },
+  { id: 'conservacion', title: 'Conservación' },
+  { id: 'seguridad', title: 'Seguridad' },
+  { id: 'derechos', title: 'Tus derechos' },
+  { id: 'menores', title: 'Menores de edad' },
+  { id: 'cambios', title: 'Cambios y versiones' },
+  { id: 'contacto', title: 'Contacto' },
+];
+
+const INTERNAL_NOTES = [
+  'RUT y domicilio del responsable.',
+  'Plazos concretos de conservación por tipo de dato.',
+  'Revisión de un abogado: encuadre en la Ley 18.331 y si corresponde inscribir la base ante la URCDP.',
+  'Cuando exista el registro de aceptaciones: informar que se guarda fecha, versión aceptada y datos técnicos de la aceptación como evidencia.',
+];
+
 export default function PrivacidadPage() {
-  // FAIL-CLOSED — mismo criterio que /terminos: en producción, con la compuerta
-  // cerrada, 404. `noindex` no es control de acceso. Ver app/terminos/page.js.
+  // Mismo criterio que /terminos: se sirve publicada, como versión preliminar
+  // (LEGAL_PREVIEW_PUBLISHED) o como borrador en dev; si no, 404.
   if (!LEGAL_PAGES_REACHABLE) notFound();
 
   const identityRows = legalIdentityRows();
 
   return (
-    <LegalDocument
-      title="Política de privacidad"
-      updatedNote={`Versión de trabajo · ${BRAND}`}
+    <LegalDraftLayout
+      doc={LEGAL_DOCS.privacidad}
+      sections={SECTIONS}
+      internalNotes={INTERNAL_NOTES}
       intro={`Esta política explica qué datos personales trata ${BRAND}, con qué finalidad, con quién se comparten y cómo podés ejercer tus derechos.`}
     >
-      <h2>1. Responsable del tratamiento</h2>
+      <h2 id="responsable">1. Responsable del tratamiento</h2>
       <ul>
         {identityRows.map((row) => (
           <li key={row.label}>
@@ -49,7 +74,7 @@ export default function PrivacidadPage() {
         </li>
       </ul>
 
-      <h2>2. Qué datos tratamos</h2>
+      <h2 id="datos">2. Qué datos tratamos</h2>
 
       <h3>Si tenés una cuenta de cliente</h3>
       <ul>
@@ -87,7 +112,7 @@ export default function PrivacidadPage() {
         <li>No te pedimos teléfono para contactarnos.</li>
       </ul>
 
-      <h2>3. Para qué usamos esos datos</h2>
+      <h2 id="finalidades">3. Para qué usamos esos datos</h2>
       <ul>
         <li>Crear y administrar tu cuenta, y autenticarte.</li>
         <li>Poner en contacto a clientes con proveedores y gestionar solicitudes y reservas.</li>
@@ -102,7 +127,7 @@ export default function PrivacidadPage() {
         comerciales.
       </p>
 
-      <h2>4. Con quién se comparten</h2>
+      <h2 id="destinatarios">4. Con quién se comparten</h2>
 
       <h3>Con el proveedor que contratás</h3>
       <p>
@@ -132,7 +157,7 @@ export default function PrivacidadPage() {
         Cuando una norma o una orden judicial nos obligue.
       </p>
 
-      <h2>5. Transferencias internacionales</h2>
+      <h2 id="transferencias">5. Transferencias internacionales</h2>
       <p>
         Los servicios listados arriba operan servidores fuera de Uruguay, por lo
         que tus datos se almacenan y procesan en el exterior. Elegimos
@@ -140,7 +165,7 @@ export default function PrivacidadPage() {
         confidencialidad.
       </p>
 
-      <h2>6. Cookies y tecnologías similares</h2>
+      <h2 id="cookies">6. Cookies y tecnologías similares</h2>
       <p>
         <strong>{BRAND} no usa cookies publicitarias, ni analítica, ni píxeles de
         seguimiento de terceros.</strong> No hay herramientas de medición de
@@ -160,7 +185,7 @@ export default function PrivacidadPage() {
         mostramos un banner de consentimiento de cookies.
       </p>
 
-      <h2>7. Conservación</h2>
+      <h2 id="conservacion">7. Conservación</h2>
       <p>
         Conservamos los datos mientras tu cuenta esté activa y, después, durante
         el tiempo necesario para cumplir obligaciones legales, contables y
@@ -174,7 +199,7 @@ export default function PrivacidadPage() {
         registros contables asociados a operaciones ya realizadas.
       </p>
 
-      <h2>8. Seguridad</h2>
+      <h2 id="seguridad">8. Seguridad</h2>
       <ul>
         <li>Todo el tráfico del sitio viaja cifrado por HTTPS.</li>
         <li>Las contraseñas se almacenan con hash, nunca en texto legible.</li>
@@ -186,7 +211,7 @@ export default function PrivacidadPage() {
         datos, actuaremos conforme a la normativa aplicable.
       </p>
 
-      <h2>9. Tus derechos</h2>
+      <h2 id="derechos">9. Tus derechos</h2>
       <p>
         De acuerdo con la <strong>Ley N.º 18.331 de Protección de Datos
         Personales</strong> de Uruguay, podés solicitar en cualquier momento:
@@ -199,29 +224,33 @@ export default function PrivacidadPage() {
       </ul>
       <p>
         Para ejercerlos escribinos a{' '}
-        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> o usá el{' '}
-        <Link href="/contacto">formulario de contacto</Link>. También podés
+        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+        {CONTACT_REACHABLE && (
+          <>
+            {' '}o usá el <Link href="/contacto">formulario de contacto</Link>
+          </>
+        )}. También podés
         presentar un reclamo ante la Unidad Reguladora y de Control de Datos
         Personales (URCDP) de Uruguay.
       </p>
 
-      <h2>10. Menores de edad</h2>
+      <h2 id="menores">10. Menores de edad</h2>
       <p>
         {BRAND} está dirigido a personas mayores de 18 años. No recogemos
         deliberadamente datos de menores de edad.
       </p>
 
-      <h2>11. Cambios y versiones</h2>
+      <h2 id="cambios">11. Cambios y versiones</h2>
       <p>
         Si actualizamos esta política, publicaremos la versión nueva en esta misma
         página con su fecha de vigencia.
       </p>
 
-      <h2>12. Contacto</h2>
+      <h2 id="contacto">12. Contacto</h2>
       <p>
         Por cualquier cuestión relativa a tus datos personales:{' '}
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
       </p>
-    </LegalDocument>
+    </LegalDraftLayout>
   );
 }

@@ -31,20 +31,25 @@ function hrefs() {
 // ── Compuerta ──────────────────────────────────────────────────────────────
 
 describe('enlaces con compuerta — producción', () => {
-  test('NO enlaza /terminos, /privacidad ni /contacto', async () => {
+  // Desde el 19/11/2026 los documentos legales se publican como VERSIÓN
+  // PRELIMINAR (LEGAL_PREVIEW_PUBLISHED en lib/site.js): sus rutas se sirven en
+  // producción, así que el footer las enlaza. El contacto sigue atado a la
+  // compuerta real (recolecta datos personales) y NO se enlaza.
+  test('enlaza los documentos legales publicados como versión preliminar', async () => {
     await renderFooterWithEnv('production');
+    const { LEGAL_PREVIEW_PUBLISHED } = await import('@/lib/site');
     const h = hrefs();
-    expect(h).not.toContain('/terminos');
-    expect(h).not.toContain('/privacidad');
-    expect(h).not.toContain('/contacto');
+    for (const route of ['/legal', '/terminos', '/terminos/cancelaciones', '/terminos/proveedores', '/privacidad']) {
+      if (LEGAL_PREVIEW_PUBLISHED) expect(h).toContain(route);
+      else expect(h).not.toContain(route);
+    }
   });
 
-  test('tampoco por texto visible', async () => {
+  test('NO enlaza /contacto mientras la compuerta real esté cerrada', async () => {
     await renderFooterWithEnv('production');
-    expect(screen.queryByText('Términos y condiciones')).toBeNull();
-    expect(screen.queryByText('Política de privacidad')).toBeNull();
-    expect(screen.queryByText('Términos')).toBeNull();
-    expect(screen.queryByText('Privacidad')).toBeNull();
+    const { PUBLIC_CONTACT_READY } = await import('@/lib/site');
+    expect(PUBLIC_CONTACT_READY).toBe(false);
+    expect(hrefs()).not.toContain('/contacto');
     expect(screen.queryByText('Contacto')).toBeNull();
   });
 
