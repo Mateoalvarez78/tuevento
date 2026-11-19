@@ -1,6 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
-import { PUBLIC_LEGAL_READY, legalBlockers } from '@/lib/site';
+import { PUBLIC_LEGAL_READY, SHOW_INTERNAL_LEGAL_NOTES, legalBlockers } from '@/lib/site';
 
 /**
  * Envoltorio común de /terminos y /privacidad: encabezado, aviso de borrador y
@@ -18,6 +18,23 @@ import { PUBLIC_LEGAL_READY, legalBlockers } from '@/lib/site';
  * El valor por defecto es el estado bloqueado: para publicarlas como vigentes
  * hay que completar los datos legales Y marcar la revisión jurídica a mano.
  */
+/**
+ * Tipografía del cuerpo de los documentos legales. Exportada para que el
+ * borrador de condiciones para proveedores (LegalDraftLayout) use exactamente
+ * la misma, sin copiar la lista de clases. Sin plugin de prose (el proyecto no
+ * lo tiene): se estilan los elementos con selectores de hijos de Tailwind.
+ */
+export const LEGAL_PROSE_CLASS = `
+  text-[0.95rem] leading-relaxed text-gray-700
+  [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mt-9 [&_h2]:mb-3
+  [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-gray-900 [&_h3]:mt-6 [&_h3]:mb-2
+  [&_p]:mb-3.5
+  [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-3.5 [&_ul]:space-y-1.5
+  [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-3.5 [&_ol]:space-y-1.5
+  [&_strong]:text-gray-900 [&_strong]:font-semibold
+  [&_a]:text-primary [&_a]:underline
+`;
+
 export default function LegalDocument({ title, updatedNote, intro, children }) {
   const blockers = PUBLIC_LEGAL_READY ? [] : legalBlockers();
 
@@ -50,12 +67,17 @@ export default function LegalDocument({ title, updatedNote, intro, children }) {
                   <strong>no es la versión vigente</strong>. No la tomes como las
                   condiciones aplicables a una contratación.
                 </p>
-                <p className="text-xs font-semibold text-amber-900 mb-1.5">Falta para poder publicarla:</p>
-                <ul className="list-disc pl-5 space-y-1 text-xs text-amber-900/90">
-                  {blockers.map((b) => (
-                    <li key={b}>{b}</li>
-                  ))}
-                </ul>
+                {/* Los bloqueos son notas internas: solo en dev/test. */}
+                {SHOW_INTERNAL_LEGAL_NOTES && (
+                  <>
+                    <p className="text-xs font-semibold text-amber-900 mb-1.5">Falta para poder publicarla:</p>
+                    <ul className="list-disc pl-5 space-y-1 text-xs text-amber-900/90">
+                      {blockers.map((b) => (
+                        <li key={b}>{b}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -65,21 +87,8 @@ export default function LegalDocument({ title, updatedNote, intro, children }) {
           <p className="text-gray-700 leading-relaxed mb-8 text-[0.95rem]">{intro}</p>
         )}
 
-        {/* Tipografía del cuerpo. Sin plugin de prose (el proyecto no lo tiene):
-            se estilan los elementos con selectores de hijos de Tailwind, que es
-            suficiente para un documento de texto y no agrega dependencias. */}
-        <div
-          className="
-            text-[0.95rem] leading-relaxed text-gray-700
-            [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mt-9 [&_h2]:mb-3
-            [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-gray-900 [&_h3]:mt-6 [&_h3]:mb-2
-            [&_p]:mb-3.5
-            [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-3.5 [&_ul]:space-y-1.5
-            [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-3.5 [&_ol]:space-y-1.5
-            [&_strong]:text-gray-900 [&_strong]:font-semibold
-            [&_a]:text-primary [&_a]:underline
-          "
-        >
+        {/* Tipografía del cuerpo: ver LEGAL_PROSE_CLASS arriba. */}
+        <div className={LEGAL_PROSE_CLASS}>
           {children}
         </div>
       </article>

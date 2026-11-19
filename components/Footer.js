@@ -30,9 +30,12 @@ const EXPLORE_LINKS = [
 // que esta tanda vino a eliminar. El filtro y el 404 salen de la MISMA
 // constante, así que no pueden desincronizarse.
 const SUPPORT_LINKS = [
-  { label: 'Contacto',               href: '/contacto',   enabled: CONTACT_REACHABLE },
-  { label: 'Términos y condiciones', href: '/terminos',   enabled: LEGAL_PAGES_REACHABLE },
-  { label: 'Política de privacidad', href: '/privacidad', enabled: LEGAL_PAGES_REACHABLE },
+  { label: 'Contacto',                          href: '/contacto',                enabled: CONTACT_REACHABLE },
+  { label: 'Centro legal',                      href: '/legal',                   enabled: LEGAL_PAGES_REACHABLE },
+  { label: 'Términos y condiciones',            href: '/terminos',                enabled: LEGAL_PAGES_REACHABLE },
+  { label: 'Cancelaciones y reembolsos',        href: '/terminos/cancelaciones',  enabled: LEGAL_PAGES_REACHABLE },
+  { label: 'Condiciones para proveedores',      href: '/terminos/proveedores',    enabled: LEGAL_PAGES_REACHABLE },
+  { label: 'Política de privacidad',            href: '/privacidad',              enabled: LEGAL_PAGES_REACHABLE },
 ].filter((l) => l.enabled);
 
 // Chips de categoría. Antes usaban búsqueda libre (`?q=<etiqueta>`), que el
@@ -54,12 +57,13 @@ const CATEGORY_CHIPS = [
   { label: 'Salón de fiestas',  slug: 'salon-de-fiestas' },
 ];
 
-// Barra inferior: los mismos tres destinos que SUPPORT_LINKS, con etiqueta
+// Barra inferior: los destinos principales de SUPPORT_LINKS, con etiqueta
 // corta. Derivan del mismo filtro para que no puedan divergir.
 const BOTTOM_LINKS = [
-  { label: 'Términos',   href: '/terminos',   enabled: LEGAL_PAGES_REACHABLE },
-  { label: 'Privacidad', href: '/privacidad', enabled: LEGAL_PAGES_REACHABLE },
-  { label: 'Contacto',   href: '/contacto',   enabled: CONTACT_REACHABLE },
+  { label: 'Términos',     href: '/terminos',   enabled: LEGAL_PAGES_REACHABLE },
+  { label: 'Privacidad',   href: '/privacidad', enabled: LEGAL_PAGES_REACHABLE },
+  { label: 'Centro legal', href: '/legal',      enabled: LEGAL_PAGES_REACHABLE },
+  { label: 'Contacto',     href: '/contacto',   enabled: CONTACT_REACHABLE },
 ].filter((l) => l.enabled);
 
 // Sufijo del copyright — titular y país salen del mismo lugar que el resto de

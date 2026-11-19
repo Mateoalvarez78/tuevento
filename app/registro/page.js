@@ -10,7 +10,7 @@ import { Eye, EyeOff, Mail, Lock, Phone, UserCircle, Check } from 'lucide-react'
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
-import { BRAND, BRAND_MONOGRAM, LEGAL_PAGES_REACHABLE } from '@/lib/site';
+import { BRAND, BRAND_MONOGRAM, LEGAL_PAGES_REACHABLE, PUBLIC_LEGAL_READY } from '@/lib/site';
 
 // Alta de cuenta de CLIENTE únicamente. Eventonow es un marketplace curado:
 // los proveedores no se autoregistran, se dan de alta desde el panel de admin.
@@ -136,11 +136,20 @@ function RegistroForm() {
                 Con la compuerta cerrada en producción, enlazarlos daría dos
                 enlaces rotos en el formulario de registro. */}
             <p className="text-xs text-gray-400">
-              {LEGAL_PAGES_REACHABLE ? (
+              {PUBLIC_LEGAL_READY ? (
                 <>
                   Al registrarte aceptás los{' '}
                   <Link href="/terminos" className="text-primary hover:underline">Términos y condiciones</Link>{' '}
                   y la{' '}
+                  <Link href="/privacidad" className="text-primary hover:underline">Política de privacidad</Link>.
+                </>
+              ) : LEGAL_PAGES_REACHABLE ? (
+                // Versión preliminar: se puede leer, pero no se presenta su
+                // lectura como aceptación de un documento que no está vigente.
+                <>
+                  Podés leer la versión preliminar de nuestros{' '}
+                  <Link href="/terminos" className="text-primary hover:underline">Términos y condiciones</Link>{' '}
+                  y de la{' '}
                   <Link href="/privacidad" className="text-primary hover:underline">Política de privacidad</Link>.
                 </>
               ) : (
