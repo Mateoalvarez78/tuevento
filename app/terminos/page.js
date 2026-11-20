@@ -7,7 +7,7 @@ import {
   BRAND, CANONICAL_ORIGIN, CONTACT_EMAIL,
   LEGAL_PAGES_REACHABLE, legalIdentityRows,
 } from '@/lib/site';
-import { LEGAL_DOCS } from '@/lib/legalDocs';
+import { LEGAL_DOCS, docHref } from '@/lib/legalDocs';
 import { COMMERCIAL, DEPOSIT_PAYMENT_HOURS } from '@/lib/providerTerms';
 
 export const metadata = legalMetadata({
@@ -18,10 +18,10 @@ export const metadata = legalMetadata({
 
 // ─── TÉRMINOS Y CONDICIONES GENERALES ────────────────────────────────────────
 //
-// Documento marco para clientes y proveedores. El detalle de cancelaciones y
-// reembolsos vive en /terminos/cancelaciones y el de proveedores en
-// /terminos/proveedores: acá solo se resume y se remite, para que cada regla
-// esté escrita en un único lugar.
+// Documento para CLIENTES. El detalle de cancelaciones y reembolsos vive en
+// /terminos/cancelaciones: acá solo se resume y se remite. Los proveedores
+// tienen su propio documento en el portal de proveedores (/provider/legal) y
+// NO se enlaza desde acá: las áreas no se cruzan.
 //
 // Los números (seña, saldo, plazos) salen de lib/providerTerms.js.
 // Las cláusulas abiertas van en <PendingLegal>: su texto propuesto se publica
@@ -39,7 +39,7 @@ const SECTIONS = [
   { id: 'pagos',            title: 'Medios de pago y cobro' },
   { id: 'cancelaciones',    title: 'Cancelaciones y reembolsos' },
   { id: 'cliente',          title: 'Obligaciones del cliente' },
-  { id: 'proveedor',        title: 'Obligaciones del proveedor' },
+  { id: 'proveedor',        title: 'Qué podés esperar del proveedor' },
   { id: 'responsabilidad',  title: 'Responsabilidad' },
   { id: 'conducta',         title: 'Reseñas y conducta' },
   { id: 'propiedad',        title: 'Propiedad intelectual' },
@@ -70,9 +70,10 @@ export default function TerminosPage() {
   return (
     <LegalDraftLayout
       doc={LEGAL_DOCS.terminos}
+      space="cliente"
       sections={SECTIONS}
       internalNotes={INTERNAL_NOTES}
-      intro={`Estos términos regulan el uso de ${BRAND} y la contratación de servicios para eventos a través de la plataforma. Explican qué hace ${BRAND}, cómo funciona una reserva de principio a fin y qué derechos y obligaciones tiene cada parte.`}
+      intro={`Estos términos regulan el uso de ${BRAND} por parte de los clientes y la contratación de servicios para eventos a través de la plataforma. Explican qué hace ${BRAND}, cómo funciona una reserva de principio a fin y cuáles son tus derechos y obligaciones.`}
     >
       {/* 1 */}
       <h2 id="titular">1. Titular de la plataforma</h2>
@@ -126,10 +127,7 @@ export default function TerminosPage() {
       <p>
         {BRAND} es un <strong>marketplace curado</strong>: los proveedores no se
         registran solos. Nuestro equipo evalúa y da de alta a cada uno, y su relación
-        con la plataforma se rige además por las{' '}
-        <Link href={LEGAL_DOCS.proveedores.href}>{LEGAL_DOCS.proveedores.title}</Link>.
-        Si querés ofrecer tus servicios, escribinos a{' '}
-        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+        con la plataforma se rige por condiciones propias.
       </p>
 
       {/* 5 */}
@@ -240,7 +238,7 @@ export default function TerminosPage() {
       <h2 id="cancelaciones">10. Cancelaciones, reembolsos y arrepentimiento</h2>
       <p>
         Las reglas completas están en la{' '}
-        <Link href={LEGAL_DOCS.cancelaciones.href}>{LEGAL_DOCS.cancelaciones.title}</Link>.
+        <Link href={docHref('cancelaciones', 'cliente')}>{LEGAL_DOCS.cancelaciones.title}</Link>.
         En resumen:
       </p>
       <ul>
@@ -273,7 +271,8 @@ export default function TerminosPage() {
       </ul>
 
       {/* 12 */}
-      <h2 id="proveedor">12. Obligaciones del proveedor</h2>
+      <h2 id="proveedor">12. Qué podés esperar del proveedor</h2>
+      <p>Cada proveedor se compromete con {BRAND} a:</p>
       <ul>
         <li>Mantener su oferta, precios y disponibilidad actualizados y veraces.</li>
         <li>Responder las solicitudes en un plazo razonable.</li>
@@ -282,9 +281,8 @@ export default function TerminosPage() {
         <li>No cobrar al cliente por fuera de la plataforma.</li>
       </ul>
       <p>
-        El detalle está en las{' '}
-        <Link href={LEGAL_DOCS.proveedores.href}>{LEGAL_DOCS.proveedores.title}</Link>,
-        incluidas las consecuencias de cancelar una reserva confirmada.
+        Si un proveedor cancela una reserva confirmada, te devolvemos todo lo que
+        pagaste y {BRAND} aplica sobre su cuenta las medidas que correspondan.
       </p>
 
       {/* 13 */}

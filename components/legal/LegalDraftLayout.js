@@ -4,7 +4,7 @@ import AppIcon from '@/components/AppIcon';
 import Badge from '@/components/Badge';
 import { LEGAL_PROSE_CLASS } from '@/components/legal/LegalDocument';
 import { BRAND, SHOW_INTERNAL_LEGAL_NOTES } from '@/lib/site';
-import { STATUS_LABELS, effectiveLabel, formatLegalDate, relatedDocs } from '@/lib/legalDocs';
+import { LEGAL_SPACES, STATUS_LABELS, effectiveLabel, formatLegalDate, relatedDocs } from '@/lib/legalDocs';
 
 /**
  * Layout de un documento legal con índice de navegación.
@@ -12,6 +12,10 @@ import { STATUS_LABELS, effectiveLabel, formatLegalDate, relatedDocs } from '@/l
  * Recibe la entrada del registro (lib/legalDocs.js) y de ahí saca versión,
  * fechas, estado y documentos relacionados: el encabezado de cada página no
  * puede quedar desincronizado del Centro legal.
+ *
+ * `space` ('cliente' | 'proveedor') decide a qué centro legal vuelve el enlace
+ * superior y qué documentos se ofrecen como relacionados: SOLO los de la misma
+ * área. Un cliente nunca ve enlazadas las condiciones de proveedores ni al revés.
  *
  * Aviso de estado:
  *  · Versión preliminar → aviso visible: en revisión legal, sin valor
@@ -26,9 +30,10 @@ import { STATUS_LABELS, effectiveLabel, formatLegalDate, relatedDocs } from '@/l
  *  · Los <h2> llevan scroll-margin para que el ancla no quede bajo el navbar.
  *  · El aviso es role="note" y dice su estado en texto, no solo con color.
  */
-export default function LegalDraftLayout({ doc, intro, sections, internalNotes = [], children }) {
+export default function LegalDraftLayout({ doc, space = 'cliente', intro, sections, internalNotes = [], children }) {
   const isPreliminary = doc.status !== 'published';
-  const related = relatedDocs(doc.key);
+  const { hub, hubTitle } = LEGAL_SPACES[space];
+  const related = relatedDocs(doc.key, space);
 
   const tocItems = (
     <ol className="space-y-1 text-sm">
@@ -53,10 +58,10 @@ export default function LegalDraftLayout({ doc, intro, sections, internalNotes =
         <nav aria-label="Índice del documento" className="hidden lg:block">
           <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-1">
             <Link
-              href="/legal"
+              href={hub}
               className="flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-primary mb-5 px-2"
             >
-              ← Centro legal
+              ← {hubTitle}
             </Link>
             <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3 px-2">
               <AppIcon icon={ListOrdered} size={14} aria-hidden="true" />
@@ -68,8 +73,8 @@ export default function LegalDraftLayout({ doc, intro, sections, internalNotes =
 
         <article className="max-w-3xl min-w-0">
           <header className="mb-6">
-            <Link href="/legal" className="lg:hidden inline-block text-xs font-semibold text-gray-500 hover:text-primary mb-3">
-              ← Centro legal
+            <Link href={hub} className="lg:hidden inline-block text-xs font-semibold text-gray-500 hover:text-primary mb-3">
+              ← {hubTitle}
             </Link>
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <Badge variant={isPreliminary ? 'warning' : 'success'} size="sm">
@@ -139,11 +144,12 @@ export default function LegalDraftLayout({ doc, intro, sections, internalNotes =
           </div>
 
           {/* Documentos relacionados — salen del registro */}
+          {related.length > 0 && (
           <aside aria-labelledby="documentos-relacionados" className="mt-12 border-t border-gray-200 pt-8">
             <h2 id="documentos-relacionados" className="text-base font-bold text-gray-900 mb-4">
               Documentos relacionados
             </h2>
-            <ul className="grid gap-3 sm:grid-cols-3">
+            <ul className="grid gap-3 sm:grid-cols-2">
               {related.map((d) => (
                 <li key={d.key}>
                   <Link
@@ -160,6 +166,7 @@ export default function LegalDraftLayout({ doc, intro, sections, internalNotes =
               ))}
             </ul>
           </aside>
+          )}
         </article>
       </div>
     </div>

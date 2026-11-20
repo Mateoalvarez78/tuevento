@@ -31,7 +31,7 @@ describe('enlaces', () => {
     render(<Footer />);
     // Rutas públicas reales (ver el árbol de app/). Si se agrega un enlace a
     // una página que no existe, este test falla.
-    const KNOWN = ['/', '/catalogo', '/contacto', '/legal', '/terminos', '/terminos/cancelaciones', '/terminos/proveedores', '/privacidad'];
+    const KNOWN = ['/', '/catalogo', '/contacto', '/legal', '/terminos', '/terminos/cancelaciones', '/privacidad'];
     const internal = allLinks()
       .map((a) => a.getAttribute('href'))
       .filter((h) => h.startsWith('/'));

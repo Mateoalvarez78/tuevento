@@ -34,7 +34,6 @@ const SUPPORT_LINKS = [
   { label: 'Centro legal',                      href: '/legal',                   enabled: LEGAL_PAGES_REACHABLE },
   { label: 'Términos y condiciones',            href: '/terminos',                enabled: LEGAL_PAGES_REACHABLE },
   { label: 'Cancelaciones y reembolsos',        href: '/terminos/cancelaciones',  enabled: LEGAL_PAGES_REACHABLE },
-  { label: 'Condiciones para proveedores',      href: '/terminos/proveedores',    enabled: LEGAL_PAGES_REACHABLE },
   { label: 'Política de privacidad',            href: '/privacidad',              enabled: LEGAL_PAGES_REACHABLE },
 ].filter((l) => l.enabled);
 
