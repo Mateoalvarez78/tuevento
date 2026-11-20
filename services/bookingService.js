@@ -91,6 +91,8 @@ function mapBooking(b) {
     depositAmount:     parseFloat(b.deposit_amount) || 0,
     depositPaid:       b.deposit_paid || false,
     paymentStatus:     b.payment_status || 'unpaid',
+    // Check "pagar el total de una vez" del carrito (migración 028).
+    payInFullRequested: b.pay_in_full_requested === true,
     // Plazos de cobro (migración 026). null cuando los pagos online están apagados.
     paymentDueAt:      b.payment_due_at || null,
     balanceDueAt:      b.balance_due_at || null,
@@ -194,6 +196,9 @@ export const bookingService = {
       // precio y revalida min/max, obligatorios y doble cobro — nunca se
       // manda un importe desde acá.
       modifier_selections: data.modifierSelections || data.modifier_selections || [],
+      // Check del carrito "pagar el total de una vez": solo la opción por
+      // defecto del primer pago; el cliente la puede cambiar al pagar.
+      pay_in_full:     data.payInFull === true ? true : undefined,
       // El backend nunca confía en placeId/lat/lng/location_source sueltos
       // (se pueden falsificar) — la única prueba válida de que la dirección
       // salió de Google Places es el location_token firmado que devolvió

@@ -12,6 +12,7 @@ import Badge from '@/components/Badge';
 import Button from '@/components/Button';
 import PageHeader from '@/components/PageHeader';
 import EmptyState from '@/components/EmptyState';
+import { PAYMENT_KIND_LABELS } from '@/lib/payments';
 
 const TABS = [
   { value: 'review', label: 'Requieren revisión' },
@@ -122,7 +123,7 @@ export default function AdminPagosPage() {
                 <tr key={r.id} className="border-t border-gray-800">
                   <td className="px-4 py-3 font-mono text-xs">{r.request_number}</td>
                   <td className="px-4 py-3">{r.provider_name}</td>
-                  <td className="px-4 py-3">{r.payment_kind === 'balance' ? 'Saldo' : 'Seña'}</td>
+                  <td className="px-4 py-3">{PAYMENT_KIND_LABELS[r.payment_kind] || r.payment_kind}</td>
                   <td className="px-4 py-3">{money(r.charge_amount, r.currency)}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={r.status} />

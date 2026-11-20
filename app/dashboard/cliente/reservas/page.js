@@ -23,8 +23,9 @@ import Drawer from '@/components/Drawer';
 import LocationMap from '@/components/LocationMap';
 import { safeFormatDate } from '@/lib/date';
 import { paymentService } from '@/services/paymentService';
+import PayInFullCheckbox from '@/components/payments/PayInFullCheckbox';
 import {
-  onlinePaymentsEnabled, paymentSimulationEnabled, nextPayment, canPayNow, clientCanCancel,
+  onlinePaymentsEnabled, paymentSimulationEnabled, nextPayment, canPayNow, clientCanCancel, canChoosePayInFull,
   paymentErrorMessage, formatDue,
 } from '@/lib/payments';
 
@@ -60,12 +61,16 @@ const CAN_CANCEL = (b) => clientCanCancel(b);
 // Botón de pago: próximo cobro (seña o saldo) dentro de plazo.
 const CAN_PAY = (b) => (ONLINE_PAYMENTS && canPayNow(b))
   || (SIMULATION && nextPayment(b)?.kind === 'deposit' && canPayNow(b));
-const payLabel = (b) => {
-  const next = nextPayment(b);
+const payLabel = (b, payInFull) => {
+  const next = nextPayment(b, new Date(), { payInFull });
   if (!next) return 'Pagar';
   if (SIMULATION) return 'Simular pago de la seña';
+  if (next.kind === 'full') return `Pagar el total · $${next.amount.toLocaleString('es-UY')}`;
   return `Pagar ${next.label.toLowerCase()} · $${next.amount.toLocaleString('es-UY')}`;
 };
+// Antes del primer pago el cliente elige seña o total (DEC-7). Arranca con lo
+// que marcó en el carrito. El simulador de desarrollo solo simula la seña.
+const CAN_CHOOSE_FULL = (b) => ONLINE_PAYMENTS && canChoosePayInFull(b) && canPayNow(b);
 
 export default function ClientReservationsPage() {
   const { showToast } = useApp();
@@ -82,6 +87,10 @@ export default function ClientReservationsPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [busyId, setBusyId] = useState(null);
   const [rateModal, setRateModal] = useState(null);
+  // Elección "pagar el total" por reserva; sin entrada = lo que marcó al reservar.
+  const [payFullChoice, setPayFullChoice] = useState({});
+  const payInFullFor = (b) => (b.id in payFullChoice ? payFullChoice[b.id] : b.payInFullRequested === true);
+  const setPayInFull = (b, v) => setPayFullChoice((prev) => ({ ...prev, [b.id]: v }));
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -131,7 +140,9 @@ export default function ClientReservationsPage() {
         await reload();
         return;
       }
-      const { checkoutUrl } = await paymentService.createCheckout(b.id);
+      // Siempre explícito: lo que el cliente ve en pantalla es lo que se pide.
+      const payInFull = CAN_CHOOSE_FULL(b) ? payInFullFor(b) : undefined;
+      const { checkoutUrl } = await paymentService.createCheckout(b.id, { payInFull });
       // Checkout alojado de dLocal Go. La confirmación llega por el backend;
       // /pago/exito solo muestra el estado que el backend confirma.
       window.location.assign(checkoutUrl);
@@ -294,6 +305,17 @@ export default function ClientReservationsPage() {
                   </div>
                 )}
 
+                {CAN_CHOOSE_FULL(b) && (
+                  <PayInFullCheckbox
+                    id={`pay-in-full-${b.id}`}
+                    className="mb-3"
+                    checked={payInFullFor(b)}
+                    onChange={(v) => setPayInFull(b, v)}
+                    total={b.totalEstimated}
+                    deposit={b.depositAmount}
+                    disabled={busyId === b.id}
+                  />
+                )}
                 <div className="flex items-center justify-end gap-2 flex-wrap">
                   <Button variant="outline" size="sm" icon={Eye} onClick={() => setSelected(b)}>Ver detalle</Button>
                   {CAN_PAY(b) && (
@@ -304,7 +326,7 @@ export default function ClientReservationsPage() {
                       loading={busyId === b.id}
                       onClick={() => handlePay(b)}
                     >
-                      {payLabel(b)}
+                      {payLabel(b, CAN_CHOOSE_FULL(b) ? payInFullFor(b) : undefined)}
                     </Button>
                   )}
                   {CAN_CANCEL(b) && (
@@ -331,7 +353,9 @@ export default function ClientReservationsPage() {
           onClose={() => setSelected(null)}
           onCancel={CAN_CANCEL(selected) ? () => setCancelModal(selected) : null}
           onPay={CAN_PAY(selected) ? () => handlePay(selected) : null}
-          payLabel={payLabel(selected)}
+          payLabel={payLabel(selected, CAN_CHOOSE_FULL(selected) ? payInFullFor(selected) : undefined)}
+          payInFull={CAN_CHOOSE_FULL(selected) ? payInFullFor(selected) : undefined}
+          onPayInFullChange={CAN_CHOOSE_FULL(selected) ? (v) => setPayInFull(selected, v) : null}
           paying={busyId === selected.id}
         />
       )}
@@ -372,8 +396,10 @@ export default function ClientReservationsPage() {
   );
 }
 
-function BookingDetailDrawer({ booking: b, onClose, onCancel, onPay, paying, payLabel: payButtonLabel }) {
-  const next = nextPayment(b);
+function BookingDetailDrawer({
+  booking: b, onClose, onCancel, onPay, paying, payLabel: payButtonLabel, payInFull, onPayInFullChange,
+}) {
+  const next = nextPayment(b, new Date(), { payInFull });
   return (
     <Drawer
       open
@@ -382,6 +408,16 @@ function BookingDetailDrawer({ booking: b, onClose, onCancel, onPay, paying, pay
       footer={
         (onPay || onCancel) ? (
           <div className="w-full space-y-2">
+            {onPay && onPayInFullChange && (
+              <PayInFullCheckbox
+                id={`pay-in-full-drawer-${b.id}`}
+                checked={payInFull}
+                onChange={onPayInFullChange}
+                total={b.totalEstimated}
+                deposit={b.depositAmount}
+                disabled={paying}
+              />
+            )}
             {onPay && (
               <Button variant="success" className="w-full" icon={CreditCard} loading={paying} onClick={onPay}>
                 {payButtonLabel}
@@ -461,7 +497,7 @@ function BookingDetailDrawer({ booking: b, onClose, onCancel, onPay, paying, pay
         {next?.dueAt && (
           <DetailRow
             icon={CalendarClock}
-            label={next.kind === 'deposit' ? 'Plazo para pagar la seña' : 'Plazo para pagar el saldo'}
+            label={{ deposit: 'Plazo para pagar la seña', full: 'Plazo para pagar el total', balance: 'Plazo para pagar el saldo' }[next.kind]}
             value={
               <span className={next.overdue ? 'text-red-600 font-semibold' : ''}>
                 {formatDue(next.dueAt)}{next.overdue ? ' · vencido' : ''}

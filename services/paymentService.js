@@ -6,9 +6,14 @@
 import { api } from './api';
 
 export const paymentService = {
-  /** Crea (o reutiliza) el checkout del próximo cobro de la reserva. */
-  async createCheckout(bookingId) {
-    const res = await api.post(`/payments/booking/${bookingId}/checkout`, {});
+  /**
+   * Crea (o reutiliza) el checkout del próximo cobro de la reserva.
+   * `payInFull` (opcional): true = pagar el total, false = la seña; sin
+   * definir = lo que el cliente marcó al reservar. El backend decide.
+   */
+  async createCheckout(bookingId, { payInFull } = {}) {
+    const body = typeof payInFull === 'boolean' ? { pay_in_full: payInFull } : {};
+    const res = await api.post(`/payments/booking/${bookingId}/checkout`, body);
     return res.data; // { intentId, checkoutUrl, kind, amount, currency, reused }
   },
 
