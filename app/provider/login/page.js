@@ -9,6 +9,8 @@ import { Eye, EyeOff, Mail, Lock, BarChart3, CalendarDays, Wallet, Store } from 
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
+import { LEGAL_PAGES_REACHABLE } from '@/lib/site';
+import { docHref } from '@/lib/legalDocs';
 
 export default function ProviderLoginPage() {
   const router = useRouter();
@@ -148,6 +150,15 @@ export default function ProviderLoginPage() {
               ¿Buscás contratar servicios?{' '}
               <Link href="/login" className="text-gray-600 hover:underline">Ingreso de clientes</Link>
             </p>
+            {/* Documentos del ÁREA PROVEEDORES (bajo /provider, que el proxy sirve
+                en el host de proveedores). Misma compuerta que las páginas. */}
+            {LEGAL_PAGES_REACHABLE && (
+              <p className="text-gray-400 text-xs mt-3">
+                <Link href={docHref('proveedores', 'proveedor')} className="text-gray-600 hover:underline">Condiciones para proveedores</Link>
+                {' · '}
+                <Link href={docHref('privacidad', 'proveedor')} className="text-gray-600 hover:underline">Privacidad</Link>
+              </p>
+            )}
           </div>
         </div>
       </div>

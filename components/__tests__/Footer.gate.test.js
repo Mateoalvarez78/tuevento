@@ -35,14 +35,19 @@ describe('enlaces con compuerta — producción', () => {
   // PRELIMINAR (LEGAL_PREVIEW_PUBLISHED en lib/site.js): sus rutas se sirven en
   // producción, así que el footer las enlaza. El contacto sigue atado a la
   // compuerta real (recolecta datos personales) y NO se enlaza.
-  test('enlaza los documentos legales publicados como versión preliminar', async () => {
+  test('enlaza los documentos legales de CLIENTES publicados como versión preliminar', async () => {
     await renderFooterWithEnv('production');
     const { LEGAL_PREVIEW_PUBLISHED } = await import('@/lib/site');
     const h = hrefs();
-    for (const route of ['/legal', '/terminos', '/terminos/cancelaciones', '/terminos/proveedores', '/privacidad']) {
+    for (const route of ['/legal', '/terminos', '/terminos/cancelaciones', '/privacidad']) {
       if (LEGAL_PREVIEW_PUBLISHED) expect(h).toContain(route);
       else expect(h).not.toContain(route);
     }
+  });
+
+  test('el footer del marketplace NO enlaza documentos del área proveedores', async () => {
+    await renderFooterWithEnv('production');
+    expect(hrefs().filter((h) => h.startsWith('/provider') || h === '/terminos/proveedores')).toEqual([]);
   });
 
   test('NO enlaza /contacto mientras la compuerta real esté cerrada', async () => {

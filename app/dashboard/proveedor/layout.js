@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutDashboard, ClipboardList, Package, Calendar, Star, BarChart3, Settings,
-  LogOut, Bell, ChevronRight, Home, BadgeCheck, Lock,
+  LogOut, Bell, ChevronRight, Home, BadgeCheck, Lock, FileText,
 } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import { useRequireRole } from '@/hooks/useRequireRole';
@@ -17,6 +17,12 @@ import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Drawer from '@/components/Drawer';
 import Avatar from '@/components/Avatar';
+import { LEGAL_PAGES_REACHABLE } from '@/lib/site';
+import { LEGAL_SPACES } from '@/lib/legalDocs';
+
+// Centro legal del ÁREA PROVEEDORES (condiciones + privacidad). Nunca los
+// documentos de clientes. Misma compuerta que las páginas legales.
+const PROVIDER_LEGAL_HUB = LEGAL_SPACES.proveedor.hub;
 
 const NAV_ITEMS = [
   { href: '/dashboard/proveedor',            label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -210,6 +216,11 @@ export default function ProviderDashboardLayout({ children }) {
             <Button variant="ghost" icon={Home} className="w-full !justify-start !text-gray-500 hover:!text-gray-700" href="/">
               Ir al inicio
             </Button>
+            {LEGAL_PAGES_REACHABLE && (
+              <Button variant="ghost" icon={FileText} className="w-full !justify-start !text-gray-500 hover:!text-gray-700 mt-0.5" href={PROVIDER_LEGAL_HUB}>
+                Condiciones y políticas
+              </Button>
+            )}
             <Button
               variant="ghost"
               icon={LogOut}
@@ -232,6 +243,11 @@ export default function ProviderDashboardLayout({ children }) {
               <ProviderCard />
               <SidebarNav />
               <div className="px-3 py-3 border-t border-gray-100">
+                {LEGAL_PAGES_REACHABLE && (
+                  <Button variant="ghost" icon={FileText} className="w-full !justify-start !text-gray-500 hover:!text-gray-700 mb-0.5" href={PROVIDER_LEGAL_HUB}>
+                    Condiciones y políticas
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   icon={LogOut}

@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { legalMetadata } from '@/components/legal/LegalDocument';
 import LegalDraftLayout from '@/components/legal/LegalDraftLayout';
@@ -56,6 +55,7 @@ export default function CancelacionesPage() {
   return (
     <LegalDraftLayout
       doc={LEGAL_DOCS.cancelaciones}
+      space="cliente"
       sections={SECTIONS}
       internalNotes={INTERNAL_NOTES}
       intro={`Esta política explica qué pasa con tu reserva y con tu dinero si tenés que cancelar, si el proveedor cancela o si ocurre algo que nadie podía prever. Complementa los Términos y condiciones de ${BRAND}.`}
@@ -157,9 +157,8 @@ export default function CancelacionesPage() {
         </li>
       </ul>
       <p>
-        El proveedor que cancela sin causa justificada enfrenta consecuencias según sus{' '}
-        <Link href={LEGAL_DOCS.proveedores.href}>condiciones</Link>, pero tu reembolso
-        no depende de eso.
+        El proveedor que cancela sin causa justificada enfrenta consecuencias con{' '}
+        {BRAND}, pero tu reembolso no depende de eso.
       </p>
 
       {/* 6 */}

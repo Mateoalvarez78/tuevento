@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import LegalDraftLayout from '@/components/legal/LegalDraftLayout';
 import PendingLegal from '@/components/legal/PendingLegal';
 import { BRAND, CONTACT_EMAIL } from '@/lib/site';
-import { LEGAL_DOCS } from '@/lib/legalDocs';
 import {
   PROVIDER_TERMS_DOC,
   PROVIDER_TERMS_REACHABLE,
@@ -22,6 +20,11 @@ import {
 //
 // Publicación: versión PRELIMINAR (LEGAL_PREVIEW_PUBLISHED, 19/11/2026), con
 // aviso visible, noindex y fuera del sitemap. No se acepta en ningún flujo.
+//
+// Área PROVEEDORES: vive bajo /provider/legal porque el proxy solo sirve
+// /provider/* en el host de proveedores. Es un documento AUTÓNOMO: no remite a
+// los Términos ni a las políticas de clientes (las áreas no se cruzan), por eso
+// incluye sus propias cláusulas de contenido, cambios y ley aplicable.
 // La versión definitiva tiene su propia compuerta (PROVIDER_TERMS_PUBLISHED).
 //
 // Los números salen de lib/providerTerms.js, que no importa nada transaccional.
@@ -29,7 +32,7 @@ import {
 export const metadata = {
   title: 'Condiciones para proveedores',
   description: `Condiciones para proveedores de ${BRAND}: comisión, cobros, seña y saldo, cancelaciones, penalidades y procedimiento de revisión.`,
-  alternates: { canonical: '/terminos/proveedores' },
+  alternates: { canonical: '/provider/legal/condiciones' },
   robots: { index: false, follow: false },
 };
 
@@ -49,6 +52,9 @@ const SECTIONS = [
   { id: 'rehabilitacion',         title: 'Rehabilitación y baja definitiva' },
   { id: 'devoluciones',           title: 'Devoluciones, contracargos y créditos' },
   { id: 'descargos',              title: 'Descargos y revisión' },
+  { id: 'contenido',              title: 'Tu contenido y la marca' },
+  { id: 'cambios',                title: 'Cambios en estas condiciones' },
+  { id: 'ley',                    title: 'Ley aplicable y jurisdicción' },
   { id: 'reclamos',               title: 'Reclamos y contacto' },
 ];
 
@@ -71,9 +77,10 @@ export default function CondicionesProveedoresPage() {
   return (
     <LegalDraftLayout
       doc={PROVIDER_TERMS_DOC}
+      space="proveedor"
       sections={SECTIONS}
       internalNotes={INTERNAL_NOTES}
-      intro={`Estas condiciones explican cómo trabajás con ${BRAND} como proveedor: qué te pedimos para publicar, cómo se cobra cada reserva, qué pasa si tenés que cancelar y cómo podés pedir que revisemos una decisión. Complementan los Términos y condiciones generales de la plataforma.`}
+      intro={`Estas condiciones explican cómo trabajás con ${BRAND} como proveedor: qué te pedimos para publicar, cómo se cobra cada reserva, qué pasa si tenés que cancelar y cómo podés pedir que revisemos una decisión.`}
     >
       {/* ── Resumen ─────────────────────────────────────────────────────── */}
       <section aria-labelledby="resumen" className="mb-10 rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
@@ -118,9 +125,7 @@ export default function CondicionesProveedoresPage() {
       </p>
       <p>
         Respondés por la ejecución del servicio, por tu personal y por el
-        cumplimiento de tus obligaciones legales, laborales y tributarias. Además de
-        estas condiciones, rigen para vos los{' '}
-        <Link href={LEGAL_DOCS.terminos.href}>{LEGAL_DOCS.terminos.title}</Link>.
+        cumplimiento de tus obligaciones legales, laborales y tributarias.
       </p>
       <PendingLegal note="El abogado debe confirmar el encuadre de Eventonow frente al cliente (intermediario o integrante de la cadena de proveedores bajo la Ley 17.250) y qué responsabilidad conserva aunque estas condiciones la asignen al proveedor." />
 
@@ -167,7 +172,7 @@ export default function CondicionesProveedoresPage() {
         <li>Recibís tus fondos según los plazos y liquidaciones normales del procesador, que no dependen de {BRAND}.</li>
         <li>Aceptás las condiciones del procesador para tu cuenta, incluida tu responsabilidad como vendedor frente a devoluciones y contracargos.</li>
       </ul>
-      <PendingLegal note="Se pretende trasladar al cliente el costo del procesamiento online. Hoy los Términos generales dicen que la plataforma no agrega cargos al precio publicado: hay que decidir cómo se informa ese costo (precio final con todo incluido o cargo separado visible antes de pagar) y validarlo legal y contractualmente antes de aplicarlo." />
+      <PendingLegal note="Se pretende trasladar al cliente el costo del procesamiento online: hay que decidir cómo se informa ese costo (precio final con todo incluido o cargo separado visible antes de pagar) y validarlo legal y contractualmente antes de aplicarlo." />
 
       {/* 6 ─────────────────────────────────────────────────────────────── */}
       <h2 id="sena-saldo">6. Seña, saldo y vencimientos</h2>
@@ -294,7 +299,7 @@ export default function CondicionesProveedoresPage() {
       <ul>
         <li>Una penalización impaga sin revisión pendiente (sección 10).</li>
         <li>El régimen de reincidencias (sección 12).</li>
-        <li>Incumplimientos graves de estas condiciones o de los Términos generales.</li>
+        <li>Incumplimientos graves de estas condiciones.</li>
       </ul>
 
       {/* 12 ────────────────────────────────────────────────────────────── */}
@@ -353,8 +358,8 @@ export default function CondicionesProveedoresPage() {
         <li>No es automático ni depende de que la penalización del proveedor que canceló esté cobrada.</li>
       </ul>
       <p>
-        Las condiciones del crédito para el cliente están en la{' '}
-        <Link href={LEGAL_DOCS.cancelaciones.href}>{LEGAL_DOCS.cancelaciones.title}</Link>.
+        Las condiciones de uso del crédito las fija {BRAND} con el cliente y no
+        modifican lo que cobrás.
       </p>
 
       {/* 15 ────────────────────────────────────────────────────────────── */}
@@ -369,20 +374,44 @@ export default function CondicionesProveedoresPage() {
       <PendingLegal note="Definir los plazos del procedimiento (presentación del descargo y respuesta de Eventonow), quién resuelve en segunda instancia y por qué canal formal se notifica." />
 
       {/* 16 ────────────────────────────────────────────────────────────── */}
-      <h2 id="reclamos">16. Reclamos y contacto</h2>
+      <h2 id="contenido">16. Tu contenido y la marca</h2>
+      <p>
+        Las fotos, textos y demás material que subís siguen siendo tuyos. Al
+        publicarlos autorizás a {BRAND} a mostrarlos en la plataforma y a usarlos
+        para promocionar tu oferta dentro del sitio, mientras tu cuenta esté activa.
+        Garantizás que tenés los derechos sobre ese material.
+      </p>
+      <p>
+        La marca {BRAND}, el sitio y su diseño pertenecen al titular de la plataforma.
+        No podés usarlos fuera de la plataforma sin autorización escrita.
+      </p>
+
+      {/* 17 ────────────────────────────────────────────────────────────── */}
+      <h2 id="cambios">17. Cambios en estas condiciones</h2>
+      <ul>
+        <li>Cada versión tiene número y fecha de vigencia y se publica en este portal.</li>
+        <li>Te avisamos <strong>antes</strong> de que una versión nueva entre en vigencia y te pedimos que la aceptes. No tomamos tu silencio como aceptación.</li>
+        <li>Si no aceptás una versión nueva, podés dejar de operar en la plataforma sin penalización por ese motivo.</li>
+        <li>Cada reserva se rige por la versión vigente al momento de aceptarla.</li>
+      </ul>
+
+      {/* 18 ────────────────────────────────────────────────────────────── */}
+      <h2 id="ley">18. Ley aplicable y jurisdicción</h2>
+      <p>
+        Estas condiciones se rigen por las leyes de la <strong>República Oriental del
+        Uruguay</strong>. Las controversias se someten a los tribunales competentes de
+        Uruguay.
+      </p>
+
+      {/* 19 ────────────────────────────────────────────────────────────── */}
+      <h2 id="reclamos">19. Reclamos y contacto</h2>
       <p>
         Para consultas, reclamos o descargos escribinos a{' '}
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> indicando el número de
         reserva. Te confirmamos la recepción y te respondemos por escrito.
       </p>
-      <PendingLegal note="Falta definir un canal formal específico para proveedores, la ley aplicable y la jurisdicción, y los datos del titular (RUT y domicilio)." />
+      <PendingLegal note="Falta definir un canal formal específico para proveedores y los datos del titular (RUT y domicilio). El abogado debe validar la cláusula de jurisdicción." />
 
-      <h2 id="versiones">Versiones</h2>
-      <p>
-        Cada versión publicada tendrá número y fecha de vigencia. Te avisaremos antes de
-        que entre en vigencia una versión nueva y te pediremos aceptarla. Las reservas
-        aceptadas antes se rigen por la versión vigente al aceptarlas.
-      </p>
     </LegalDraftLayout>
   );
 }
