@@ -16,6 +16,7 @@ import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import AddToMyEventModal from '@/components/my-event/AddToMyEventModal';
 import { BADGE_CONFIG } from '@/components/ServiceCard';
+import PaymentTermsNotice from '@/components/payments/PaymentTermsNotice';
 
 const REVIEWS_PAGE_SIZE = 6;
 
@@ -293,6 +294,9 @@ export default function ProviderDetailPage({ params }) {
                 </div>
               </div>
             )}
+
+            {/* Condiciones de cobro: el cliente ve el plazo del saldo antes de reservar */}
+            <PaymentTermsNotice terms={provider.paymentTerms} className="mb-4" />
 
             {/* Cancellation */}
             <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-2xl">

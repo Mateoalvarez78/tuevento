@@ -2,6 +2,7 @@
 // Real API-backed booking operations.
 
 import { api, buildQuery, ApiError } from './api';
+import { COMMISSION_RATE } from '@/lib/commissionHelpers';
 
 // Status mapping: backend uses 'accepted', frontend legacy uses 'confirmed'
 const STATUS_MAP = { accepted: 'confirmed', confirmed: 'accepted' };
@@ -85,7 +86,7 @@ function mapBooking(b) {
     totalEstimated:    parseFloat(b.total_amount) || 0,
     subtotal:          parseFloat(b.subtotal) || 0,
     commissionAmount:  parseFloat(b.commission_amount) || 0,
-    commissionRate:    parseFloat(b.commission_rate) || 0.08,
+    commissionRate:    parseFloat(b.commission_rate) || COMMISSION_RATE,
     providerNet:       parseFloat(b.provider_net) || 0,
     depositAmount:     parseFloat(b.deposit_amount) || 0,
     depositPaid:       b.deposit_paid || false,
@@ -147,7 +148,7 @@ export const bookingService = {
       grossRevenue:      d.earnings?.grossRevenue || 0,
       commissionAmount:  d.earnings?.totalCommission || 0,
       netRevenue:        d.earnings?.netRevenue || 0,
-      commissionRate:    d.earnings?.commissionRate || 0.08,
+      commissionRate:    d.earnings?.commissionRate || COMMISSION_RATE,
       conversionRate:    d.bookings?.conversionRate || 0,
       acceptanceRate:    d.bookings?.acceptanceRate || 0,
       ratingAvg:         d.ratingAvg || 0,

@@ -13,6 +13,7 @@ import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
 import Chip from '@/components/Chip';
+import { COMMISSION_LABEL } from '@/lib/commissionHelpers';
 
 const STEPS = [
   { label: 'Responsable', icon: User },
@@ -55,7 +56,7 @@ export default function NuevoProveedorPage() {
     description: '', city: '', department: '', address: '', zones: [],
   });
   const [commercial, setCommercial] = useState({
-    commissionRate: '', currency: 'UYU', paymentMethod: '',
+    currency: 'UYU', paymentMethod: '',
     bankName: '', accountType: '', accountNumber: '', accountHolder: '',
   });
   const [internalNotes, setInternalNotes] = useState('');
@@ -78,9 +79,6 @@ export default function NuevoProveedorPage() {
     setSubmitting(true);
     setError('');
     try {
-      const commissionRate = commercial.commissionRate !== ''
-        ? Math.max(0, Math.min(1, parseFloat(commercial.commissionRate) / 100))
-        : null;
       const bankAccount = (commercial.bankName || commercial.accountNumber || commercial.accountHolder)
         ? {
             bankName: commercial.bankName || undefined,
@@ -106,7 +104,6 @@ export default function NuevoProveedorPage() {
         currency: commercial.currency,
         paymentMethod: commercial.paymentMethod,
         bankAccount,
-        commissionRate,
         internalNotes,
       });
       setResult(res);
@@ -259,11 +256,6 @@ export default function NuevoProveedorPage() {
         {step === 2 && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Comisión Eventonow (%)">
-                <Input variant="dark" type="number" min="0" max="100" step="0.1" value={commercial.commissionRate}
-                  onChange={(e) => setCommercial({ ...commercial, commissionRate: e.target.value })}
-                  placeholder="Default de la plataforma" />
-              </Field>
               <Field label="Moneda">
                 <select className={selectCls} value={commercial.currency} onChange={(e) => setCommercial({ ...commercial, currency: e.target.value })}>
                   {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -306,7 +298,7 @@ export default function NuevoProveedorPage() {
               <SummaryRow label="Negocio" value={business.businessName} />
               <SummaryRow label="Ubicación" value={[business.city, business.department].filter(Boolean).join(', ') || '—'} />
               <SummaryRow label="Zonas" value={business.zones.join(', ') || '—'} />
-              <SummaryRow label="Comisión" value={commercial.commissionRate ? `${commercial.commissionRate}%` : 'Default de la plataforma'} />
+              <SummaryRow label="Comisión" value={`${COMMISSION_LABEL} (única para todos los proveedores)`} />
               <SummaryRow label="Moneda" value={commercial.currency} />
             </div>
             {error && <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">{error}</div>}

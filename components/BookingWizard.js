@@ -13,6 +13,7 @@ import {
 } from '@/lib/modifierSelection';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
+import PaymentTermsNotice from '@/components/payments/PaymentTermsNotice';
 import Input from '@/components/Input';
 import LocationPicker from '@/components/LocationPicker';
 import { safeFormatDate, addHoursToTime, todayStr } from '@/lib/date';
@@ -876,10 +877,8 @@ export default function BookingWizard({ provider, initialPackageId }) {
               </span>
             </div>
             <div className="h-px bg-gray-200" />
-            {/* La línea "Seña sugerida (30%)" se retiró: el modelo vigente es
-                que el cliente abona el TOTAL del servicio una vez que el
-                proveedor confirma la disponibilidad — no una seña parcial. El
-                cliente ve un único importe, que es el total. */}
+            {/* Seña + saldo: los porcentajes y plazos los manda el backend
+                (payment_terms) y se muestran debajo, nunca calculados acá. */}
             {totalEstimated != null ? (
               <div className="flex justify-between text-base">
                 <span className="font-semibold text-gray-800">Total estimado</span>
@@ -892,17 +891,15 @@ export default function BookingWizard({ provider, initialPackageId }) {
               </div>
             )}
           </div>
-          {/* Decía: "Si acepta, te contactará para coordinar el pago de la seña"
-              — describía un pago coordinado FUERA de la plataforma, lo contrario
-              del modelo de cobro. Ahora describe el flujo real y no nombra
-              ninguna pasarela (el checkout todavía no está operativo). */}
+          {/* Flujo real del cobro, sin nombrar la pasarela (guard de contenido
+              público). Las condiciones exactas salen de payment_terms. */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
             <strong>¿Cómo funciona?</strong> Tu solicitud llega al proveedor, que
-            confirma o rechaza la disponibilidad para tu fecha. Si la confirma, la
-            reserva queda pendiente de pago y vas a poder abonar el total desde
-            <strong> Mis reservas</strong>. La reserva queda confirmada cuando el
-            pago se acredita.
+            confirma o rechaza la disponibilidad para tu fecha. Si la confirma, vas a
+            poder pagar la seña y después el saldo desde <strong>Mis reservas</strong>.
+            La reserva queda confirmada cuando se acredita la seña.
           </div>
+          <PaymentTermsNotice terms={provider.paymentTerms} title="Condiciones de pago" className="mt-3" />
           {error && (
             <div className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
               {error}

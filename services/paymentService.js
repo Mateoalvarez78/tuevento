@@ -23,6 +23,31 @@ export const paymentService = {
     return res.data || [];
   },
 
+  // ── Proveedor ───────────────────────────────────────────────────────────────
+  /**
+   * Estado de la conexión de cobros del proveedor logueado y qué le falta
+   * para poder aceptar reservas. Sin códigos ni porcentajes.
+   * { state, can_receive_payments, can_accept_bookings, payments_required_to_accept,
+   *   requirements: [{ key, label, done }], pending_requirement, next_step }
+   */
+  async getMyPaymentAccount() {
+    const res = await api.get('/providers/me/payment-account');
+    return res.data;
+  },
+
+  /** Plazo del saldo elegido por el proveedor: { balance_due_days_before_event, options, client_view }. */
+  async getMyPaymentTerms() {
+    const res = await api.get('/providers/me/payment-terms');
+    return res.data;
+  },
+
+  async updateMyPaymentTerms(balanceDueDaysBeforeEvent) {
+    const res = await api.patch('/providers/me/payment-terms', {
+      balance_due_days_before_event: balanceDueDaysBeforeEvent,
+    });
+    return res.data;
+  },
+
   // ── Admin ─────────────────────────────────────────────────────────────────
   async adminListIntents(status) {
     const res = await api.get(`/payments/admin/intents${status ? `?status=${encodeURIComponent(status)}` : ''}`);
