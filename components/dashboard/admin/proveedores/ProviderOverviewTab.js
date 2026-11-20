@@ -6,6 +6,7 @@
 import { Calendar, Package, CalendarClock, DollarSign, Percent, Wallet, CheckCircle2, XCircle, Star } from 'lucide-react';
 import MetricCard from '@/components/MetricCard';
 import { safeFormatDate, safeFormatDateTime } from '@/lib/date';
+import { COMMISSION_LABEL } from '@/lib/commissionHelpers';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
 const pct = (v) => (v == null ? '—' : `${(v * 100).toFixed(0)}%`);
@@ -70,7 +71,7 @@ export default function ProviderOverviewTab({ provider }) {
           <InfoRow label="Tiempo de respuesta" value={p.responseTime ? `${p.responseTime} (declarado)` : '—'} />
         </InfoCard>
         <InfoCard title="Comercial">
-          <InfoRow label="Comisión" value={p.commissionRate != null ? `${(p.commissionRate * 100).toFixed(1)}%` : 'Default de la plataforma'} />
+          <InfoRow label="Comisión" value={`${COMMISSION_LABEL} (única)`} />
           <InfoRow label="Moneda" value={p.currency || '—'} />
           <InfoRow label="Método de cobro" value={p.paymentMethod || '—'} />
         </InfoCard>

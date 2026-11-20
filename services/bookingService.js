@@ -2,6 +2,7 @@
 // Real API-backed booking operations.
 
 import { api, buildQuery, ApiError } from './api';
+import { COMMISSION_RATE } from '@/lib/commissionHelpers';
 
 // Status mapping: backend uses 'accepted', frontend legacy uses 'confirmed'
 const STATUS_MAP = { accepted: 'confirmed', confirmed: 'accepted' };
@@ -14,8 +15,12 @@ function normalizeStatus(status) {
 // seña-pagada sin tocar el status crudo del backend (que sigue siendo solo
 // pending/accepted/rejected/cancelled/completed). Úsese solo para badges/color,
 // nunca para lógica de negocio (ahí seguí usando `status`/`rawStatus`).
+//
+// Seña + saldo (eventonow-back, migración 026): la reserva queda confirmada en
+// cuanto se paga la SEÑA (payment_status 'partial'); el saldo se paga después.
+// Por eso "esperando seña" es solo 'unpaid'.
 function computeDisplayStatus(normalizedStatus, paymentStatus) {
-  if (normalizedStatus === 'confirmed' && paymentStatus !== 'paid') return 'accepted';
+  if (normalizedStatus === 'confirmed' && paymentStatus === 'unpaid') return 'accepted';
   return normalizedStatus;
 }
 
@@ -81,11 +86,18 @@ function mapBooking(b) {
     totalEstimated:    parseFloat(b.total_amount) || 0,
     subtotal:          parseFloat(b.subtotal) || 0,
     commissionAmount:  parseFloat(b.commission_amount) || 0,
-    commissionRate:    parseFloat(b.commission_rate) || 0.08,
+    commissionRate:    parseFloat(b.commission_rate) || COMMISSION_RATE,
     providerNet:       parseFloat(b.provider_net) || 0,
     depositAmount:     parseFloat(b.deposit_amount) || 0,
     depositPaid:       b.deposit_paid || false,
     paymentStatus:     b.payment_status || 'unpaid',
+    // Check "pagar el total de una vez" del carrito (migración 028).
+    payInFullRequested: b.pay_in_full_requested === true,
+    // Plazos de cobro (migración 026). null cuando los pagos online están apagados.
+    paymentDueAt:      b.payment_due_at || null,
+    balanceDueAt:      b.balance_due_at || null,
+    balanceOverdueAt:  b.balance_overdue_at || null,
+    balanceAmount:     Math.round(((parseFloat(b.total_amount) || 0) - (parseFloat(b.deposit_amount) || 0)) * 100) / 100,
     // Status — normalize accepted→confirmed for legacy UI
     status:            normalizeStatus(b.status),
     rawStatus:         b.status,
@@ -138,7 +150,7 @@ export const bookingService = {
       grossRevenue:      d.earnings?.grossRevenue || 0,
       commissionAmount:  d.earnings?.totalCommission || 0,
       netRevenue:        d.earnings?.netRevenue || 0,
-      commissionRate:    d.earnings?.commissionRate || 0.08,
+      commissionRate:    d.earnings?.commissionRate || COMMISSION_RATE,
       conversionRate:    d.bookings?.conversionRate || 0,
       acceptanceRate:    d.bookings?.acceptanceRate || 0,
       ratingAvg:         d.ratingAvg || 0,
@@ -184,6 +196,9 @@ export const bookingService = {
       // precio y revalida min/max, obligatorios y doble cobro — nunca se
       // manda un importe desde acá.
       modifier_selections: data.modifierSelections || data.modifier_selections || [],
+      // Check del carrito "pagar el total de una vez": solo la opción por
+      // defecto del primer pago; el cliente la puede cambiar al pagar.
+      pay_in_full:     data.payInFull === true ? true : undefined,
       // El backend nunca confía en placeId/lat/lng/location_source sueltos
       // (se pueden falsificar) — la única prueba válida de que la dirección
       // salió de Google Places es el location_token firmado que devolvió
@@ -247,8 +262,10 @@ export const bookingService = {
   },
 
   /**
-   * Simula el pago de la seña (sin pasarela real todavía). Solo el cliente
-   * dueño de la reserva puede llamarlo, y solo si está aceptada y sin pago.
+   * SOLO DESARROLLO: simula el pago de la seña. El backend lo rechaza (403)
+   * salvo con PAYMENT_SIMULATION_ENABLED=true fuera de producción y con la
+   * pasarela real apagada; la UI lo muestra solo con
+   * NEXT_PUBLIC_PAYMENT_SIMULATION=true (lib/payments.js).
    */
   async payDeposit(id) {
     const res = await api.post(`/payments/booking/${id}/simulate-deposit`, {});

@@ -3,6 +3,7 @@
 // Solo consumido por el área admin (backend valida requireAdmin).
 
 import { api, buildQuery } from './api';
+import { COMMISSION_RATE } from '@/lib/commissionHelpers';
 
 const num = (v) => parseFloat(v) || 0;
 // El backend usa 'accepted'; la UI muestra 'confirmed' en los badges.
@@ -95,7 +96,7 @@ function mapDetail(b) {
     subtotal: num(b.subtotal),
     total: num(b.total_amount),
     commission: num(b.commission_amount),
-    commissionRate: num(b.commission_rate) || 0.08,
+    commissionRate: num(b.commission_rate) || COMMISSION_RATE,
     providerNet: num(b.provider_net),
     deposit: num(b.deposit_amount),
     depositPaid: b.deposit_paid || false,

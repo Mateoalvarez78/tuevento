@@ -18,6 +18,7 @@ import { CHART_AXIS, CHART_GRID_LIGHT, CHART_TOOLTIP_LIGHT, CHART_COLORS } from 
 import { TABLE_HEAD_CLS, TABLE_ROW_HOVER_CLS } from '@/components/Table';
 import { providerDashboardService } from '@/services/providerDashboardService';
 import { parseApiDate, safeFormatDate } from '@/lib/date';
+import PaymentAccountStatusCard from '@/components/dashboard/proveedor/PaymentAccountStatusCard';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
 const currentMonthKey = () => {
@@ -106,6 +107,9 @@ export default function ProviderOverview({ provider, services = [], onCreateServ
           <Button icon={Plus} onClick={onCreateService}>Crear servicio</Button>
         </div>
       </div>
+
+      {/* Estado de cobros online: solo aparece si al proveedor le falta algo. */}
+      <PaymentAccountStatusCard compact />
 
       {noActivity ? (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">

@@ -45,6 +45,9 @@ export function mapServiceToProvider(s) {
     totalBookings:   parseInt(s.total_bookings) || 0,
     responseTime:    s.response_time || 'Responde en menos de 24hs',
     cancellationPolicy: s.cancellation_policy || 'Consultar con el proveedor.',
+    // Seña, saldo y plazo del saldo elegido por el proveedor (A4). null si el
+    // backend no lo manda: la UI no inventa números.
+    paymentTerms:    s.payment_terms || null,
     eventTypes:      Array.isArray(s.event_types) ? s.event_types : [],
     packages:        mapPackages(s.packages),
     extras:          mapExtras(s.extras),
@@ -431,7 +434,6 @@ export const providerService = {
         currency:        data.currency || undefined,
         payment_method:  data.paymentMethod || undefined,
         bank_account:    data.bankAccount || undefined,
-        commission_rate: data.commissionRate != null ? data.commissionRate : undefined,
         internal_notes:  data.internalNotes || undefined,
       };
       const res = await api.post('/admin/providers', body);
@@ -463,7 +465,6 @@ export const providerService = {
         currency:        data.currency || undefined,
         payment_method:  data.paymentMethod || undefined,
         bank_account:    data.bankAccount || undefined,
-        commission_rate: data.commissionRate != null ? data.commissionRate : undefined,
         internal_notes:  data.internalNotes || undefined,
       };
       const res = await api.patch(`/admin/providers/${id}`, body);

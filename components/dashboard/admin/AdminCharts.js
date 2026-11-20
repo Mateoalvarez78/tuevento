@@ -5,6 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { CHART_COLORS, CHART_AXIS, CHART_GRID_DARK, CHART_TOOLTIP_DARK } from '@/lib/chartTheme';
+import { COMMISSION_LABEL } from '@/lib/commissionHelpers';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
 const shortMonth = (label) => (label || '').split(' ')[0]; // "Ene 2026" → "Ene"
@@ -79,7 +80,7 @@ export default function AdminCharts({ monthly = [], stats }) {
       </Panel>
 
       {/* Comisión Eventonow por mes */}
-      <Panel title="Comisión Eventonow por mes" subtitle="8% sobre reservas confirmadas · UYU">
+      <Panel title="Comisión Eventonow por mes" subtitle={`${COMMISSION_LABEL} sobre reservas confirmadas · UYU`}>
         {!hasMonthly ? empty('Sin datos aún') : (
           <div style={{ width: '100%', height: 210 }}>
             <ResponsiveContainer>
