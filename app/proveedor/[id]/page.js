@@ -295,7 +295,7 @@ export default function ProviderDetailPage({ params }) {
               </div>
             )}
 
-            {/* Condiciones de cobro: el cliente ve el plazo del saldo antes de reservar */}
+            {/* Condiciones de cobro: pago único, plazo y cuotas, antes de reservar */}
             <PaymentTermsNotice terms={provider.paymentTerms} className="mb-4" />
 
             {/* Cancellation */}

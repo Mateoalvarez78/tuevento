@@ -41,7 +41,7 @@ export default function ProviderOverviewTab({ provider }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
         <MetricCard theme="dark" icon={Package} label="Servicios publicados" value={`${p.publishedServicesCount}/${p.servicesCount}`} />
         <MetricCard theme="dark" icon={CalendarClock} label="Reservas totales" value={p.bookingsPending + p.bookingsAccepted + p.bookingsCompleted + p.bookingsCancelled + p.bookingsRejected} />
-        <MetricCard theme="dark" icon={DollarSign} label="Volumen bruto" value={money(p.grossAmount)} tone="emerald" tooltip="Reservas completadas o aceptadas con seña paga." />
+        <MetricCard theme="dark" icon={DollarSign} label="Volumen bruto" value={money(p.grossAmount)} tone="emerald" tooltip="Reservas completadas o aceptadas y pagas." />
         <MetricCard theme="dark" icon={Percent} label="Comisión Eventonow" value={money(p.commissionAmount)} tone="amber" />
         <MetricCard theme="dark" icon={Wallet} label="Neto del proveedor" value={money(p.providerNetAmount)} tone="blue" />
         <MetricCard theme="dark" icon={CheckCircle2} label="Tasa de aceptación" value={pct(p.acceptanceRate)} tooltip="(Aceptadas + completadas) / reservas ya decididas (excluye pendientes)." />

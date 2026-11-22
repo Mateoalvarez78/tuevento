@@ -1,6 +1,6 @@
 'use client';
 
-// Panel de conciliación de cobros con dLocal Go (seña + saldo).
+// Panel de conciliación de cobros con dLocal Go (pago único; seña y saldo solo en reservas viejas).
 // Qué hacer con cada estado: eventonow-back/docs/payments/RUNBOOK.md.
 
 import { useCallback, useEffect, useState } from 'react';
@@ -84,7 +84,7 @@ export default function AdminPagosPage() {
 
   return (
     <div className="p-4 sm:p-8">
-      <PageHeader theme="dark" title="Pagos" subtitle="Cobros de seña y saldo con dLocal Go" className="mb-5 sm:mb-6" />
+      <PageHeader theme="dark" title="Pagos" subtitle="Cobros de reservas con dLocal Go" className="mb-5 sm:mb-6" />
 
       <div className="flex gap-2 mb-5 flex-wrap" role="tablist">
         {TABS.map((t) => (

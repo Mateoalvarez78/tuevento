@@ -3,7 +3,6 @@
 import ProviderStatusBadge from '@/components/ProviderStatusBadge';
 import Button from '@/components/Button';
 import PaymentAccountStatusCard from '@/components/dashboard/proveedor/PaymentAccountStatusCard';
-import BalanceDueSettingCard from '@/components/dashboard/proveedor/BalanceDueSettingCard';
 import { useProviderDashboard } from '../layout';
 
 export default function ProviderProfilePage() {
@@ -53,7 +52,6 @@ export default function ProviderProfilePage() {
       <Button className="mt-5 w-full sm:w-auto">Guardar cambios</Button>
     </div>
     <PaymentAccountStatusCard />
-    <BalanceDueSettingCard />
     </div>
   );
 }

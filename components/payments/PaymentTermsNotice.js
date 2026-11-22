@@ -2,10 +2,10 @@
 
 import { paymentTermsLines } from '@/lib/payments';
 
-// Condiciones de cobro que el cliente ve ANTES de reservar: seña, plazo de la
-// seña y el plazo del saldo que eligió el proveedor (payment_terms del
-// backend). Si el backend no las manda, no se muestra nada: nunca se inventan
-// porcentajes ni plazos en el frontend.
+// Condiciones de cobro que el cliente ve ANTES de reservar: pago único por el
+// total, plazo para pagar y si se puede en cuotas (payment_terms del backend).
+// Si el backend no las manda, no se muestra nada: nunca se inventan plazos ni
+// cantidades de cuotas en el frontend.
 export default function PaymentTermsNotice({ terms, title = 'Cómo se paga', className = '' }) {
   const lines = paymentTermsLines(terms);
   if (!lines) return null;

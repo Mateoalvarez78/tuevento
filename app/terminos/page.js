@@ -8,7 +8,7 @@ import {
   LEGAL_PAGES_REACHABLE, legalIdentityRows,
 } from '@/lib/site';
 import { LEGAL_DOCS, docHref } from '@/lib/legalDocs';
-import { COMMERCIAL, DEPOSIT_PAYMENT_HOURS } from '@/lib/providerTerms';
+import { PAYMENT_HOURS } from '@/lib/providerTerms';
 
 export const metadata = legalMetadata({
   title: 'Términos y condiciones',
@@ -23,7 +23,7 @@ export const metadata = legalMetadata({
 // tienen su propio documento en el portal de proveedores (/provider/legal) y
 // NO se enlaza desde acá: las áreas no se cruzan.
 //
-// Los números (seña, saldo, plazos) salen de lib/providerTerms.js.
+// Los números (plazo de pago y escalas) salen de lib/providerTerms.js.
 // Las cláusulas abiertas van en <PendingLegal>: su texto propuesto se publica
 // rotulado «En revisión legal»; la nota de qué falta decidir solo se ve en dev.
 
@@ -35,7 +35,7 @@ const SECTIONS = [
   { id: 'oferta',           title: 'Publicación de la oferta' },
   { id: 'contratacion',     title: 'Cómo se contrata' },
   { id: 'presupuestos',     title: 'Presupuestos personalizados' },
-  { id: 'precios',          title: 'Precios, seña y saldo' },
+  { id: 'precios',          title: 'Precios y forma de pago' },
   { id: 'pagos',            title: 'Medios de pago y cobro' },
   { id: 'cancelaciones',    title: 'Cancelaciones y reembolsos' },
   { id: 'cliente',          title: 'Obligaciones del cliente' },
@@ -64,8 +64,6 @@ export default function TerminosPage() {
   if (!LEGAL_PAGES_REACHABLE) notFound();
 
   const identityRows = legalIdentityRows();
-  const c = COMMERCIAL;
-  const dueOptions = c.balanceDueOptionsDays.join(', ').replace(/, (\d+)$/, ' o $1');
 
   return (
     <LegalDraftLayout
@@ -111,9 +109,8 @@ export default function TerminosPage() {
         <li><strong>Cliente:</strong> quien busca y contrata un servicio para su evento.</li>
         <li><strong>Proveedor:</strong> la persona o empresa independiente que ofrece y presta el servicio.</li>
         <li><strong>Solicitud:</strong> el pedido de disponibilidad que el cliente envía al proveedor para una fecha y un evento concretos.</li>
-        <li><strong>Reserva:</strong> la contratación de un servicio que el proveedor aceptó. Queda confirmada cuando se paga la seña.</li>
-        <li><strong>Seña:</strong> el pago inicial del {c.depositPercent} % del valor del servicio, que confirma la reserva.</li>
-        <li><strong>Saldo:</strong> el {c.balancePercent} % restante, que se paga antes del evento.</li>
+        <li><strong>Reserva:</strong> la contratación de un servicio que el proveedor aceptó. Queda confirmada cuando se paga.</li>
+        <li><strong>Pago:</strong> el pago único del total del servicio, por la plataforma, que confirma la reserva. Con tarjeta de crédito puede hacerse en cuotas.</li>
       </ul>
 
       {/* 4 */}
@@ -158,19 +155,15 @@ export default function TerminosPage() {
           de su operación. Un rechazo no genera cargos ni compensaciones.
         </li>
         <li>
-          <strong>Pago de la seña.</strong> Si el proveedor acepta, tenés{' '}
-          <strong>{DEPOSIT_PAYMENT_HOURS} horas</strong> para pagar la seña del{' '}
-          {c.depositPercent} %. Si no la pagás en ese plazo, la solicitud vence y la
-          fecha vuelve a quedar libre.
+          <strong>Pago.</strong> Si el proveedor acepta, tenés{' '}
+          <strong>{PAYMENT_HOURS} horas</strong> para pagar el total en un solo pago.
+          Si no lo pagás en ese plazo, la solicitud vence y la fecha vuelve a quedar
+          libre.
         </li>
         <li>
           <strong>Reserva confirmada.</strong> La reserva queda{' '}
-          <strong>confirmada cuando se acredita la seña</strong>. Antes de eso, la fecha
+          <strong>confirmada cuando se acredita el pago</strong>. Antes de eso, la fecha
           no está asegurada.
-        </li>
-        <li>
-          <strong>Pago del saldo.</strong> El {c.balancePercent} % restante se paga
-          por la plataforma antes del vencimiento que se te informa al reservar.
         </li>
       </ol>
 
@@ -185,23 +178,18 @@ export default function TerminosPage() {
       </p>
 
       {/* 8 */}
-      <h2 id="precios">8. Precios, seña y saldo</h2>
+      <h2 id="precios">8. Precios y forma de pago</h2>
       <ul>
         <li><strong>Los precios se expresan en pesos uruguayos.</strong></li>
         <li>
-          <strong>Seña del {c.depositPercent} %</strong> para confirmar y{' '}
-          <strong>saldo del {c.balancePercent} %</strong> antes del evento.
+          <strong>Pago único:</strong> pagás el total de la reserva de una sola vez,
+          dentro de las {PAYMENT_HOURS} horas desde que el proveedor la acepta. No hay
+          seña ni saldo.
         </li>
         <li>
-          <strong>Vencimiento del saldo:</strong> lo define cada proveedor entre{' '}
-          {dueOptions} días antes del evento ({c.balanceDueDefaultDays} días si no
-          define otro). Lo ves <strong>antes de reservar</strong> y queda fijo para tu
-          reserva aunque el proveedor lo cambie después.
-        </li>
-        <li>
-          <strong>Si el saldo vence sin pagarse</strong>, la reserva no se cancela
-          automáticamente: queda en revisión y nos comunicamos con vos y con el
-          proveedor.
+          <strong>Cuotas:</strong> con tarjeta de crédito podés elegir pagar en cuotas
+          al momento de pagar, según lo que ofrezcan tu tarjeta y el procesador de
+          pagos. Con cuotas o sin ellas, la reserva queda paga por el total.
         </li>
         <li>
           <strong>Una reserva por proveedor.</strong> Si contratás varios servicios
@@ -213,7 +201,7 @@ export default function TerminosPage() {
           por fuera.
         </li>
       </ul>
-      <PendingLegal note="Validar legal y contractualmente el traslado al cliente del costo de procesamiento online antes de aplicarlo.">
+      <PendingLegal note="Validar legal y contractualmente el traslado al cliente del costo de procesamiento online antes de aplicarlo. Confirmar con el procesador qué cuotas ofrece en Uruguay y quién asume el recargo (SBX-11 del backend) antes de describirlas con más detalle.">
         <p>
           El pago online puede tener un cargo por procesamiento. Si corresponde, lo vas
           a ver detallado <strong>antes de pagar</strong>, junto con el precio total de
@@ -266,7 +254,7 @@ export default function TerminosPage() {
       <ul>
         <li>Dar información veraz sobre el evento: fecha, lugar, cantidad de personas y requerimientos.</li>
         <li>Garantizar las condiciones para que el proveedor pueda prestar el servicio: acceso, espacio, instalaciones y permisos.</li>
-        <li>Pagar la seña y el saldo en los plazos indicados, por la plataforma.</li>
+        <li>Pagar la reserva en el plazo indicado, por la plataforma.</li>
         <li>Tratar al proveedor y a su personal con respeto.</li>
       </ul>
 

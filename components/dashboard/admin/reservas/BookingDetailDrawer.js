@@ -155,7 +155,8 @@ export default function BookingDetailDrawer({ bookingId, onClose, onChanged }) {
               </div>
               <Row label={`Comisión Eventonow (${Math.round(data.commissionRate * 100)}%)`}><span className="text-amber-400">{money(data.commission)}</span></Row>
               <Row label="Neto proveedor"><span className="text-emerald-400">{money(data.providerNet)}</span></Row>
-              {data.deposit > 0 && <Row label="Seña (30%)">{money(data.deposit)}</Row>}
+              {/* Legado: solo reservas creadas con seña + saldo. */}
+              {data.deposit > 0 && <Row label="Seña (reserva anterior al pago único)">{money(data.deposit)}</Row>}
             </Section>
 
             {/* Observaciones */}

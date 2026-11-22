@@ -3,7 +3,7 @@ import Badge from '@/components/Badge';
 
 const STATUS = {
   pending:   { label: 'Pendiente',      icon: Clock,        bg: 'bg-orange-50',  text: 'text-orange-700',  border: 'border-orange-200' },
-  accepted:  { label: 'Esperando seña', icon: Wallet,       bg: 'bg-violet-50',  text: 'text-violet-600',  border: 'border-violet-200' },
+  accepted:  { label: 'Esperando pago', icon: Wallet,       bg: 'bg-violet-50',  text: 'text-violet-600',  border: 'border-violet-200' },
   confirmed: { label: 'Confirmada',     icon: CheckCircle2, bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
   rejected:  { label: 'Rechazada',      icon: XCircle,      bg: 'bg-red-50',     text: 'text-red-600',     border: 'border-red-200' },
   cancelled: { label: 'Cancelada',      icon: Ban,          bg: 'bg-gray-50',    text: 'text-gray-500',    border: 'border-gray-200' },

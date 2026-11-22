@@ -1,5 +1,6 @@
 // ─── PAYMENT SERVICE ──────────────────────────────────────────────────────────
-// Cobros online con dLocal Go (seña + saldo). El backend crea el checkout y
+// Cobros online con dLocal Go (pago único por el total; las cuotas se eligen
+// dentro del checkout). El backend crea el checkout y
 // devuelve la URL alojada de dLocal; acá solo se pide y se redirige.
 // Ver eventonow-back/docs/payments/ARCHITECTURE.md.
 
@@ -7,13 +8,11 @@ import { api } from './api';
 
 export const paymentService = {
   /**
-   * Crea (o reutiliza) el checkout del próximo cobro de la reserva.
-   * `payInFull` (opcional): true = pagar el total, false = la seña; sin
-   * definir = lo que el cliente marcó al reservar. El backend decide.
+   * Crea (o reutiliza) el checkout del próximo cobro de la reserva: el total
+   * (o el saldo de una reserva vieja con seña). El backend decide.
    */
-  async createCheckout(bookingId, { payInFull } = {}) {
-    const body = typeof payInFull === 'boolean' ? { pay_in_full: payInFull } : {};
-    const res = await api.post(`/payments/booking/${bookingId}/checkout`, body);
+  async createCheckout(bookingId) {
+    const res = await api.post(`/payments/booking/${bookingId}/checkout`, {});
     return res.data; // { intentId, checkoutUrl, kind, amount, currency, reused }
   },
 
@@ -37,19 +36,6 @@ export const paymentService = {
    */
   async getMyPaymentAccount() {
     const res = await api.get('/providers/me/payment-account');
-    return res.data;
-  },
-
-  /** Plazo del saldo elegido por el proveedor: { balance_due_days_before_event, options, client_view }. */
-  async getMyPaymentTerms() {
-    const res = await api.get('/providers/me/payment-terms');
-    return res.data;
-  },
-
-  async updateMyPaymentTerms(balanceDueDaysBeforeEvent) {
-    const res = await api.patch('/providers/me/payment-terms', {
-      balance_due_days_before_event: balanceDueDaysBeforeEvent,
-    });
     return res.data;
   },
 

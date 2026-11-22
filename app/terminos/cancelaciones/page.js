@@ -31,7 +31,7 @@ const SECTIONS = [
   { id: 'cancela-proveedor', title: 'Si cancela el proveedor' },
   { id: 'fuerza-mayor',     title: 'Hechos fuera de control' },
   { id: 'cambios-fecha',    title: 'Cambios de fecha' },
-  { id: 'saldo-impago',     title: 'Si no se paga el saldo' },
+  { id: 'pago-vencido',     title: 'Si no se paga a tiempo' },
   { id: 'creditos',         title: 'Créditos compensatorios' },
   { id: 'reembolsos',       title: 'Cómo y cuándo se reembolsa' },
   { id: 'contracargos',     title: 'Desconocimientos y contracargos' },
@@ -40,7 +40,8 @@ const SECTIONS = [
 
 const INTERNAL_NOTES = [
   'Aprobar la escala de cancelación del cliente (propuesta de política única).',
-  'Confirmar con el abogado cómo convive la seña con el derecho de arrepentimiento y si aplica a servicios con fecha determinada.',
+  'Confirmar con el abogado cómo convive el pago anticipado del total (y lo retenido en la escala) con el derecho de arrepentimiento y si aplica a servicios con fecha determinada.',
+  'Confirmar con el procesador de pagos cómo se reembolsa un pago hecho en cuotas (si se anulan las cuotas pendientes o se devuelve lo ya cobrado).',
   'Confirmar la fecha de vigencia del nuevo art. 16 (Ley 20.531, art. 108) e implementar el botón de arrepentimiento.',
   'Definir plazos de respuesta a pedidos de cancelación y de inicio del reembolso.',
   'Definir la lista objetiva de hechos fuera de control.',
@@ -101,7 +102,7 @@ export default function CancelacionesPage() {
       {/* 3 */}
       <h2 id="antes-de-confirmar">3. Antes de que se confirme la reserva</h2>
       <p>
-        Mientras la reserva no esté confirmada (es decir, mientras no pagaste la seña),
+        Mientras la reserva no esté confirmada (es decir, mientras no la pagaste),
         podés retirar tu solicitud en cualquier momento <strong>sin ningún costo</strong>.
         No se te cobra nada.
       </p>
@@ -115,8 +116,7 @@ export default function CancelacionesPage() {
       </p>
       <PendingLegal note="Escala propuesta como política única de plataforma. Falta aprobación comercial y revisión jurídica (proporcionalidad frente a la Ley 17.250).">
         <p className="mb-2">
-          Recordá: la seña es el {c.depositPercent} % y el saldo el {c.balancePercent} %
-          del valor del servicio.
+          Los porcentajes se calculan sobre el total que pagaste por la reserva.
         </p>
       </PendingLegal>
       <div className="overflow-x-auto mb-4">
@@ -149,7 +149,7 @@ export default function CancelacionesPage() {
       <h2 id="cancela-proveedor">5. Si cancela el proveedor</h2>
       <ul>
         <li>Te avisamos apenas lo sepamos.</li>
-        <li><strong>Te devolvemos todo lo que pagaste</strong>: seña y saldo.</li>
+        <li><strong>Te devolvemos todo lo que pagaste</strong>: el total de la reserva.</li>
         <li>Te ayudamos a encontrar otro proveedor disponible para tu fecha.</li>
         <li>
           {BRAND} puede ofrecerte además un <strong>crédito compensatorio</strong> para
@@ -182,12 +182,11 @@ export default function CancelacionesPage() {
       </p>
 
       {/* 8 */}
-      <h2 id="saldo-impago">8. Si no se paga el saldo</h2>
+      <h2 id="pago-vencido">8. Si no se paga a tiempo</h2>
       <p>
-        Si el saldo vence sin pagarse, la reserva <strong>no se cancela
-        automáticamente</strong>. Queda en revisión y nos comunicamos con vos. Si no se
-        regulariza, la reserva puede cancelarse aplicando esta política como una
-        cancelación del cliente.
+        Si el proveedor acepta y no pagás dentro del plazo indicado, la solicitud{' '}
+        <strong>vence sola</strong>: la fecha vuelve a quedar libre y no se te cobra
+        nada.
       </p>
 
       {/* 9 */}
@@ -199,7 +198,7 @@ export default function CancelacionesPage() {
       </p>
       <ul>
         <li>Vence a los <strong>{c.creditExpiryMonths} meses</strong> desde que se emite.</li>
-        <li>Se aplica solo al <strong>saldo</strong> de una reserva nueva, nunca a la seña.</li>
+        <li>Se descuenta del <strong>total</strong> de una reserva nueva.</li>
         <li>Si la reserva donde lo usaste se cancela sin culpa tuya, <strong>te devolvemos el crédito</strong>.</li>
         <li>Lo financia {BRAND}: el nuevo proveedor cobra su precio completo.</li>
       </ul>
