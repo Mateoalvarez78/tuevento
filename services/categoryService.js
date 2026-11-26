@@ -29,6 +29,7 @@ function mapCategory(c) {
 
   return {
     id:    c.slug || c.id,   // slug — usado por filtros del catálogo
+    slug:  c.slug || null,   // explícito, para armar enlaces (lib/catalogLinks.js)
     categoryId: c.id,        // UUID real — necesario para crear servicios
     label: c.name,
     icon:  getCategoryIcon(c.slug || c.id), // componente Lucide, no emoji

@@ -7,6 +7,7 @@ import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
 import { categoryService } from '@/services/categoryService';
 import { BRAND, PROVIDER_CONTACT_MAILTO } from '@/lib/site';
+import { catalogCategoryHref } from '@/lib/catalogLinks';
 
 export const metadata = {
   title: `${BRAND} — Marketplace de servicios para eventos en Uruguay`,
@@ -117,7 +118,7 @@ export default async function HomePage() {
             {quickTags.map((cat) => (
               <Link
                 key={cat.id}
-                href={`/catalogo?categories=${cat.id}`}
+                href={catalogCategoryHref(cat)}
                 className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-white/70 border border-white/20 hover:border-white/60 hover:bg-white/10 hover:text-white px-3.5 py-1.5 rounded-full transition-all"
               >
                 <AppIcon icon={cat.icon} size={14} aria-hidden="true" />

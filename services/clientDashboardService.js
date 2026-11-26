@@ -64,6 +64,7 @@ export const clientDashboardService = {
       .filter(Boolean)
       .map((cat) => ({
         id: cat.id,
+        slug: cat.slug || cat.id,
         label: cat.label,
         icon: cat.icon,
         done: bookings.some((b) => matchesCategory(b, cat)),
