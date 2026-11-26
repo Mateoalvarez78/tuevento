@@ -163,8 +163,8 @@ export default async function HomePage() {
           <div className="flex items-end justify-between mb-8">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1.5">Destacados</p>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Proveedores top del mes</h2>
-              <p className="text-gray-500 mt-1.5 text-sm">Los más reservados y mejor puntuados de Uruguay</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Proveedores destacados</h2>
+              <p className="text-gray-500 mt-1.5 text-sm">Algunos de los proveedores publicados en Eventonow</p>
             </div>
             <Link
               href="/catalogo"
