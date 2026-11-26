@@ -68,6 +68,11 @@ export default function ProviderDetailPage({ params }) {
 
   const [provider, setProvider] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Distinto de "no existe": un 500 o un corte de red no es un servicio dado
+  // de baja. Mostrar "Proveedor no encontrado" ante un error del servidor
+  // escondió durante días que TODAS las fichas del catálogo fallaban.
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [selectedPackageId, setSelectedPackageId] = useState(null);
   const [descExpanded, setDescExpanded] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
@@ -83,6 +88,7 @@ export default function ProviderDetailPage({ params }) {
     if (!id) return;
     let cancelled = false;
     setLoading(true);
+    setLoadError(false);
     providerService.getById(id)
       .then((p) => {
         if (!cancelled) {
@@ -93,11 +99,15 @@ export default function ProviderDetailPage({ params }) {
           setLoading(false);
         }
       })
-      .catch(() => {
-        if (!cancelled) setLoading(false);
+      .catch((err) => {
+        if (cancelled) return;
+        // 404 = el servicio no existe → cae en "Proveedor no encontrado".
+        // Cualquier otra cosa es una falla nuestra, no del enlace.
+        if (err?.status !== 404) setLoadError(true);
+        setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, reloadKey]);
 
   // Reseñas reales del servicio (endpoint separado, paginado + distribución).
   useEffect(() => {
@@ -117,6 +127,18 @@ export default function ProviderDetailPage({ params }) {
   }, [id, reviewsPage]);
 
   if (loading) return <LoadingSkeleton />;
+
+  if (loadError) {
+    return (
+      <EmptyState
+        icon={PackageX}
+        title="No pudimos cargar este servicio"
+        description="Tuvimos un problema al cargar la información. Probá de nuevo en unos segundos."
+        cta="Reintentar"
+        onCta={() => setReloadKey((k) => k + 1)}
+      />
+    );
+  }
 
   if (!provider) {
     return (
