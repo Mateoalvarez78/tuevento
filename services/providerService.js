@@ -308,8 +308,10 @@ export function mapFeaturedProvider(p) {
 // ── Public API ────────────────────────────────────────────────────────────────
 export const providerService = {
   /** Proveedores destacados para la home pública (datos reales, orden por reservas/rating). */
-  async getFeaturedProviders(limit = 8) {
-    const res = await api.get(`/providers/featured${buildQuery({ limit })}`);
+  // `options` opcional: lo pasa la home cuando lo llama desde el servidor
+  // (ISR), con `{ signal, next: { revalidate } }` — ver lib/homeData.js.
+  async getFeaturedProviders(limit = 8, options = {}) {
+    const res = await api.get(`/providers/featured${buildQuery({ limit })}`, options);
     return (res.data || []).map(mapFeaturedProvider);
   },
 

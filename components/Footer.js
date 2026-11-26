@@ -200,7 +200,7 @@ export default function Footer() {
         {/* Búsquedas frecuentes */}
         <div className="border-t border-gray-800 pt-8 pb-4">
           <p className="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-3">
-            Servicios más buscados
+            Categorías del catálogo
           </p>
           <div className="flex flex-wrap gap-x-5 gap-y-1.5">
             {CATEGORY_CHIPS.map((c) => (
