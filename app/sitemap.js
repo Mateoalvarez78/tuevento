@@ -14,7 +14,7 @@
 //    el catálogo sea real.
 //  · /terminos y /privacidad MIENTRAS sigan en borrador — ver abajo.
 
-import { CANONICAL_ORIGIN, PUBLIC_LEGAL_READY, PUBLIC_CONTACT_READY } from '@/lib/site';
+import { CANONICAL_ORIGIN, PUBLIC_LEGAL_READY } from '@/lib/site';
 
 export default function sitemap() {
   const now = new Date();
@@ -22,20 +22,16 @@ export default function sitemap() {
   const entries = [
     { url: '/', changeFrequency: 'weekly', priority: 1 },
     { url: '/catalogo', changeFrequency: 'daily', priority: 0.8 },
+    // /contacto se sirve siempre (sin formulario mientras la compuerta esté
+    // cerrada): correo e identidad del titular son contenido público real.
+    { url: '/contacto', changeFrequency: 'yearly', priority: 0.5 },
   ];
 
   // FAIL-CLOSED. Nada entra al sitemap antes de estar publicado de verdad:
-  //  · /contacto se sirve solo cuando la compuerta de cumplimiento está
-  //    abierta (recolecta datos personales y enlaza a la Privacidad), así que
-  //    anunciarlo antes sería anunciar un 404.
-  //  · /terminos y /privacidad, ídem: datos legales completos + revisión
+  //  · /terminos y /privacidad: datos legales completos + revisión
   //    jurídica + las cinco secciones de política cerradas.
   // Las constantes son las MISMAS que deciden el 404 de cada página, así que el
   // sitemap no puede desincronizarse de lo que realmente se sirve.
-  if (PUBLIC_CONTACT_READY) {
-    entries.push({ url: '/contacto', changeFrequency: 'yearly', priority: 0.5 });
-  }
-
   if (PUBLIC_LEGAL_READY) {
     entries.push(
       { url: '/terminos', changeFrequency: 'yearly', priority: 0.4 },

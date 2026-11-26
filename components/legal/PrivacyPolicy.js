@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import LegalDraftLayout from '@/components/legal/LegalDraftLayout';
 import { LEGAL_DOCS } from '@/lib/legalDocs';
-import { BRAND, CONTACT_EMAIL, CONTACT_REACHABLE, legalIdentityRows } from '@/lib/site';
+import { BRAND, CONTACT_EMAIL, CONTACT_FORM_ENABLED, legalIdentityRows } from '@/lib/site';
 
 // ─── BASE DE ESTE DOCUMENTO ──────────────────────────────────────────────────
 // Cada tratamiento y cada tercero mencionado abajo fue VERIFICADO en el código o
@@ -12,7 +12,7 @@ import { BRAND, CONTACT_EMAIL, CONTACT_REACHABLE, legalIdentityRows } from '@/li
 // todos los scripts son propios. De ahí la sección sobre cookies.
 //
 // QUÉ FALTA para publicarla como vigente:
-//   · Identificación fiscal y domicilio del responsable (pendientes de confirmar).
+//   · Razón social y RUT del responsable (pendientes de cargar; el domicilio no se publica).
 //   · Plazos concretos de conservación por tipo de dato (decisión pendiente).
 //   · Revisión de un abogado uruguayo, incluido el encuadre en la Ley 18.331 y
 //     si corresponde inscribir la base ante la URCDP. NO se afirma que la base
@@ -33,7 +33,7 @@ const SECTIONS = [
 ];
 
 const INTERNAL_NOTES = [
-  'RUT y domicilio del responsable.',
+  'Razón social y RUT del responsable (LEGAL_ENTITY en lib/site.js).',
   'Plazos concretos de conservación por tipo de dato.',
   'Revisión de un abogado: encuadre en la Ley 18.331 y si corresponde inscribir la base ante la URCDP.',
   'Cuando exista el registro de aceptaciones: informar que se guarda fecha, versión aceptada y datos técnicos de la aceptación como evidencia.',
@@ -221,7 +221,7 @@ export default function PrivacyPolicy({ space = 'cliente' }) {
       <p>
         Para ejercerlos escribinos a{' '}
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
-        {CONTACT_REACHABLE && space === 'cliente' && (
+        {CONTACT_FORM_ENABLED && space === 'cliente' && (
           <>
             {' '}o usá el <Link href="/contacto">formulario de contacto</Link>
           </>
