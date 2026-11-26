@@ -26,7 +26,9 @@ const COPY = {
 export default function LegalHub({ space }) {
   const docs = spaceDocs(space);
   const copy = COPY[space];
-  const anyPreliminary = docs.some((d) => d.status !== 'published');
+  const preliminary = docs.filter((d) => d.status !== 'published');
+  const anyPreliminary = preliminary.length > 0;
+  const allPreliminary = preliminary.length === docs.length;
 
   return (
     <div className="bg-surface min-h-screen py-10 sm:py-14 px-4 sm:px-6 lg:px-8">
@@ -42,10 +44,21 @@ export default function LegalHub({ space }) {
             <div className="flex items-start gap-3">
               <AppIcon icon={ShieldAlert} size={20} className="text-amber-700 shrink-0 mt-0.5" aria-hidden="true" />
               <p className="text-sm text-amber-950/90 leading-relaxed">
-                <strong className="text-amber-950">Versiones preliminares.</strong> Estos
-                documentos están en revisión legal y todavía no son las versiones vigentes.
-                Cuando se publiquen las definitivas, cada uno va a indicar su fecha de
-                vigencia y te vamos a pedir que lo aceptes.
+                {allPreliminary ? (
+                  <>
+                    <strong className="text-amber-950">Versiones preliminares.</strong> Estos
+                    documentos están en revisión legal y todavía no son las versiones vigentes.
+                    Cuando se publiquen las definitivas, cada uno va a indicar su fecha de
+                    vigencia y te vamos a pedir que lo aceptes.
+                  </>
+                ) : (
+                  <>
+                    <strong className="text-amber-950">En versión preliminar:</strong>{' '}
+                    {preliminary.map((d) => d.title).join(', ')}. Está en revisión legal y
+                    todavía no es la versión vigente; los demás documentos de esta página sí
+                    están vigentes desde la fecha que indica cada uno.
+                  </>
+                )}
               </p>
             </div>
           </div>

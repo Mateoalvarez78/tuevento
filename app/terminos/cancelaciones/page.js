@@ -116,7 +116,7 @@ export default function CancelacionesPage() {
         cancelación y la fecha del evento, con fechas de Uruguay. Lo que te
         devolvemos depende de esa anticipación:
       </p>
-      <PendingLegal note="Plazo mínimo de 7 días decidido el 22/11/2026. El porcentaje retenido del tramo intermedio es una propuesta: falta aprobación comercial y revisión jurídica (proporcionalidad frente a la Ley 17.250).">
+      <PendingLegal inForce={LEGAL_DOCS.cancelaciones.status === 'published'} note="Plazo mínimo de 7 días decidido el 22/11/2026. El porcentaje retenido del tramo intermedio es una propuesta: falta aprobación comercial y revisión jurídica (proporcionalidad frente a la Ley 17.250).">
         <p className="mb-2">
           Los porcentajes se calculan sobre el total que pagaste por la reserva, aunque
           lo hayas pagado en cuotas.
@@ -181,7 +181,7 @@ export default function CancelacionesPage() {
         Buscamos primero un cambio de fecha; si no es posible, se reembolsa lo que
         corresponda.
       </p>
-      <PendingLegal note="Falta la lista objetiva de hechos que califican y qué documentación se pide." />
+      <PendingLegal inForce={LEGAL_DOCS.cancelaciones.status === 'published'} note="Falta la lista objetiva de hechos que califican y qué documentación se pide." />
 
       {/* 7 */}
       <h2 id="cambios-fecha">7. Cambios de fecha</h2>
@@ -222,7 +222,7 @@ export default function CancelacionesPage() {
         <li>El tiempo de acreditación depende de tu banco o emisor de tarjeta.</li>
         <li>Si un reembolso legal se demora, el importe se actualiza según la ley.</li>
       </ul>
-      <PendingLegal note="Definir el plazo máximo para iniciar el reembolso una vez resuelto el caso." />
+      <PendingLegal inForce={LEGAL_DOCS.cancelaciones.status === 'published'} note="Definir el plazo máximo para iniciar el reembolso una vez resuelto el caso." />
 
       {/* 11 */}
       <h2 id="contracargos">11. Desconocimientos y contracargos</h2>

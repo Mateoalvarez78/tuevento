@@ -252,7 +252,7 @@ export default function TerminosPage() {
           por fuera.
         </li>
       </ul>
-      <PendingLegal note="Validar legal y contractualmente el traslado al cliente del costo de procesamiento online antes de aplicarlo. Confirmar con el procesador qué cuotas ofrece en Uruguay y quién asume el recargo (SBX-11 del backend) antes de describirlas con más detalle.">
+      <PendingLegal inForce={LEGAL_DOCS.terminos.status === 'published'} note="Validar legal y contractualmente el traslado al cliente del costo de procesamiento online antes de aplicarlo. Confirmar con el procesador qué cuotas ofrece en Uruguay y quién asume el recargo (SBX-11 del backend) antes de describirlas con más detalle.">
         <p>
           El pago online puede tener un cargo por procesamiento. Si corresponde, lo vas
           a ver detallado <strong>antes de pagar</strong>, junto con el precio total de
