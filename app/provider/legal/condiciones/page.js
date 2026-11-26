@@ -9,6 +9,7 @@ import {
   PENALTY_SCALE,
   RECIDIVISM_STEPS,
   PAYMENT_HOURS,
+  CLIENT_CANCELLATION_SCALE,
 } from '@/lib/providerTerms';
 
 // ─── CONDICIONES PARA PROVEEDORES ────────────────────────────────────────────
@@ -42,7 +43,7 @@ const SECTIONS = [
   { id: 'obligaciones',           title: 'Obligaciones en reservas aceptadas' },
   { id: 'comision',               title: 'Comisión comercial' },
   { id: 'cobros',                 title: 'Cobros y procesador de pagos' },
-  { id: 'pago-cliente',           title: 'Cómo paga el cliente' },
+  { id: 'pago-cliente',           title: 'Cómo paga y cómo cancela el cliente' },
   { id: 'cancelaciones',          title: 'Si necesitás cancelar' },
   { id: 'revision-cancelaciones', title: 'Cancelación justificada o injustificada' },
   { id: 'penalizaciones',         title: 'Penalizaciones (propuesta)' },
@@ -62,7 +63,8 @@ const INTERNAL_NOTES = [
   'Aprobación definitiva de la escala de penalizaciones y del régimen de reincidencias.',
   'Revisión de un abogado uruguayo (cláusula penal, intereses, cobro de deudas y compatibilidad con la normativa de consumo).',
   'Validación del traslado al cliente del costo de procesamiento online.',
-  'Datos legales del titular (RUT y domicilio) y un canal formal de reclamos.',
+  'Datos legales del titular (razón social y RUT) y un canal formal de reclamos.',
+  'Confirmar con el procesador si los fondos pueden quedar retenidos hasta 7 días antes del evento (liberación diferida del pago dividido) y, según la respuesta, cómo se financian los reembolsos por cancelación del cliente.',
   'Mecanismo de aceptación con registro de versión (todavía no existe).',
 ];
 
@@ -174,12 +176,12 @@ export default function CondicionesProveedoresPage() {
       <PendingLegal note="Se pretende trasladar al cliente el costo del procesamiento online: hay que decidir cómo se informa ese costo (precio final con todo incluido o cargo separado visible antes de pagar) y validarlo legal y contractualmente antes de aplicarlo." />
 
       {/* 6 ─────────────────────────────────────────────────────────────── */}
-      <h2 id="pago-cliente">6. Cómo paga el cliente</h2>
+      <h2 id="pago-cliente">6. Cómo paga y cómo cancela el cliente</h2>
       <ol>
         <li>
           <strong>Pago único por el total.</strong> Cuando aceptás, el cliente tiene{' '}
           {PAYMENT_HOURS} horas para pagar el total de la reserva en un solo pago. No hay
-          seña ni saldo.
+          pagos parciales ni importes pendientes para más adelante.
         </li>
         <li>
           <strong>Reserva confirmada.</strong> La reserva queda confirmada cuando el pago
@@ -194,6 +196,25 @@ export default function CondicionesProveedoresPage() {
         </li>
       </ol>
       <PendingLegal note="Confirmar con el procesador de pagos qué cuotas ofrece en Uruguay con pago dividido, quién asume el recargo y si el vendedor recibe el total de una vez (SBX-11 del backend) antes de publicar esta cláusula como definitiva." />
+      <h3>Si el cliente cancela</h3>
+      <p>
+        El cliente puede cancelar una reserva confirmada como máximo hasta{' '}
+        <strong>{c.clientCancellationMinDays} días corridos antes del evento</strong>.
+        Con menos anticipación la reserva ya no admite cancelación de su parte, salvo el
+        derecho de arrepentimiento que la ley le reconoce en las contrataciones a
+        distancia. Lo que se le devuelve depende de la anticipación:
+      </p>
+      <ul>
+        {CLIENT_CANCELLATION_SCALE.map((t) => (
+          <li key={t.label}><strong>{t.label}:</strong> {t.refund}</li>
+        ))}
+      </ul>
+      <p>
+        Lo que se retiene en una cancelación del cliente es para vos, como compensación
+        por haber bloqueado la fecha. Los reembolsos por cancelación del cliente los
+        gestiona {BRAND}; no los negocies directamente con él.
+      </p>
+      <PendingLegal note="El porcentaje retenido del tramo intermedio es una propuesta pendiente de aprobación. Falta definir si la comisión de Eventonow se calcula sobre lo retenido y cómo se instrumenta el reembolso según los plazos de liquidación del procesador." />
 
       {/* 7 ─────────────────────────────────────────────────────────────── */}
       <h2 id="cancelaciones">7. Si necesitás cancelar una reserva</h2>
@@ -401,7 +422,7 @@ export default function CondicionesProveedoresPage() {
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> indicando el número de
         reserva. Te confirmamos la recepción y te respondemos por escrito.
       </p>
-      <PendingLegal note="Falta definir un canal formal específico para proveedores y los datos del titular (RUT y domicilio). El abogado debe validar la cláusula de jurisdicción." />
+      <PendingLegal note="Falta definir un canal formal específico para proveedores y los datos del titular (razón social y RUT). El abogado debe validar la cláusula de jurisdicción." />
 
     </LegalDraftLayout>
   );

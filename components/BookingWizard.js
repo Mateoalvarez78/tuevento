@@ -19,6 +19,7 @@ import LocationPicker from '@/components/LocationPicker';
 import { safeFormatDate, addHoursToTime, todayStr } from '@/lib/date';
 import { shouldShowGuestCapacityFields, isModelCheckoutEnabled, getPricingModelLabel } from '@/lib/packagePricingField';
 import { pricingCapabilitiesService } from '@/services/pricingCapabilitiesService';
+import { CONTACT_EMAIL, quoteRequestMailto } from '@/lib/site';
 import {
   getInitialUnits, getInitialBillableHours, validateUnitsSelection,
   validateBillableHoursSelection, formatHoursLabel,
@@ -637,7 +638,14 @@ export default function BookingWizard({ provider, initialPackageId }) {
           {isCustomQuote && (
             <div className="mt-6 flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
               <AppIcon icon={AlertTriangle} size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
-              <p>Este paquete requiere presupuesto personalizado. Contactá al proveedor directamente para cotizarlo — no se puede reservar automáticamente desde acá.</p>
+              <p>
+                Este paquete requiere presupuesto personalizado y no se reserva directamente.
+                Escribinos a{' '}
+                <a href={quoteRequestMailto(provider?.name)} className="font-semibold underline">{CONTACT_EMAIL}</a>{' '}
+                con la fecha, el lugar y la cantidad de invitados: le pasamos el pedido al
+                proveedor y te enviamos el presupuesto. Si lo aceptás, se paga dentro de la
+                plataforma como cualquier otra reserva.
+              </p>
             </div>
           )}
 
@@ -649,7 +657,9 @@ export default function BookingWizard({ provider, initialPackageId }) {
               <AppIcon icon={AlertTriangle} size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
               <p>
                 Este paquete se cobra {getPricingModelLabel(selectedPkg?.pricingModel).toLowerCase()} y todavía
-                no se puede reservar en línea. Contactá al proveedor para coordinarlo.
+                no se puede reservar en línea. Escribinos a{' '}
+                <a href={quoteRequestMailto(provider?.name)} className="font-semibold underline">{CONTACT_EMAIL}</a>{' '}
+                y lo coordinamos con el proveedor.
               </p>
             </div>
           )}

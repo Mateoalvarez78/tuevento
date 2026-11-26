@@ -67,7 +67,7 @@ export default function CancelacionesPage() {
         <ul>
           <li>Podés <strong>arrepentirte</strong> dentro del plazo legal y recuperar lo que pagaste, sin dar explicaciones.</li>
           <li>Si <strong>cancela el proveedor</strong>, te devolvemos todo lo que pagaste.</li>
-          <li>Si <strong>cancelás vos</strong> fuera del plazo de arrepentimiento, el reembolso depende de cuánto falte para el evento.</li>
+          <li>Si <strong>cancelás vos</strong> fuera del plazo de arrepentimiento, podés hacerlo <strong>hasta {c.clientCancellationMinDays} días antes del evento</strong>, y el reembolso depende de cuánto falte. Con menos anticipación la reserva ya no se puede cancelar.</li>
           <li>Ante un <strong>hecho fuera de control</strong> de las partes, revisamos el caso y buscamos una solución justa para ambos.</li>
           <li>Todas las cancelaciones y reembolsos los gestiona {BRAND}.</li>
         </ul>
@@ -110,19 +110,22 @@ export default function CancelacionesPage() {
       {/* 4 */}
       <h2 id="cancela-cliente">4. Si cancelás vos una reserva confirmada</h2>
       <p>
-        Fuera del plazo de arrepentimiento, el reembolso depende de la anticipación
-        con la que nos avises. Contamos los <strong>días corridos</strong> entre la
-        fecha en que pedís la cancelación y la fecha del evento.
+        Fuera del plazo de arrepentimiento podés cancelar una reserva confirmada{' '}
+        <strong>como máximo hasta {c.clientCancellationMinDays} días corridos antes del
+        evento</strong>. Contamos los días corridos entre la fecha en que nos pedís la
+        cancelación y la fecha del evento, con fechas de Uruguay. Lo que te
+        devolvemos depende de esa anticipación:
       </p>
-      <PendingLegal note="Escala propuesta como política única de plataforma. Falta aprobación comercial y revisión jurídica (proporcionalidad frente a la Ley 17.250).">
+      <PendingLegal note="Plazo mínimo de 7 días decidido el 22/11/2026. El porcentaje retenido del tramo intermedio es una propuesta: falta aprobación comercial y revisión jurídica (proporcionalidad frente a la Ley 17.250).">
         <p className="mb-2">
-          Los porcentajes se calculan sobre el total que pagaste por la reserva.
+          Los porcentajes se calculan sobre el total que pagaste por la reserva, aunque
+          lo hayas pagado en cuotas.
         </p>
       </PendingLegal>
       <div className="overflow-x-auto mb-4">
         <table>
           <caption className="text-left text-xs text-gray-500 mb-2">
-            Reembolso al cliente según la anticipación de la cancelación (propuesta).
+            Qué pasa si cancelás, según cuánto falte para el evento.
           </caption>
           <thead>
             <tr className="border-b border-gray-200 text-left">
@@ -142,7 +145,15 @@ export default function CancelacionesPage() {
       </div>
       <p>
         Lo que no se reembolsa compensa al proveedor por haber bloqueado la fecha y
-        rechazado otros eventos.
+        rechazado otros eventos. Si reservás un servicio cuando faltan menos de{' '}
+        {c.clientCancellationMinDays} días para el evento, tené en cuenta que desde el
+        momento del pago la reserva ya no admite cancelación de tu parte (salvo el
+        derecho de arrepentimiento del punto 2).
+      </p>
+      <p>
+        Si pagaste en cuotas, el reembolso se hace sobre el mismo medio de pago y la
+        forma en que se refleja en tu resumen (anulación de cuotas pendientes o
+        devolución de lo cobrado) depende del emisor de tu tarjeta.
       </p>
 
       {/* 5 */}
