@@ -8,7 +8,7 @@ import ServiceCard from '@/components/ServiceCard';
 import SkeletonCard from '@/components/SkeletonCard';
 import { providerService } from '@/services/providerService';
 
-// Sección "Proveedores top del mes" de la home pública. Datos reales.
+// Sección "Proveedores destacados" de la home pública. Datos reales.
 export default function FeaturedProviders() {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
