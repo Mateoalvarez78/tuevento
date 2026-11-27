@@ -7,6 +7,8 @@ import Button from '@/components/Button';
 import AppIcon from '@/components/AppIcon';
 import { bookingService } from '@/services/bookingService';
 import { safeFormatDate } from '@/lib/date';
+import { isPaymentAccountRequiredError } from '@/lib/payments';
+import Link from 'next/link';
 
 // Etapa 5: antes de confirmar, muestra cuánto tiene comprometido el proveedor
 // para esa fecha y deja elegir si bloquear el resto del día. La validación
@@ -21,6 +23,9 @@ export default function AcceptBookingModal({ booking, onClose, onAccepted, onCha
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [conflict, setConflict] = useState(false);
+  // 409 PAYMENT_ACCOUNT_REQUIRED / BOOKING_COMMISSION_MISMATCH: no es un
+  // conflicto de agenda, revisar la disponibilidad no lo arregla.
+  const [accountError, setAccountError] = useState(false);
   const [blockFullDay, setBlockFullDay] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -29,6 +34,7 @@ export default function AcceptBookingModal({ booking, onClose, onAccepted, onCha
     setPreview(null);
     setError(null);
     setConflict(false);
+    setAccountError(false);
     setLoading(true);
     bookingService.getAcceptPreview(booking.id)
       .then(setPreview)
@@ -48,7 +54,9 @@ export default function AcceptBookingModal({ booking, onClose, onAccepted, onCha
       const updated = await bookingService.updateStatus(booking.id, 'accepted', null, { blockFullDay });
       onAccepted?.(updated);
     } catch (e) {
-      const isConflict = e?.code === 'AVAILABILITY_CONFLICT' || e?.status === 409;
+      const isAccountError = isPaymentAccountRequiredError(e);
+      const isConflict = !isAccountError && (e?.code === 'AVAILABILITY_CONFLICT' || e?.status === 409);
+      setAccountError(isAccountError);
       setConflict(isConflict);
       setError(e?.message || 'No se pudo aceptar la reserva');
       setSubmitting(false);
@@ -90,7 +98,14 @@ export default function AcceptBookingModal({ booking, onClose, onAccepted, onCha
       ) : error ? (
         <div className="flex items-start gap-2 text-sm text-danger bg-danger/5 rounded-xl p-3">
           <AppIcon icon={AlertTriangle} size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
-          <p>{error}{conflict ? ' Volvé a revisar la disponibilidad antes de intentar de nuevo.' : ''}</p>
+          <div>
+            <p>{error}{conflict ? ' Volvé a revisar la disponibilidad antes de intentar de nuevo.' : ''}</p>
+            {accountError && (
+              <Link href="/dashboard/proveedor/perfil#cobros" className="inline-block mt-2 font-semibold underline">
+                Ver qué me falta para cobrar online
+              </Link>
+            )}
+          </div>
         </div>
       ) : preview && (
         <>

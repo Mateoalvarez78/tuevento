@@ -40,7 +40,7 @@ export default function EditarProveedorPage() {
     description: '', city: '', department: '', address: '', zones: [],
   });
   const [commercial, setCommercial] = useState({
-    commissionRate: '', currency: 'UYU', paymentMethod: '',
+    currency: 'UYU', paymentMethod: '',
     bankName: '', accountType: '', accountNumber: '', accountHolder: '',
   });
   const [internalNotes, setInternalNotes] = useState('');
@@ -67,7 +67,6 @@ export default function EditarProveedorPage() {
           zones: p.zones || [],
         });
         setCommercial({
-          commissionRate: p.commissionRate != null ? (p.commissionRate * 100).toString() : '',
           currency: p.currency || 'UYU',
           paymentMethod: p.paymentMethod || '',
           bankName: p.bankAccount?.bankName || '',
@@ -95,9 +94,6 @@ export default function EditarProveedorPage() {
     setSaving(true);
     setError('');
     try {
-      const commissionRate = commercial.commissionRate !== ''
-        ? Math.max(0, Math.min(1, parseFloat(commercial.commissionRate) / 100))
-        : null;
       const bankAccount = (commercial.bankName || commercial.accountNumber || commercial.accountHolder)
         ? {
             bankName: commercial.bankName || undefined,
@@ -123,7 +119,6 @@ export default function EditarProveedorPage() {
         currency: commercial.currency,
         paymentMethod: commercial.paymentMethod,
         bankAccount,
-        commissionRate,
         internalNotes,
       });
       router.push(`/admin/proveedores/${id}`);
@@ -211,11 +206,6 @@ export default function EditarProveedorPage() {
         <div className="border-t border-gray-800 pt-6">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Comercial</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <Field label="Comisión Eventonow (%)">
-              <Input variant="dark" type="number" min="0" max="100" step="0.1" value={commercial.commissionRate}
-                onChange={(e) => setCommercial({ ...commercial, commissionRate: e.target.value })}
-                placeholder="Default de la plataforma" />
-            </Field>
             <Field label="Moneda">
               <select className={selectCls} value={commercial.currency} onChange={(e) => setCommercial({ ...commercial, currency: e.target.value })}>
                 {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}

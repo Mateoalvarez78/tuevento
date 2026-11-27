@@ -8,6 +8,7 @@ import { assetUrl } from '@/services/api';
 import { getCategoryIcon } from '@/utils/icons';
 import { formatCurrency } from '@/utils/formatters';
 import { roundForDisplay } from '@/lib/smartPackages';
+import { CONTACT_EMAIL } from '@/lib/site';
 
 const MAX_INCLUDES_VISIBLE = 3;
 const THUMB_CLASSES = 'w-16 h-16 rounded-xl shrink-0 object-cover bg-gray-100';
@@ -126,7 +127,7 @@ export default function CategoryLineItem({ category, onEditPackage, onChangeProv
           )}
         </div>
         {requiresCustomQuote && (
-          <p className="text-xs text-gray-400 mt-0.5">Contactá al proveedor para cotizar este servicio.</p>
+          <p className="text-xs text-gray-400 mt-0.5">Presupuesto a pedido: escribinos a {CONTACT_EMAIL} para cotizarlo.</p>
         )}
         {visibleIncludes.length > 0 && (
           <p className="text-xs text-gray-400 mt-0.5 truncate">

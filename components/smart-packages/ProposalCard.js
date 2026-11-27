@@ -8,6 +8,7 @@ import Button from '@/components/Button';
 import CategoryLineItem from './CategoryLineItem';
 import { formatCurrency } from '@/utils/formatters';
 import { PROFILE_LABELS, PROFILE_DESCRIPTIONS, budgetSharePct, budgetBarWidthPct, roundForDisplay } from '@/lib/smartPackages';
+import { CONTACT_EMAIL } from '@/lib/site';
 
 // Identidad visual sutil por perfil — independiente de cuál sea la
 // "recomendada" (`proposal.recommended`, que depende de la preferencia que
@@ -84,7 +85,7 @@ export default function ProposalCard({ proposal, budget, onSelect, selecting = f
         {hasCustomQuoteCategories && (
           <div className="mt-2 flex items-start gap-1.5 text-xs text-gray-500">
             <AppIcon icon={TriangleAlert} size={13} className="mt-0.5 shrink-0 text-gray-400" aria-hidden="true" />
-            <span>Este total no incluye servicios con presupuesto personalizado — contactá a esos proveedores para cotizarlos.</span>
+            <span>Este total no incluye servicios con presupuesto personalizado: pedilos escribiendo a {CONTACT_EMAIL} y te enviamos la cotización.</span>
           </div>
         )}
       </div>

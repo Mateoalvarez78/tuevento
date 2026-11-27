@@ -17,6 +17,7 @@ import {
   X,
   Layers,
   Inbox,
+  CreditCard,
 } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
   // mostraba nada, así que un mensaje nuevo solo se descubría entrando a la
   // página: nadie se enteraba de que había llegado.
   { href: '/admin/contacto',   label: 'Mensajes',    icon: Inbox, badge: 'contactNew' },
+  { href: '/admin/pagos',      label: 'Pagos',       icon: CreditCard },
 ];
 
 export default function AdminLayout({ children }) {

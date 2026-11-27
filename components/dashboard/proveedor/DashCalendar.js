@@ -116,7 +116,7 @@ export function CalendarDrawer({ booking, onClose }) {
                   : `${booking.guests} personas`
               }
             />
-            <DetailRow icon={DollarSign} label="Monto" value={fmtFull(gross)} sub={booking.depositPaid ? 'Seña pagada' : 'Seña pendiente'} subIcon={booking.depositPaid ? CheckCircle2 : AlertCircle} subColor={booking.depositPaid ? 'text-emerald-600' : 'text-amber-500'} />
+            <DetailRow icon={DollarSign} label="Monto" value={fmtFull(gross)} sub={{ paid: 'Pagado', partial: 'Seña pagada (reserva anterior)' }[booking.paymentStatus] || 'Pago pendiente'} subIcon={booking.paymentStatus === 'paid' ? CheckCircle2 : AlertCircle} subColor={booking.paymentStatus === 'paid' ? 'text-emerald-600' : 'text-amber-500'} />
             <DetailRow icon={FileText} label="Servicio" value={booking.serviceTitle || '—'} />
             {booking.message && (
               <DetailRow icon={FileText} label="Mensaje del cliente" iconClassName="text-gray-400" value={booking.message} />

@@ -2,6 +2,7 @@
 
 import ProviderStatusBadge from '@/components/ProviderStatusBadge';
 import Button from '@/components/Button';
+import PaymentAccountStatusCard from '@/components/dashboard/proveedor/PaymentAccountStatusCard';
 import { useProviderDashboard } from '../layout';
 
 export default function ProviderProfilePage() {
@@ -12,6 +13,7 @@ export default function ProviderProfilePage() {
   }
 
   return (
+    <div className="space-y-5">
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
       <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
         <img
@@ -48,6 +50,8 @@ export default function ProviderProfilePage() {
         </div>
       </div>
       <Button className="mt-5 w-full sm:w-auto">Guardar cambios</Button>
+    </div>
+    <PaymentAccountStatusCard />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
   LayoutGrid, List, SlidersHorizontal,
-  ChevronDown, ChevronLeft, ChevronRight, Search, X,
+  ChevronDown, ChevronLeft, ChevronRight, Search, X, CloudOff,
   MapPin, Map, CalendarDays, PartyPopper, Star, CheckCircle2, DollarSign, SearchX,
 } from 'lucide-react';
 import FilterSidebar from '@/components/FilterSidebar';
@@ -48,6 +48,11 @@ function CatalogoContent() {
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [categories, setCategories] = useState([]);
+  // Robustez ante un backend lento o dormido: distinguir "no hay resultados"
+  // de "no pudimos cargar", avisar si tarda y permitir reintentar.
+  const [loadError, setLoadError] = useState(false);
+  const [slow, setSlow] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     categoryService.getAll().then(setCategories).catch(() => setCategories([]));
@@ -94,6 +99,9 @@ function CatalogoContent() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setLoadError(false);
+    setSlow(false);
+    const slowTimer = setTimeout(() => { if (!cancelled) setSlow(true); }, 6000);
     providerService.getAll({ ...filters, sort, page, limit: PER_PAGE })
       .then((res) => {
         if (!cancelled) {
@@ -105,11 +113,12 @@ function CatalogoContent() {
         }
       })
       .catch(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
+        if (!cancelled) { setLoadError(true); setLoading(false); }
+      })
+      .finally(() => clearTimeout(slowTimer));
+    return () => { cancelled = true; clearTimeout(slowTimer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtersKey]);
+  }, [filtersKey, reloadKey]);
 
   // filters.category puede traer varias, separadas por coma (ej. "catering,dj")
   const selectedCategoryIds = filters.category ? filters.category.split(',').filter(Boolean) : [];
@@ -203,6 +212,8 @@ function CatalogoContent() {
                       <span className="w-3 h-3 rounded-full bg-gray-200 skeleton" />
                       Buscando...
                     </span>
+                  ) : loadError ? (
+                    <span>No pudimos cargar los resultados</span>
                   ) : (
                     <>
                       <span className="font-semibold text-gray-800">{totalCount}</span>
@@ -320,7 +331,7 @@ function CatalogoContent() {
             {/* Category quick-pills (only when no category selected) */}
             {selectedCategories.length === 0 && !loading && (
               <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-5">
-                {categories.slice(0, 10).map((cat) => (
+                {categories.filter((cat) => cat.count > 0).slice(0, 10).map((cat) => (
                   <Chip key={cat.id} icon={cat.icon} onClick={() => toggleCategory(cat.id)} className="shadow-sm shrink-0">
                     {cat.label}
                   </Chip>
@@ -335,6 +346,21 @@ function CatalogoContent() {
                 : 'space-y-4'}
               >
                 {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
+                {slow && (
+                  <p className="col-span-full text-center text-sm text-gray-500" role="status">
+                    Está tardando más de lo normal. Seguimos buscando…
+                  </p>
+                )}
+              </div>
+            ) : loadError ? (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm" role="status">
+                <EmptyState
+                  icon={CloudOff}
+                  title="No pudimos cargar el catálogo"
+                  description="Puede ser algo momentáneo. Probá de nuevo en unos segundos."
+                  cta="Reintentar"
+                  onCta={() => setReloadKey((k) => k + 1)}
+                />
               </div>
             ) : pageItems.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">

@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import AppIcon from '@/components/AppIcon';
+import { catalogCategoryHref } from '@/lib/catalogLinks';
 
 export default function CategoryCard({ category, active = false }) {
   return (
     <Link
-      href={`/catalogo?categoria=${category.id}`}
+      href={catalogCategoryHref(category)}
       className={`group flex flex-col items-center gap-3 p-6 rounded-2xl border transition-all duration-200 cursor-pointer select-none
         ${active
           ? 'border-primary bg-primary-light shadow-md'

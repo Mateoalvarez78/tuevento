@@ -6,6 +6,7 @@
 import { Calendar, Package, CalendarClock, DollarSign, Percent, Wallet, CheckCircle2, XCircle, Star } from 'lucide-react';
 import MetricCard from '@/components/MetricCard';
 import { safeFormatDate, safeFormatDateTime } from '@/lib/date';
+import { COMMISSION_LABEL } from '@/lib/commissionHelpers';
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-UY')}`;
 const pct = (v) => (v == null ? '—' : `${(v * 100).toFixed(0)}%`);
@@ -40,7 +41,7 @@ export default function ProviderOverviewTab({ provider }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
         <MetricCard theme="dark" icon={Package} label="Servicios publicados" value={`${p.publishedServicesCount}/${p.servicesCount}`} />
         <MetricCard theme="dark" icon={CalendarClock} label="Reservas totales" value={p.bookingsPending + p.bookingsAccepted + p.bookingsCompleted + p.bookingsCancelled + p.bookingsRejected} />
-        <MetricCard theme="dark" icon={DollarSign} label="Volumen bruto" value={money(p.grossAmount)} tone="emerald" tooltip="Reservas completadas o aceptadas con seña paga." />
+        <MetricCard theme="dark" icon={DollarSign} label="Volumen bruto" value={money(p.grossAmount)} tone="emerald" tooltip="Reservas completadas o aceptadas y pagas." />
         <MetricCard theme="dark" icon={Percent} label="Comisión Eventonow" value={money(p.commissionAmount)} tone="amber" />
         <MetricCard theme="dark" icon={Wallet} label="Neto del proveedor" value={money(p.providerNetAmount)} tone="blue" />
         <MetricCard theme="dark" icon={CheckCircle2} label="Tasa de aceptación" value={pct(p.acceptanceRate)} tooltip="(Aceptadas + completadas) / reservas ya decididas (excluye pendientes)." />
@@ -70,7 +71,7 @@ export default function ProviderOverviewTab({ provider }) {
           <InfoRow label="Tiempo de respuesta" value={p.responseTime ? `${p.responseTime} (declarado)` : '—'} />
         </InfoCard>
         <InfoCard title="Comercial">
-          <InfoRow label="Comisión" value={p.commissionRate != null ? `${(p.commissionRate * 100).toFixed(1)}%` : 'Default de la plataforma'} />
+          <InfoRow label="Comisión" value={`${COMMISSION_LABEL} (única)`} />
           <InfoRow label="Moneda" value={p.currency || '—'} />
           <InfoRow label="Método de cobro" value={p.paymentMethod || '—'} />
         </InfoCard>

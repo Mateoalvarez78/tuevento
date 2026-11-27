@@ -9,7 +9,6 @@ import {
   SOCIAL_LINKS,
   PROVIDER_CONTACT_MAILTO,
   LEGAL_PAGES_REACHABLE,
-  CONTACT_REACHABLE,
   legalIdentityRows,
 } from '@/lib/site';
 
@@ -24,13 +23,14 @@ const EXPLORE_LINKS = [
   { label: 'Quiero ser proveedor', href: PROVIDER_CONTACT_MAILTO },
 ];
 
-// Enlaces condicionados a la compuerta de cumplimiento (lib/site.js). En un
-// build de producción con la compuerta cerrada, estas rutas responden 404: si
-// se enlazaran igual, el footer ofrecería tres enlaces rotos — exactamente lo
-// que esta tanda vino a eliminar. El filtro y el 404 salen de la MISMA
-// constante, así que no pueden desincronizarse.
+// Enlaces legales condicionados a la compuerta de cumplimiento (lib/site.js):
+// si la ruta respondiera 404, el footer no la enlaza. El filtro y el 404 salen
+// de la MISMA constante, así que no pueden desincronizarse.
+//
+// /contacto se enlaza SIEMPRE: la página se sirve en todos los entornos (solo
+// el formulario depende de la compuerta, ver CONTACT_FORM_ENABLED).
 const SUPPORT_LINKS = [
-  { label: 'Contacto',                          href: '/contacto',                enabled: CONTACT_REACHABLE },
+  { label: 'Contacto',                          href: '/contacto',                enabled: true },
   { label: 'Centro legal',                      href: '/legal',                   enabled: LEGAL_PAGES_REACHABLE },
   { label: 'Términos y condiciones',            href: '/terminos',                enabled: LEGAL_PAGES_REACHABLE },
   { label: 'Cancelaciones y reembolsos',        href: '/terminos/cancelaciones',  enabled: LEGAL_PAGES_REACHABLE },
@@ -62,7 +62,7 @@ const BOTTOM_LINKS = [
   { label: 'Términos',     href: '/terminos',   enabled: LEGAL_PAGES_REACHABLE },
   { label: 'Privacidad',   href: '/privacidad', enabled: LEGAL_PAGES_REACHABLE },
   { label: 'Centro legal', href: '/legal',      enabled: LEGAL_PAGES_REACHABLE },
-  { label: 'Contacto',     href: '/contacto',   enabled: CONTACT_REACHABLE },
+  { label: 'Contacto',     href: '/contacto',   enabled: true },
 ].filter((l) => l.enabled);
 
 // Sufijo del copyright — titular y país salen del mismo lugar que el resto de
@@ -182,7 +182,7 @@ export default function Footer() {
 
           {/* Identidad del titular — dato que dLocal exige ver publicado.
               Se renderizan solo las filas con valor (ver legalIdentityRows):
-              mientras falten RUT y domicilio, esas filas no existen en el DOM,
+              mientras falten razón social y RUT, esas filas no existen en el DOM,
               no aparecen vacías. */}
           <div className="col-span-2 lg:col-span-1">
             <h4 className="text-white font-semibold text-sm mb-4">Datos del titular</h4>
@@ -200,7 +200,7 @@ export default function Footer() {
         {/* Búsquedas frecuentes */}
         <div className="border-t border-gray-800 pt-8 pb-4">
           <p className="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-3">
-            Servicios más buscados
+            Categorías del catálogo
           </p>
           <div className="flex flex-wrap gap-x-5 gap-y-1.5">
             {CATEGORY_CHIPS.map((c) => (

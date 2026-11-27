@@ -3,6 +3,7 @@
 // GET /dashboard/provider (solo provider/admin) y mapea a camelCase.
 
 import { api, buildQuery } from './api';
+import { COMMISSION_RATE } from '@/lib/commissionHelpers';
 
 const MONTHS_ES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -111,7 +112,7 @@ export const providerDashboardService = {
         grossRevenue:    parseFloat(d.earnings?.grossRevenue) || 0,
         totalCommission: parseFloat(d.earnings?.totalCommission) || 0,
         netRevenue:      parseFloat(d.earnings?.netRevenue) || 0,
-        commissionRate:  parseFloat(d.earnings?.commissionRate) || 0.08,
+        commissionRate:  parseFloat(d.earnings?.commissionRate) || COMMISSION_RATE,
       },
       recentBookings:   (d.recentBookings || []).map(mapRecent),
       topServices:      (d.topServices || []).map(mapTopService),
@@ -134,7 +135,7 @@ export const providerDashboardService = {
         gross:          parseFloat(s.gross) || 0,
         commission:     parseFloat(s.commission) || 0,
         net:            parseFloat(s.net) || 0,
-        commissionRate: parseFloat(s.commissionRate) || 0.08,
+        commissionRate: parseFloat(s.commissionRate) || COMMISSION_RATE,
       },
       byMonth:      (d.byMonth || []).map(mapEarningsMonth).reverse(), // backend: DESC → queremos cronológico
       transactions: (d.transactions || []).map(mapTransaction),

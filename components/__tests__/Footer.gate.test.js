@@ -4,9 +4,9 @@
 // accesible del logo.
 //
 // El archivo re-importa el Footer con NODE_ENV=production para comprobar lo que
-// se renderiza en un build real: con la compuerta cerrada, el footer NO debe
-// ofrecer /terminos, /privacidad ni /contacto, porque esas tres rutas responden
-// 404. Enlazarlas devolvería al footer los enlaces rotos que esta tanda eliminó.
+// se renderiza en un build real: el footer enlaza solo rutas que se sirven.
+// /contacto se sirve siempre (sin formulario mientras la compuerta legal esté
+// cerrada), así que se enlaza siempre.
 import { describe, test, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 
@@ -33,8 +33,8 @@ function hrefs() {
 describe('enlaces con compuerta — producción', () => {
   // Desde el 19/11/2026 los documentos legales se publican como VERSIÓN
   // PRELIMINAR (LEGAL_PREVIEW_PUBLISHED en lib/site.js): sus rutas se sirven en
-  // producción, así que el footer las enlaza. El contacto sigue atado a la
-  // compuerta real (recolecta datos personales) y NO se enlaza.
+  // producción, así que el footer las enlaza. La página de contacto se sirve
+  // siempre; solo su formulario sigue atado a la compuerta real.
   test('enlaza los documentos legales de CLIENTES publicados como versión preliminar', async () => {
     await renderFooterWithEnv('production');
     const { LEGAL_PREVIEW_PUBLISHED } = await import('@/lib/site');
@@ -50,12 +50,12 @@ describe('enlaces con compuerta — producción', () => {
     expect(hrefs().filter((h) => h.startsWith('/provider') || h === '/terminos/proveedores')).toEqual([]);
   });
 
-  test('NO enlaza /contacto mientras la compuerta real esté cerrada', async () => {
+  test('enlaza /contacto SIEMPRE: la página se sirve aunque el formulario esté cerrado', async () => {
     await renderFooterWithEnv('production');
-    const { PUBLIC_CONTACT_READY } = await import('@/lib/site');
+    const { PUBLIC_CONTACT_READY, CONTACT_REACHABLE } = await import('@/lib/site');
     expect(PUBLIC_CONTACT_READY).toBe(false);
-    expect(hrefs()).not.toContain('/contacto');
-    expect(screen.queryByText('Contacto')).toBeNull();
+    expect(CONTACT_REACHABLE).toBe(true);
+    expect(hrefs()).toContain('/contacto');
   });
 
   test('sigue sin tener ningún enlace muerto', async () => {

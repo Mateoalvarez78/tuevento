@@ -13,11 +13,13 @@ import {
 } from '@/lib/modifierSelection';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
+import PaymentTermsNotice from '@/components/payments/PaymentTermsNotice';
 import Input from '@/components/Input';
 import LocationPicker from '@/components/LocationPicker';
 import { safeFormatDate, addHoursToTime, todayStr } from '@/lib/date';
 import { shouldShowGuestCapacityFields, isModelCheckoutEnabled, getPricingModelLabel } from '@/lib/packagePricingField';
 import { pricingCapabilitiesService } from '@/services/pricingCapabilitiesService';
+import { CONTACT_EMAIL, quoteRequestMailto } from '@/lib/site';
 import {
   getInitialUnits, getInitialBillableHours, validateUnitsSelection,
   validateBillableHoursSelection, formatHoursLabel,
@@ -636,7 +638,14 @@ export default function BookingWizard({ provider, initialPackageId }) {
           {isCustomQuote && (
             <div className="mt-6 flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
               <AppIcon icon={AlertTriangle} size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
-              <p>Este paquete requiere presupuesto personalizado. Contactá al proveedor directamente para cotizarlo — no se puede reservar automáticamente desde acá.</p>
+              <p>
+                Este paquete requiere presupuesto personalizado y no se reserva directamente.
+                Escribinos a{' '}
+                <a href={quoteRequestMailto(provider?.name)} className="font-semibold underline">{CONTACT_EMAIL}</a>{' '}
+                con la fecha, el lugar y la cantidad de invitados: le pasamos el pedido al
+                proveedor y te enviamos el presupuesto. Si lo aceptás, se paga dentro de la
+                plataforma como cualquier otra reserva.
+              </p>
             </div>
           )}
 
@@ -648,7 +657,9 @@ export default function BookingWizard({ provider, initialPackageId }) {
               <AppIcon icon={AlertTriangle} size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
               <p>
                 Este paquete se cobra {getPricingModelLabel(selectedPkg?.pricingModel).toLowerCase()} y todavía
-                no se puede reservar en línea. Contactá al proveedor para coordinarlo.
+                no se puede reservar en línea. Escribinos a{' '}
+                <a href={quoteRequestMailto(provider?.name)} className="font-semibold underline">{CONTACT_EMAIL}</a>{' '}
+                y lo coordinamos con el proveedor.
               </p>
             </div>
           )}
@@ -876,10 +887,8 @@ export default function BookingWizard({ provider, initialPackageId }) {
               </span>
             </div>
             <div className="h-px bg-gray-200" />
-            {/* La línea "Seña sugerida (30%)" se retiró: el modelo vigente es
-                que el cliente abona el TOTAL del servicio una vez que el
-                proveedor confirma la disponibilidad — no una seña parcial. El
-                cliente ve un único importe, que es el total. */}
+            {/* Pago único por el total: el plazo y si hay cuotas los manda
+                el backend (payment_terms) y se muestran debajo. */}
             {totalEstimated != null ? (
               <div className="flex justify-between text-base">
                 <span className="font-semibold text-gray-800">Total estimado</span>
@@ -892,17 +901,15 @@ export default function BookingWizard({ provider, initialPackageId }) {
               </div>
             )}
           </div>
-          {/* Decía: "Si acepta, te contactará para coordinar el pago de la seña"
-              — describía un pago coordinado FUERA de la plataforma, lo contrario
-              del modelo de cobro. Ahora describe el flujo real y no nombra
-              ninguna pasarela (el checkout todavía no está operativo). */}
+          {/* Flujo real del cobro, sin nombrar la pasarela (guard de contenido
+              público). Las condiciones exactas salen de payment_terms. */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
             <strong>¿Cómo funciona?</strong> Tu solicitud llega al proveedor, que
-            confirma o rechaza la disponibilidad para tu fecha. Si la confirma, la
-            reserva queda pendiente de pago y vas a poder abonar el total desde
-            <strong> Mis reservas</strong>. La reserva queda confirmada cuando el
-            pago se acredita.
+            confirma o rechaza la disponibilidad para tu fecha. Si la confirma, vas a
+            poder pagar el total en un solo pago desde <strong>Mis reservas</strong>.
+            La reserva queda confirmada cuando se acredita el pago.
           </div>
+          <PaymentTermsNotice terms={provider.paymentTerms} title="Condiciones de pago" className="mt-3" />
           {error && (
             <div className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
               {error}

@@ -2,6 +2,7 @@
 // Real API-backed booking operations.
 
 import { api, buildQuery, ApiError } from './api';
+import { COMMISSION_RATE } from '@/lib/commissionHelpers';
 
 // Status mapping: backend uses 'accepted', frontend legacy uses 'confirmed'
 const STATUS_MAP = { accepted: 'confirmed', confirmed: 'accepted' };
@@ -10,12 +11,16 @@ function normalizeStatus(status) {
   return STATUS_MAP[status] || status;
 }
 
-// Estado "humano" para UI: distingue aceptada-esperando-seña de confirmada-con-
-// seña-pagada sin tocar el status crudo del backend (que sigue siendo solo
+// Estado "humano" para UI: distingue aceptada-esperando-pago de confirmada-y-
+// pagada sin tocar el status crudo del backend (que sigue siendo solo
 // pending/accepted/rejected/cancelled/completed). Úsese solo para badges/color,
 // nunca para lógica de negocio (ahí seguí usando `status`/`rawStatus`).
+//
+// Pago único (eventonow-back, ADR 0007): la reserva queda confirmada cuando se
+// paga el total (payment_status 'paid'). Las reservas viejas con seña quedaban
+// confirmadas con la seña ('partial'). Por eso "esperando pago" es solo 'unpaid'.
 function computeDisplayStatus(normalizedStatus, paymentStatus) {
-  if (normalizedStatus === 'confirmed' && paymentStatus !== 'paid') return 'accepted';
+  if (normalizedStatus === 'confirmed' && paymentStatus === 'unpaid') return 'accepted';
   return normalizedStatus;
 }
 
@@ -81,15 +86,22 @@ function mapBooking(b) {
     totalEstimated:    parseFloat(b.total_amount) || 0,
     subtotal:          parseFloat(b.subtotal) || 0,
     commissionAmount:  parseFloat(b.commission_amount) || 0,
-    commissionRate:    parseFloat(b.commission_rate) || 0.08,
+    commissionRate:    parseFloat(b.commission_rate) || COMMISSION_RATE,
     providerNet:       parseFloat(b.provider_net) || 0,
+    // Legado (seña + saldo): 0 en reservas del pago único.
     depositAmount:     parseFloat(b.deposit_amount) || 0,
     depositPaid:       b.deposit_paid || false,
     paymentStatus:     b.payment_status || 'unpaid',
+    // Vencimiento del pago (migración 026). null cuando los pagos online están apagados.
+    paymentDueAt:      b.payment_due_at || null,
+    // Legado: saldo de reservas viejas con seña.
+    balanceDueAt:      b.balance_due_at || null,
+    balanceOverdueAt:  b.balance_overdue_at || null,
+    balanceAmount:     Math.round(((parseFloat(b.total_amount) || 0) - (parseFloat(b.deposit_amount) || 0)) * 100) / 100,
     // Status — normalize accepted→confirmed for legacy UI
     status:            normalizeStatus(b.status),
     rawStatus:         b.status,
-    // Solo para mostrar: "accepted" (esperando seña) vs "confirmed" (seña pagada).
+    // Solo para mostrar: "accepted" (esperando pago) vs "confirmed" (pagada).
     displayStatus:     computeDisplayStatus(normalizeStatus(b.status), b.payment_status || 'unpaid'),
     rejectionReason:   b.rejection_reason || null,
     cancellationReason:b.cancellation_reason || null,
@@ -138,7 +150,7 @@ export const bookingService = {
       grossRevenue:      d.earnings?.grossRevenue || 0,
       commissionAmount:  d.earnings?.totalCommission || 0,
       netRevenue:        d.earnings?.netRevenue || 0,
-      commissionRate:    d.earnings?.commissionRate || 0.08,
+      commissionRate:    d.earnings?.commissionRate || COMMISSION_RATE,
       conversionRate:    d.bookings?.conversionRate || 0,
       acceptanceRate:    d.bookings?.acceptanceRate || 0,
       ratingAvg:         d.ratingAvg || 0,
@@ -247,10 +259,12 @@ export const bookingService = {
   },
 
   /**
-   * Simula el pago de la seña (sin pasarela real todavía). Solo el cliente
-   * dueño de la reserva puede llamarlo, y solo si está aceptada y sin pago.
+   * SOLO DESARROLLO: simula el pago (el total). El backend lo rechaza (403)
+   * salvo con PAYMENT_SIMULATION_ENABLED=true fuera de producción y con la
+   * pasarela real apagada; la UI lo muestra solo con
+   * NEXT_PUBLIC_PAYMENT_SIMULATION=true (lib/payments.js).
    */
-  async payDeposit(id) {
+  async simulatePayment(id) {
     const res = await api.post(`/payments/booking/${id}/simulate-deposit`, {});
     return mapBooking(res.data);
   },

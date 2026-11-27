@@ -19,6 +19,20 @@ Next.js 16 + React 19, JavaScript puro (sin TypeScript), Tailwind v4. Ver la Kno
 - **Sin TypeScript.**
 - **Next.js 16 tiene breaking changes** respecto a versiones anteriores (ver `AGENTS.md` arriba) — confirmar contra `node_modules/next/dist/docs/` antes de asumir un comportamiento de una versión previa (ej. `params` en rutas dinámicas es una `Promise`).
 
+## Pagos (pago único por el total con dLocal Go)
+
+Fuente de verdad del dominio: `eventonow-back/docs/payments/ARCHITECTURE.md` y `eventonow-back/src/modules/payments/CLAUDE.md` (repo del backend).
+
+- **El frontend nunca decide que algo está pagado.** Solo muestra `payment_status` de la reserva y el estado del intento que devuelve la API. `/pago/exito` y `/pago/cancelado` no confían en la URL: consultan `POST /payments/intents/:id/sync`.
+- **Modelo vigente (ADR 0007 del backend, 22/11/2026):** el cliente paga **el total en un solo pago** dentro de las 48 h desde la aceptación. Con tarjeta de crédito elige **cuotas dentro del checkout** de dLocal Go; para nosotros es un único cobro. No hay seña, ni saldo, ni check "pagar el total" en el carrito. Seña y saldo solo aparecen en reservas viejas (`paymentStatus === 'partial'`, `depositAmount > 0`) y se muestran como legado.
+- Toda la lógica de qué cobro toca, plazos y textos vive en `lib/payments.js` (puro, con tests). Las llamadas, en `services/paymentService.js`.
+- Las condiciones que ve el cliente antes de reservar salen de `payment_terms` del backend (`{ payment_mode, payment_due_hours, installments_available }`, `paymentTermsLines`). Nunca prometer un número de cuotas: dependen de la tarjeta. `NEXT_PUBLIC_PAYMENT_INSTALLMENTS=false` apaga el aviso de cuotas en Mis reservas (espejo de `PAYMENT_INSTALLMENTS_ENABLED` del backend).
+- Los textos legales toman los números de `lib/providerTerms.js` (`PAYMENT_HOURS`, escala de cancelación en % del total).
+- Ante `PAYMENT_STATUS_UNKNOWN` o `PAYMENT_UNDER_REVIEW` el mensaje al cliente pide **no volver a pagar** (`paymentErrorMessage`). No reemplazarlo por un genérico.
+- El cliente solo cancela por su cuenta si `payment_status === 'unpaid'`; con dinero cobrado lo gestiona el equipo.
+- Flags públicas: `NEXT_PUBLIC_ONLINE_PAYMENTS_ENABLED=true` muestra el botón de pago real; `NEXT_PUBLIC_PAYMENT_SIMULATION=true` solo en desarrollo y nunca junto con la anterior.
+- Admin: `/admin/pagos` (conciliación) y la pestaña **Cobros** del proveedor (conexión con dLocal Go).
+
 ## Ver también
 
 [`../docs/FRONTEND.md`](../docs/FRONTEND.md) · [`../docs/COMPONENT_LIBRARY.md`](../docs/COMPONENT_LIBRARY.md) · [`../docs/CODING_STANDARDS.md`](../docs/CODING_STANDARDS.md)

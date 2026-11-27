@@ -8,7 +8,8 @@ import {
   COMMERCIAL,
   PENALTY_SCALE,
   RECIDIVISM_STEPS,
-  DEPOSIT_PAYMENT_HOURS,
+  PAYMENT_HOURS,
+  CLIENT_CANCELLATION_SCALE,
 } from '@/lib/providerTerms';
 
 // ─── CONDICIONES PARA PROVEEDORES ────────────────────────────────────────────
@@ -31,7 +32,7 @@ import {
 
 export const metadata = {
   title: 'Condiciones para proveedores',
-  description: `Condiciones para proveedores de ${BRAND}: comisión, cobros, seña y saldo, cancelaciones, penalidades y procedimiento de revisión.`,
+  description: `Condiciones para proveedores de ${BRAND}: comisión, cobros, forma de pago del cliente, cancelaciones, penalidades y procedimiento de revisión.`,
   alternates: { canonical: '/provider/legal/condiciones' },
   robots: { index: false, follow: false },
 };
@@ -42,7 +43,7 @@ const SECTIONS = [
   { id: 'obligaciones',           title: 'Obligaciones en reservas aceptadas' },
   { id: 'comision',               title: 'Comisión comercial' },
   { id: 'cobros',                 title: 'Cobros y procesador de pagos' },
-  { id: 'sena-saldo',             title: 'Seña, saldo y vencimientos' },
+  { id: 'pago-cliente',           title: 'Cómo paga y cómo cancela el cliente' },
   { id: 'cancelaciones',          title: 'Si necesitás cancelar' },
   { id: 'revision-cancelaciones', title: 'Cancelación justificada o injustificada' },
   { id: 'penalizaciones',         title: 'Penalizaciones (propuesta)' },
@@ -62,7 +63,8 @@ const INTERNAL_NOTES = [
   'Aprobación definitiva de la escala de penalizaciones y del régimen de reincidencias.',
   'Revisión de un abogado uruguayo (cláusula penal, intereses, cobro de deudas y compatibilidad con la normativa de consumo).',
   'Validación del traslado al cliente del costo de procesamiento online.',
-  'Datos legales del titular (RUT y domicilio) y un canal formal de reclamos.',
+  'Datos legales del titular (razón social y RUT) y un canal formal de reclamos.',
+  'Confirmar con el procesador si los fondos pueden quedar retenidos hasta 7 días antes del evento (liberación diferida del pago dividido) y, según la respuesta, cómo se financian los reembolsos por cancelación del cliente.',
   'Mecanismo de aceptación con registro de versión (todavía no existe).',
 ];
 
@@ -72,7 +74,6 @@ export default function CondicionesProveedoresPage() {
   if (!PROVIDER_TERMS_REACHABLE) notFound();
 
   const c = COMMERCIAL;
-  const dueOptions = c.balanceDueOptionsDays.join(', ').replace(/, (\d+)$/, ' o $1');
 
   return (
     <LegalDraftLayout
@@ -87,7 +88,7 @@ export default function CondicionesProveedoresPage() {
         <h2 id="resumen" className="!mt-0">En pocas palabras</h2>
         <ul>
           <li>{BRAND} cobra una comisión del <strong>{pct(c.commissionPercent)}</strong> del valor del servicio.</li>
-          <li>El cliente paga una <strong>seña del {pct(c.depositPercent)}</strong> para confirmar y el <strong>saldo del {pct(c.balancePercent)}</strong> antes del evento, en el plazo que vos elijas.</li>
+          <li>El cliente paga <strong>el total en un solo pago</strong> para confirmar la reserva (con tarjeta de crédito puede elegir cuotas).</li>
           <li>Podés publicar y recibir solicitudes sin conectar tu cuenta de cobro, pero <strong>no podés aceptar reservas</strong> hasta conectarla.</li>
           <li>Si tenés que cancelar una reserva aceptada, lo pedís y lo revisa nuestro equipo. Al cliente siempre se le devuelve lo que corresponda.</li>
           <li>Las penalizaciones por cancelaciones injustificadas son, por ahora, una <strong>propuesta pendiente de validación</strong>.</li>
@@ -175,34 +176,45 @@ export default function CondicionesProveedoresPage() {
       <PendingLegal note="Se pretende trasladar al cliente el costo del procesamiento online: hay que decidir cómo se informa ese costo (precio final con todo incluido o cargo separado visible antes de pagar) y validarlo legal y contractualmente antes de aplicarlo." />
 
       {/* 6 ─────────────────────────────────────────────────────────────── */}
-      <h2 id="sena-saldo">6. Seña, saldo y vencimientos</h2>
+      <h2 id="pago-cliente">6. Cómo paga y cómo cancela el cliente</h2>
       <ol>
         <li>
-          <strong>Seña del {pct(c.depositPercent)}.</strong> Cuando aceptás, el cliente
-          tiene {DEPOSIT_PAYMENT_HOURS} horas para pagar la seña. La reserva queda
-          confirmada cuando la seña se acredita; si no se paga, la solicitud vence y la
-          fecha vuelve a quedar libre.
+          <strong>Pago único por el total.</strong> Cuando aceptás, el cliente tiene{' '}
+          {PAYMENT_HOURS} horas para pagar el total de la reserva en un solo pago. No hay
+          pagos parciales ni importes pendientes para más adelante.
         </li>
         <li>
-          <strong>Saldo del {pct(c.balancePercent)}.</strong> Se habilita cuando se
-          confirma la seña y se paga también a través de la plataforma.
+          <strong>Reserva confirmada.</strong> La reserva queda confirmada cuando el pago
+          se acredita. Si no se paga en el plazo, la solicitud vence sola y la fecha
+          vuelve a quedar libre.
         </li>
         <li>
-          <strong>Vencimiento del saldo.</strong> Elegís en tu configuración cuántos
-          días antes del evento vence: <strong>{dueOptions} días</strong>. Si no elegís,
-          se aplican <strong>{c.balanceDueDefaultDays} días</strong>.
-        </li>
-        <li>
-          <strong>La configuración se congela en cada reserva.</strong> El plazo
-          vigente al aceptar una reserva queda guardado en esa reserva. Si después lo
-          cambiás, el cambio rige solo para las reservas nuevas.
+          <strong>Cuotas.</strong> Con tarjeta de crédito el cliente puede elegir cuotas
+          al pagar, según lo que ofrezcan su tarjeta y el procesador. Para vos es igual
+          un único cobro por el total: el procesador separa la comisión y acredita tu
+          parte según sus plazos normales.
         </li>
       </ol>
+      <PendingLegal note="Confirmar con el procesador de pagos qué cuotas ofrece en Uruguay con pago dividido, quién asume el recargo y si el vendedor recibe el total de una vez (SBX-11 del backend) antes de publicar esta cláusula como definitiva." />
+      <h3>Si el cliente cancela</h3>
       <p>
-        Si el saldo vence sin pagarse, la reserva <strong>no se cancela sola</strong>:
-        queda en revisión de nuestro equipo, que se comunica con las partes.
+        El cliente puede cancelar una reserva confirmada como máximo hasta{' '}
+        <strong>{c.clientCancellationMinDays} días corridos antes del evento</strong>.
+        Con menos anticipación la reserva ya no admite cancelación de su parte, salvo el
+        derecho de arrepentimiento que la ley le reconoce en las contrataciones a
+        distancia. Lo que se le devuelve depende de la anticipación:
       </p>
-      <PendingLegal note="Definir: qué pasa si el evento está más cerca que el vencimiento elegido (ej. reserva aceptada 5 días antes con vencimiento a 7 días), y qué derechos tiene el proveedor cuando el cliente no paga el saldo." />
+      <ul>
+        {CLIENT_CANCELLATION_SCALE.map((t) => (
+          <li key={t.label}><strong>{t.label}:</strong> {t.refund}</li>
+        ))}
+      </ul>
+      <p>
+        Lo que se retiene en una cancelación del cliente es para vos, como compensación
+        por haber bloqueado la fecha. Los reembolsos por cancelación del cliente los
+        gestiona {BRAND}; no los negocies directamente con él.
+      </p>
+      <PendingLegal note="El porcentaje retenido del tramo intermedio es una propuesta pendiente de aprobación. Falta definir si la comisión de Eventonow se calcula sobre lo retenido y cómo se instrumenta el reembolso según los plazos de liquidación del procesador." />
 
       {/* 7 ─────────────────────────────────────────────────────────────── */}
       <h2 id="cancelaciones">7. Si necesitás cancelar una reserva</h2>
@@ -410,7 +422,7 @@ export default function CondicionesProveedoresPage() {
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> indicando el número de
         reserva. Te confirmamos la recepción y te respondemos por escrito.
       </p>
-      <PendingLegal note="Falta definir un canal formal específico para proveedores y los datos del titular (RUT y domicilio). El abogado debe validar la cláusula de jurisdicción." />
+      <PendingLegal note="Falta definir un canal formal específico para proveedores y los datos del titular (razón social y RUT). El abogado debe validar la cláusula de jurisdicción." />
 
     </LegalDraftLayout>
   );

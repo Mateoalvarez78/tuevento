@@ -45,6 +45,9 @@ export function mapServiceToProvider(s) {
     totalBookings:   parseInt(s.total_bookings) || 0,
     responseTime:    s.response_time || 'Responde en menos de 24hs',
     cancellationPolicy: s.cancellation_policy || 'Consultar con el proveedor.',
+    // Condiciones de cobro: pago único, plazo y si hay cuotas. null si el
+    // backend no lo manda: la UI no inventa números.
+    paymentTerms:    s.payment_terms || null,
     eventTypes:      Array.isArray(s.event_types) ? s.event_types : [],
     packages:        mapPackages(s.packages),
     extras:          mapExtras(s.extras),
@@ -305,8 +308,10 @@ export function mapFeaturedProvider(p) {
 // ── Public API ────────────────────────────────────────────────────────────────
 export const providerService = {
   /** Proveedores destacados para la home pública (datos reales, orden por reservas/rating). */
-  async getFeaturedProviders(limit = 8) {
-    const res = await api.get(`/providers/featured${buildQuery({ limit })}`);
+  // `options` opcional: lo pasa la home cuando lo llama desde el servidor
+  // (ISR), con `{ signal, next: { revalidate } }` — ver lib/homeData.js.
+  async getFeaturedProviders(limit = 8, options = {}) {
+    const res = await api.get(`/providers/featured${buildQuery({ limit })}`, options);
     return (res.data || []).map(mapFeaturedProvider);
   },
 
@@ -431,7 +436,6 @@ export const providerService = {
         currency:        data.currency || undefined,
         payment_method:  data.paymentMethod || undefined,
         bank_account:    data.bankAccount || undefined,
-        commission_rate: data.commissionRate != null ? data.commissionRate : undefined,
         internal_notes:  data.internalNotes || undefined,
       };
       const res = await api.post('/admin/providers', body);
@@ -463,7 +467,6 @@ export const providerService = {
         currency:        data.currency || undefined,
         payment_method:  data.paymentMethod || undefined,
         bank_account:    data.bankAccount || undefined,
-        commission_rate: data.commissionRate != null ? data.commissionRate : undefined,
         internal_notes:  data.internalNotes || undefined,
       };
       const res = await api.patch(`/admin/providers/${id}`, body);

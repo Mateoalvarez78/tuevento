@@ -8,7 +8,7 @@ import {
   LEGAL_PAGES_REACHABLE, legalIdentityRows,
 } from '@/lib/site';
 import { LEGAL_DOCS, docHref } from '@/lib/legalDocs';
-import { COMMERCIAL, DEPOSIT_PAYMENT_HOURS } from '@/lib/providerTerms';
+import { COMMERCIAL, PAYMENT_HOURS } from '@/lib/providerTerms';
 
 export const metadata = legalMetadata({
   title: 'Términos y condiciones',
@@ -23,7 +23,7 @@ export const metadata = legalMetadata({
 // tienen su propio documento en el portal de proveedores (/provider/legal) y
 // NO se enlaza desde acá: las áreas no se cruzan.
 //
-// Los números (seña, saldo, plazos) salen de lib/providerTerms.js.
+// Los números (plazo de pago y escalas) salen de lib/providerTerms.js.
 // Las cláusulas abiertas van en <PendingLegal>: su texto propuesto se publica
 // rotulado «En revisión legal»; la nota de qué falta decidir solo se ve en dev.
 
@@ -33,9 +33,9 @@ const SECTIONS = [
   { id: 'definiciones',     title: 'Definiciones' },
   { id: 'cuentas',          title: 'Cuentas' },
   { id: 'oferta',           title: 'Publicación de la oferta' },
-  { id: 'contratacion',     title: 'Cómo se contrata' },
+  { id: 'contratacion',     title: 'Cómo funciona y cómo se contrata' },
   { id: 'presupuestos',     title: 'Presupuestos personalizados' },
-  { id: 'precios',          title: 'Precios, seña y saldo' },
+  { id: 'precios',          title: 'Precios y forma de pago' },
   { id: 'pagos',            title: 'Medios de pago y cobro' },
   { id: 'cancelaciones',    title: 'Cancelaciones y reembolsos' },
   { id: 'cliente',          title: 'Obligaciones del cliente' },
@@ -50,7 +50,8 @@ const SECTIONS = [
 ];
 
 const INTERNAL_NOTES = [
-  'RUT y domicilio del titular (LEGAL_ENTITY en lib/site.js).',
+  'Razón social y RUT del titular (LEGAL_ENTITY en lib/site.js).',
+  'Presupuesto personalizado: el pedido de presupuesto dentro de la plataforma todavía no existe (quoteRequestEnabled en false en el backend). Hoy el proceso es por correo y la reserva por el importe cotizado la tiene que poder registrar el equipo: confirmar que eso es operable antes de recibir el primer pedido.',
   'Revisión de un abogado uruguayo de todo el documento.',
   'Validar el traslado al cliente del costo de procesamiento online y cómo se informa.',
   'Encuadre de Eventonow frente al consumidor (intermediario o parte de la cadena, Ley 17.250).',
@@ -64,8 +65,6 @@ export default function TerminosPage() {
   if (!LEGAL_PAGES_REACHABLE) notFound();
 
   const identityRows = legalIdentityRows();
-  const c = COMMERCIAL;
-  const dueOptions = c.balanceDueOptionsDays.join(', ').replace(/, (\d+)$/, ' o $1');
 
   return (
     <LegalDraftLayout
@@ -111,9 +110,9 @@ export default function TerminosPage() {
         <li><strong>Cliente:</strong> quien busca y contrata un servicio para su evento.</li>
         <li><strong>Proveedor:</strong> la persona o empresa independiente que ofrece y presta el servicio.</li>
         <li><strong>Solicitud:</strong> el pedido de disponibilidad que el cliente envía al proveedor para una fecha y un evento concretos.</li>
-        <li><strong>Reserva:</strong> la contratación de un servicio que el proveedor aceptó. Queda confirmada cuando se paga la seña.</li>
-        <li><strong>Seña:</strong> el pago inicial del {c.depositPercent} % del valor del servicio, que confirma la reserva.</li>
-        <li><strong>Saldo:</strong> el {c.balancePercent} % restante, que se paga antes del evento.</li>
+        <li><strong>Reserva:</strong> la contratación de un servicio que el proveedor aceptó. Queda confirmada cuando se paga.</li>
+        <li><strong>Pago:</strong> el pago único del total del servicio, por la plataforma, que confirma la reserva. Con tarjeta de crédito puede hacerse en cuotas.</li>
+        <li><strong>Presupuesto personalizado:</strong> la cotización que arma el proveedor para un servicio que no tiene precio cerrado.</li>
       </ul>
 
       {/* 4 */}
@@ -145,63 +144,103 @@ export default function TerminosPage() {
       </p>
 
       {/* 6 */}
-      <h2 id="contratacion">6. Cómo se contrata un servicio</h2>
+      <h2 id="contratacion">6. Cómo funciona y cómo se contrata un servicio</h2>
+      <p>
+        Cada servicio se contrata por separado y con su propio proveedor. Si para tu
+        evento necesitás catering, música y fotografía, son tres reservas
+        independientes. El recorrido de cada una es siempre el mismo:
+      </p>
       <ol>
         <li>
-          <strong>Solicitud.</strong> Elegís un servicio, indicás fecha, lugar y
-          detalles del evento, y enviás la solicitud. <strong>Enviar una solicitud no
-          reserva nada ni genera cargos.</strong>
+          <strong>Elegís el servicio.</strong> En la ficha de cada proveedor ves qué
+          ofrece, qué incluye cada paquete, en qué zonas trabaja y el precio. Según el
+          servicio, el precio puede ser por persona, por paquete, por unidad o por
+          hora; la plataforma te calcula el total antes de enviar nada.
         </li>
         <li>
-          <strong>Respuesta del proveedor.</strong> El proveedor acepta o rechaza la
-          solicitud. Puede rechazarla por disponibilidad, zona, capacidad u otro motivo
-          de su operación. Un rechazo no genera cargos ni compensaciones.
+          <strong>Enviás una solicitud.</strong> Indicás fecha, lugar, cantidad de
+          invitados y los detalles del evento. <strong>Enviar una solicitud no reserva
+          la fecha ni genera ningún cargo.</strong>
         </li>
         <li>
-          <strong>Pago de la seña.</strong> Si el proveedor acepta, tenés{' '}
-          <strong>{DEPOSIT_PAYMENT_HOURS} horas</strong> para pagar la seña del{' '}
-          {c.depositPercent} %. Si no la pagás en ese plazo, la solicitud vence y la
-          fecha vuelve a quedar libre.
+          <strong>El proveedor acepta o rechaza.</strong> Revisa su disponibilidad y
+          las condiciones del evento. Puede rechazar por agenda, zona, capacidad u otro
+          motivo de su operación. Un rechazo no genera cargos ni compensaciones.
         </li>
         <li>
-          <strong>Reserva confirmada.</strong> La reserva queda{' '}
-          <strong>confirmada cuando se acredita la seña</strong>. Antes de eso, la fecha
-          no está asegurada.
+          <strong>Pagás el total.</strong> Si el proveedor acepta, tenés{' '}
+          <strong>{PAYMENT_HOURS} horas</strong> para pagar el total de la reserva en
+          un único pago dentro de {BRAND}. Con tarjeta de crédito podés elegir pagarlo
+          en cuotas. Si no pagás en ese plazo, la solicitud vence sola, la fecha
+          vuelve a quedar libre y no se te cobra nada.
         </li>
         <li>
-          <strong>Pago del saldo.</strong> El {c.balancePercent} % restante se paga
-          por la plataforma antes del vencimiento que se te informa al reservar.
+          <strong>La reserva queda confirmada.</strong> Se confirma cuando el pago se
+          acredita; antes de eso la fecha no está asegurada. Desde tu cuenta ves el
+          estado de cada reserva y de su pago.
+        </li>
+        <li>
+          <strong>El proveedor presta el servicio.</strong> El día del evento el
+          proveedor presta el servicio en las condiciones publicadas y acordadas. Si
+          algo no se cumple, nos escribís y gestionamos el reclamo (punto 13).
         </li>
       </ol>
+      <p>
+        Una vez confirmada, podés cancelar la reserva como máximo hasta{' '}
+        <strong>{COMMERCIAL.clientCancellationMinDays} días antes del evento</strong>,
+        con el reembolso que indica la política de cancelaciones (punto 10).
+      </p>
 
       {/* 7 */}
-      <h2 id="presupuestos">7. Presupuestos personalizados</h2>
+      <h2 id="presupuestos">7. Servicios con presupuesto personalizado</h2>
       <p>
         Algunos servicios no tienen un precio cerrado porque dependen del evento
-        concreto (invitados, duración, ubicación, requerimientos). En esos casos la
-        plataforma indica que el precio es <strong>a consultar</strong> y el proveedor
-        te prepara una cotización. Una cotización es una propuesta: no reserva la fecha
-        hasta que se convierte en una reserva por el proceso del punto 6.
+        concreto: cantidad de invitados, duración, ubicación, montaje o
+        requerimientos especiales. En esos casos la ficha del servicio dice{' '}
+        <strong>«Presupuesto personalizado»</strong> en lugar de un precio, y ese
+        paquete no se puede reservar directamente. El proceso es este:
+      </p>
+      <ol>
+        <li>
+          Nos escribís a <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> con el
+          servicio que te interesa, la fecha, el lugar, la cantidad de invitados y lo
+          que necesitás.
+        </li>
+        <li>
+          Le pasamos el pedido al proveedor, que prepara un presupuesto por escrito con
+          qué incluye, qué no incluye y el <strong>precio total en pesos
+          uruguayos</strong>.
+        </li>
+        <li>
+          Te enviamos el presupuesto. Es una propuesta: no te obliga a nada y no
+          reserva la fecha.
+        </li>
+        <li>
+          Si lo aceptás, la reserva se registra en {BRAND} por el importe del
+          presupuesto y desde ahí sigue el mismo camino que cualquier otra:{' '}
+          <strong>pago único del total dentro de la plataforma</strong> (en cuotas si
+          lo elegís con tarjeta de crédito), confirmación al acreditarse el pago y las
+          mismas reglas de cancelación y reembolso.
+        </li>
+      </ol>
+      <p>
+        Un presupuesto personalizado nunca se paga por fuera de {BRAND}. Si un
+        proveedor te pide pagarle directamente, avisanos.
       </p>
 
       {/* 8 */}
-      <h2 id="precios">8. Precios, seña y saldo</h2>
+      <h2 id="precios">8. Precios y forma de pago</h2>
       <ul>
         <li><strong>Los precios se expresan en pesos uruguayos.</strong></li>
         <li>
-          <strong>Seña del {c.depositPercent} %</strong> para confirmar y{' '}
-          <strong>saldo del {c.balancePercent} %</strong> antes del evento.
+          <strong>Pago único:</strong> pagás el total de la reserva de una sola vez,
+          dentro de las {PAYMENT_HOURS} horas desde que el proveedor la acepta. No hay
+          pagos parciales ni importes que queden pendientes para más adelante.
         </li>
         <li>
-          <strong>Vencimiento del saldo:</strong> lo define cada proveedor entre{' '}
-          {dueOptions} días antes del evento ({c.balanceDueDefaultDays} días si no
-          define otro). Lo ves <strong>antes de reservar</strong> y queda fijo para tu
-          reserva aunque el proveedor lo cambie después.
-        </li>
-        <li>
-          <strong>Si el saldo vence sin pagarse</strong>, la reserva no se cancela
-          automáticamente: queda en revisión y nos comunicamos con vos y con el
-          proveedor.
+          <strong>Cuotas:</strong> con tarjeta de crédito podés elegir pagar en cuotas
+          al momento de pagar, según lo que ofrezcan tu tarjeta y el procesador de
+          pagos. Con cuotas o sin ellas, la reserva queda paga por el total.
         </li>
         <li>
           <strong>Una reserva por proveedor.</strong> Si contratás varios servicios
@@ -213,7 +252,7 @@ export default function TerminosPage() {
           por fuera.
         </li>
       </ul>
-      <PendingLegal note="Validar legal y contractualmente el traslado al cliente del costo de procesamiento online antes de aplicarlo.">
+      <PendingLegal inForce={LEGAL_DOCS.terminos.status === 'published'} note="Validar legal y contractualmente el traslado al cliente del costo de procesamiento online antes de aplicarlo. Confirmar con el procesador qué cuotas ofrece en Uruguay y quién asume el recargo (SBX-11 del backend) antes de describirlas con más detalle.">
         <p>
           El pago online puede tener un cargo por procesamiento. Si corresponde, lo vas
           a ver detallado <strong>antes de pagar</strong>, junto con el precio total de
@@ -252,8 +291,10 @@ export default function TerminosPage() {
           te ayudamos a encontrar otra opción.
         </li>
         <li>
-          <strong>Si cancelás vos:</strong> el reembolso depende de la anticipación con
-          la que canceles.
+          <strong>Si cancelás vos:</strong> podés hacerlo como máximo hasta{' '}
+          {COMMERCIAL.clientCancellationMinDays} días antes del evento, y el reembolso
+          depende de la anticipación con la que canceles. Con menos anticipación la
+          reserva ya no se puede cancelar.
         </li>
         <li>
           Los reembolsos los gestiona {BRAND}, que revisa cada caso con la información
@@ -266,7 +307,7 @@ export default function TerminosPage() {
       <ul>
         <li>Dar información veraz sobre el evento: fecha, lugar, cantidad de personas y requerimientos.</li>
         <li>Garantizar las condiciones para que el proveedor pueda prestar el servicio: acceso, espacio, instalaciones y permisos.</li>
-        <li>Pagar la seña y el saldo en los plazos indicados, por la plataforma.</li>
+        <li>Pagar la reserva en el plazo indicado, por la plataforma.</li>
         <li>Tratar al proveedor y a su personal con respeto.</li>
       </ul>
 

@@ -29,6 +29,7 @@ function mapCategory(c) {
 
   return {
     id:    c.slug || c.id,   // slug — usado por filtros del catálogo
+    slug:  c.slug || null,   // explícito, para armar enlaces (lib/catalogLinks.js)
     categoryId: c.id,        // UUID real — necesario para crear servicios
     label: c.name,
     icon:  getCategoryIcon(c.slug || c.id), // componente Lucide, no emoji
@@ -193,9 +194,24 @@ export const categoryService = {
       _cache = (res.data || []).map(mapCategory);
       return _cache;
     } catch {
-      // Fallback to mock categories if API unavailable
-      return MOCK_CATEGORIES;
+      // Si la API no responde se devuelven las categorías locales para que los
+      // filtros y formularios sigan teniendo etiquetas e íconos. Los CONTEOS
+      // del mock son inventados: se ponen en 0 para que ninguna pantalla
+      // pública muestre "48 servicios" que no existen. No se cachea: el
+      // próximo llamado vuelve a intentar contra la API.
+      return MOCK_CATEGORIES.map((c) => ({ ...c, slug: c.id, count: 0 }));
     }
+  },
+
+  /**
+   * Categorías públicas con su conteo REAL de servicios activos, sin caché de
+   * módulo y SIN fallback a datos locales: si la API falla, lanza. Lo usa la
+   * home desde el servidor (ISR), que decide qué mostrar ante un error.
+   * `options` se pasa tal cual a la capa HTTP (`signal`, `next.revalidate`).
+   */
+  async getWithCounts(options = {}) {
+    const res = await api.get('/categories', options);
+    return (res.data || []).map(mapCategory);
   },
 
   async getById(id) {

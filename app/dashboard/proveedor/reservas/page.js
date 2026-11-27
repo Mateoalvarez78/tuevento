@@ -21,8 +21,8 @@ import Avatar from '@/components/Avatar';
 const STATUS_FILTERS = [
   { id: 'all',       label: 'Todas' },
   { id: 'pending',   label: 'Pendientes de respuesta' },
-  { id: 'accepted',  label: 'Esperando seña' },
-  { id: 'confirmed', label: 'Confirmadas (seña paga)' },
+  { id: 'accepted',  label: 'Esperando pago' },
+  { id: 'confirmed', label: 'Confirmadas (pagas)' },
   { id: 'completed', label: 'Completadas' },
   { id: 'cancelled', label: 'Canceladas' },
   { id: 'rejected',  label: 'Rechazadas' },

@@ -29,7 +29,7 @@ export default function ProviderKpis({ summary, loading }) {
       <MetricCard theme="dark" icon={ShieldCheck} label="Verificados" value={summary.verified} tone="blue" />
       <MetricCard theme="dark" icon={Package} label="Con servicios publicados" value={summary.withPublishedServices} />
       <MetricCard theme="dark" icon={UserPlus} label="Nuevos en el período" value={summary.newInPeriod} tooltip="Últimos 30 días, salvo que apliques un rango de fechas." />
-      <MetricCard theme="dark" icon={DollarSign} label="Volumen bruto" value={money(summary.grossAmount)} tone="emerald" tooltip="Reservas completadas o aceptadas con seña paga." />
+      <MetricCard theme="dark" icon={DollarSign} label="Volumen bruto" value={money(summary.grossAmount)} tone="emerald" tooltip="Reservas completadas o aceptadas y pagas." />
       <MetricCard theme="dark" icon={Percent} label="Comisión Eventonow" value={money(summary.commissionAmount)} tone="amber" />
       <MetricCard theme="dark" icon={Wallet} label="Neto a proveedores" value={money(summary.providerNetAmount)} tone="blue" />
       <MetricCard theme="dark" icon={XCircle} label="Cancelaciones" value={summary.cancellations} />

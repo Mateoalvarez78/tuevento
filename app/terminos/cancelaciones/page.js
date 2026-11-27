@@ -31,7 +31,7 @@ const SECTIONS = [
   { id: 'cancela-proveedor', title: 'Si cancela el proveedor' },
   { id: 'fuerza-mayor',     title: 'Hechos fuera de control' },
   { id: 'cambios-fecha',    title: 'Cambios de fecha' },
-  { id: 'saldo-impago',     title: 'Si no se paga el saldo' },
+  { id: 'pago-vencido',     title: 'Si no se paga a tiempo' },
   { id: 'creditos',         title: 'Créditos compensatorios' },
   { id: 'reembolsos',       title: 'Cómo y cuándo se reembolsa' },
   { id: 'contracargos',     title: 'Desconocimientos y contracargos' },
@@ -40,7 +40,8 @@ const SECTIONS = [
 
 const INTERNAL_NOTES = [
   'Aprobar la escala de cancelación del cliente (propuesta de política única).',
-  'Confirmar con el abogado cómo convive la seña con el derecho de arrepentimiento y si aplica a servicios con fecha determinada.',
+  'Confirmar con el abogado cómo convive el pago anticipado del total (y lo retenido en la escala) con el derecho de arrepentimiento y si aplica a servicios con fecha determinada.',
+  'Confirmar con el procesador de pagos cómo se reembolsa un pago hecho en cuotas (si se anulan las cuotas pendientes o se devuelve lo ya cobrado).',
   'Confirmar la fecha de vigencia del nuevo art. 16 (Ley 20.531, art. 108) e implementar el botón de arrepentimiento.',
   'Definir plazos de respuesta a pedidos de cancelación y de inicio del reembolso.',
   'Definir la lista objetiva de hechos fuera de control.',
@@ -66,7 +67,7 @@ export default function CancelacionesPage() {
         <ul>
           <li>Podés <strong>arrepentirte</strong> dentro del plazo legal y recuperar lo que pagaste, sin dar explicaciones.</li>
           <li>Si <strong>cancela el proveedor</strong>, te devolvemos todo lo que pagaste.</li>
-          <li>Si <strong>cancelás vos</strong> fuera del plazo de arrepentimiento, el reembolso depende de cuánto falte para el evento.</li>
+          <li>Si <strong>cancelás vos</strong> fuera del plazo de arrepentimiento, podés hacerlo <strong>hasta {c.clientCancellationMinDays} días antes del evento</strong>, y el reembolso depende de cuánto falte. Con menos anticipación la reserva ya no se puede cancelar.</li>
           <li>Ante un <strong>hecho fuera de control</strong> de las partes, revisamos el caso y buscamos una solución justa para ambos.</li>
           <li>Todas las cancelaciones y reembolsos los gestiona {BRAND}.</li>
         </ul>
@@ -101,7 +102,7 @@ export default function CancelacionesPage() {
       {/* 3 */}
       <h2 id="antes-de-confirmar">3. Antes de que se confirme la reserva</h2>
       <p>
-        Mientras la reserva no esté confirmada (es decir, mientras no pagaste la seña),
+        Mientras la reserva no esté confirmada (es decir, mientras no la pagaste),
         podés retirar tu solicitud en cualquier momento <strong>sin ningún costo</strong>.
         No se te cobra nada.
       </p>
@@ -109,20 +110,22 @@ export default function CancelacionesPage() {
       {/* 4 */}
       <h2 id="cancela-cliente">4. Si cancelás vos una reserva confirmada</h2>
       <p>
-        Fuera del plazo de arrepentimiento, el reembolso depende de la anticipación
-        con la que nos avises. Contamos los <strong>días corridos</strong> entre la
-        fecha en que pedís la cancelación y la fecha del evento.
+        Fuera del plazo de arrepentimiento podés cancelar una reserva confirmada{' '}
+        <strong>como máximo hasta {c.clientCancellationMinDays} días corridos antes del
+        evento</strong>. Contamos los días corridos entre la fecha en que nos pedís la
+        cancelación y la fecha del evento, con fechas de Uruguay. Lo que te
+        devolvemos depende de esa anticipación:
       </p>
-      <PendingLegal note="Escala propuesta como política única de plataforma. Falta aprobación comercial y revisión jurídica (proporcionalidad frente a la Ley 17.250).">
+      <PendingLegal inForce={LEGAL_DOCS.cancelaciones.status === 'published'} note="Plazo mínimo de 7 días decidido el 22/11/2026. El porcentaje retenido del tramo intermedio es una propuesta: falta aprobación comercial y revisión jurídica (proporcionalidad frente a la Ley 17.250).">
         <p className="mb-2">
-          Recordá: la seña es el {c.depositPercent} % y el saldo el {c.balancePercent} %
-          del valor del servicio.
+          Los porcentajes se calculan sobre el total que pagaste por la reserva, aunque
+          lo hayas pagado en cuotas.
         </p>
       </PendingLegal>
       <div className="overflow-x-auto mb-4">
         <table>
           <caption className="text-left text-xs text-gray-500 mb-2">
-            Reembolso al cliente según la anticipación de la cancelación (propuesta).
+            Qué pasa si cancelás, según cuánto falte para el evento.
           </caption>
           <thead>
             <tr className="border-b border-gray-200 text-left">
@@ -142,14 +145,22 @@ export default function CancelacionesPage() {
       </div>
       <p>
         Lo que no se reembolsa compensa al proveedor por haber bloqueado la fecha y
-        rechazado otros eventos.
+        rechazado otros eventos. Si reservás un servicio cuando faltan menos de{' '}
+        {c.clientCancellationMinDays} días para el evento, tené en cuenta que desde el
+        momento del pago la reserva ya no admite cancelación de tu parte (salvo el
+        derecho de arrepentimiento del punto 2).
+      </p>
+      <p>
+        Si pagaste en cuotas, el reembolso se hace sobre el mismo medio de pago y la
+        forma en que se refleja en tu resumen (anulación de cuotas pendientes o
+        devolución de lo cobrado) depende del emisor de tu tarjeta.
       </p>
 
       {/* 5 */}
       <h2 id="cancela-proveedor">5. Si cancela el proveedor</h2>
       <ul>
         <li>Te avisamos apenas lo sepamos.</li>
-        <li><strong>Te devolvemos todo lo que pagaste</strong>: seña y saldo.</li>
+        <li><strong>Te devolvemos todo lo que pagaste</strong>: el total de la reserva.</li>
         <li>Te ayudamos a encontrar otro proveedor disponible para tu fecha.</li>
         <li>
           {BRAND} puede ofrecerte además un <strong>crédito compensatorio</strong> para
@@ -170,7 +181,7 @@ export default function CancelacionesPage() {
         Buscamos primero un cambio de fecha; si no es posible, se reembolsa lo que
         corresponda.
       </p>
-      <PendingLegal note="Falta la lista objetiva de hechos que califican y qué documentación se pide." />
+      <PendingLegal inForce={LEGAL_DOCS.cancelaciones.status === 'published'} note="Falta la lista objetiva de hechos que califican y qué documentación se pide." />
 
       {/* 7 */}
       <h2 id="cambios-fecha">7. Cambios de fecha</h2>
@@ -182,12 +193,11 @@ export default function CancelacionesPage() {
       </p>
 
       {/* 8 */}
-      <h2 id="saldo-impago">8. Si no se paga el saldo</h2>
+      <h2 id="pago-vencido">8. Si no se paga a tiempo</h2>
       <p>
-        Si el saldo vence sin pagarse, la reserva <strong>no se cancela
-        automáticamente</strong>. Queda en revisión y nos comunicamos con vos. Si no se
-        regulariza, la reserva puede cancelarse aplicando esta política como una
-        cancelación del cliente.
+        Si el proveedor acepta y no pagás dentro del plazo indicado, la solicitud{' '}
+        <strong>vence sola</strong>: la fecha vuelve a quedar libre y no se te cobra
+        nada.
       </p>
 
       {/* 9 */}
@@ -199,7 +209,7 @@ export default function CancelacionesPage() {
       </p>
       <ul>
         <li>Vence a los <strong>{c.creditExpiryMonths} meses</strong> desde que se emite.</li>
-        <li>Se aplica solo al <strong>saldo</strong> de una reserva nueva, nunca a la seña.</li>
+        <li>Se descuenta del <strong>total</strong> de una reserva nueva.</li>
         <li>Si la reserva donde lo usaste se cancela sin culpa tuya, <strong>te devolvemos el crédito</strong>.</li>
         <li>Lo financia {BRAND}: el nuevo proveedor cobra su precio completo.</li>
       </ul>
@@ -212,7 +222,7 @@ export default function CancelacionesPage() {
         <li>El tiempo de acreditación depende de tu banco o emisor de tarjeta.</li>
         <li>Si un reembolso legal se demora, el importe se actualiza según la ley.</li>
       </ul>
-      <PendingLegal note="Definir el plazo máximo para iniciar el reembolso una vez resuelto el caso." />
+      <PendingLegal inForce={LEGAL_DOCS.cancelaciones.status === 'published'} note="Definir el plazo máximo para iniciar el reembolso una vez resuelto el caso." />
 
       {/* 11 */}
       <h2 id="contracargos">11. Desconocimientos y contracargos</h2>

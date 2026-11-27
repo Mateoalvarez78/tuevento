@@ -5,14 +5,29 @@ import CategoryCard from '@/components/CategoryCard';
 import FeaturedProviders from '@/components/home/FeaturedProviders';
 import AppIcon from '@/components/AppIcon';
 import Button from '@/components/Button';
-import { categoryService } from '@/services/categoryService';
+import { loadHomeData } from '@/lib/homeData';
 import { BRAND, PROVIDER_CONTACT_MAILTO } from '@/lib/site';
+import { catalogCategoryHref } from '@/lib/catalogLinks';
 
 export const metadata = {
   title: `${BRAND} — Marketplace de servicios para eventos en Uruguay`,
   description:
     'Marketplace uruguayo de servicios para eventos. Pedí disponibilidad a proveedores de catering, música, fotografía, decoración y más, y contratá cada servicio por separado.',
   alternates: { canonical: '/' },
+};
+
+// ISR: la home se genera en el servidor y se regenera como máximo cada 5
+// minutos (mismo valor que HOME_REVALIDATE_SECONDS en lib/homeData.js; Next
+// exige un literal acá). Si el backend está dormido al regenerar, los datos que
+// no llegan se ocultan o se completan en el navegador — ver lib/homeData.js.
+export const revalidate = 300;
+
+// Imagen de fondo del hero. PENDIENTE: reemplazar por una foto propia (de un
+// evento real de un proveedor publicado, con su permiso). Para cambiarla,
+// subí la imagen a /public (p. ej. /public/hero.jpg) y poné `src: '/hero.jpg'`.
+// Es decorativa: el texto del hero no depende de lo que muestre.
+const HERO_IMAGE = {
+  src: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1600&q=80',
 };
 
 // La barra de estadísticas ("500+ proveedores", "15K+ eventos", "4.9★",
@@ -33,12 +48,12 @@ export const metadata = {
 // "pagás con X" sería anunciar algo que todavía no funciona.
 const PAYMENT_FACTS = [
   {
-    title: 'Un pago por servicio',
-    desc: 'Si contratás catering y fotografía, son dos reservas y dos pagos independientes, cada uno con su proveedor.',
+    title: 'Un pago por servicio, por el total',
+    desc: 'Cada servicio es una reserva con su propio pago, por el importe total. Con tarjeta de crédito podés elegir pagarlo en cuotas.',
   },
   {
-    title: 'El precio que ves es el total',
-    desc: 'No agregamos cargos al importe que figura en la reserva. Nuestra comisión la asume el proveedor, no vos.',
+    title: 'Ves el total antes de pagar',
+    desc: 'Antes de confirmar el pago ves el importe total de la reserva. Nuestra comisión la asume el proveedor, no vos.',
   },
   {
     title: 'Primero disponibilidad, después pago',
@@ -63,13 +78,17 @@ const HOW_IT_WORKS = [
   {
     Icon: CalendarCheck,
     title: 'Pagás y queda confirmada',
-    desc: 'Abonás el total del servicio dentro de la plataforma. La reserva queda confirmada cuando se acredita el pago.',
+    desc: 'Pagás el total del servicio dentro de la plataforma, en cuotas si querés. La reserva queda confirmada cuando se acredita el pago.',
   },
 ];
 
 export default async function HomePage() {
-  const categories = await categoryService.getAll();
-  const quickTags = categories.slice(0, 6);
+  // `categories`: solo las que tienen servicios activos, o null si la API no
+  // respondió. `featured`: array real (vacío = sin sección) o null (se pide
+  // desde el navegador). Ver lib/homeData.js.
+  const { categories, featured } = await loadHomeData();
+  const visibleCategories = categories || [];
+  const quickTags = visibleCategories.slice(0, 6);
 
   return (
     <>
@@ -78,8 +97,9 @@ export default async function HomePage() {
         {/* Background */}
         <div className="absolute inset-0 overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1600&q=80"
-            alt="Evento"
+            src={HERO_IMAGE.src}
+            alt=""
+            aria-hidden="true"
             className="w-full h-full object-cover object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-gray-950/95 via-gray-900/75 to-gray-800/30" />
@@ -99,25 +119,29 @@ export default async function HomePage() {
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-[3.75rem] font-extrabold text-white leading-[1.1] tracking-tight mb-5">
-              Te ayudamos a organizar{' '}
-              <span className="gradient-text">todo tu evento</span>,<br className="hidden sm:block" />
-              de punta a punta.
+              Contratá los servicios{' '}
+              <span className="gradient-text">para tu evento</span>,<br className="hidden sm:block" />
+              en un solo lugar.
             </h1>
             <p className="text-base sm:text-lg text-gray-300 max-w-xl leading-relaxed">
-              Contanos qué estás organizando y armamos hasta 3 propuestas completas con catering, DJ, fotografía, decoración y más — proveedores y precios reales.
+              Pedí disponibilidad a proveedores de Uruguay para tu fecha y, cuando acepten,
+              pagá cada servicio dentro de la plataforma. Si querés, contanos qué estás
+              organizando y te sugerimos combinaciones con los proveedores publicados.
             </p>
           </div>
 
           {/* Armar mi evento — ancho completo hasta max-w-5xl */}
           <EventHero className="w-full max-w-5xl" />
 
-          {/* Camino secundario: explorar el marketplace por categoría */}
+          {/* Camino secundario: explorar el marketplace por categoría. Solo
+              categorías con servicios activos; sin ninguna, no se muestra. */}
+          {quickTags.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mt-5 max-w-5xl">
             <span className="text-xs sm:text-sm text-white/50 mr-1">O contratá un solo servicio:</span>
             {quickTags.map((cat) => (
               <Link
                 key={cat.id}
-                href={`/catalogo?categories=${cat.id}`}
+                href={catalogCategoryHref(cat)}
                 className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-white/70 border border-white/20 hover:border-white/60 hover:bg-white/10 hover:text-white px-3.5 py-1.5 rounded-full transition-all"
               >
                 <AppIcon icon={cat.icon} size={14} aria-hidden="true" />
@@ -125,6 +149,7 @@ export default async function HomePage() {
               </Link>
             ))}
           </div>
+          )}
         </div>
       </section>
 
@@ -132,6 +157,10 @@ export default async function HomePage() {
           junto a HOW_IT_WORKS. Ninguna de las cuatro cifras era verificable. */}
 
       {/* ── CATEGORIES ─────────────────────────────────────────────────── */}
+      {/* Solo categorías con al menos un servicio activo: una tarjeta que lleva
+          a un catálogo vacío no ayuda a nadie. Sin ninguna (o si la API no
+          respondió al generar la página), la sección no se muestra. */}
+      {visibleCategories.length > 0 && (
       <section className="py-14 sm:py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-end justify-between mb-8">
@@ -147,7 +176,7 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 gap-2.5 sm:gap-3">
-            {categories.slice(0, 8).map((cat) => (
+            {visibleCategories.slice(0, 8).map((cat) => (
               <CategoryCard key={cat.id} category={cat} />
             ))}
           </div>
@@ -156,33 +185,12 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ── FEATURED PROVIDERS ─────────────────────────────────────────── */}
-      <section className="py-14 sm:py-16 bg-surface">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1.5">Destacados</p>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Proveedores destacados</h2>
-              <p className="text-gray-500 mt-1.5 text-sm">Algunos de los proveedores publicados en Eventonow</p>
-            </div>
-            <Link
-              href="/catalogo"
-              className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-dark transition-colors"
-            >
-              Ver todos <AppIcon icon={ArrowRight} size={14} aria-hidden="true" />
-            </Link>
-          </div>
-
-          <FeaturedProviders />
-
-          <div className="flex justify-center mt-10">
-            <Button variant="outline" href="/catalogo">
-              Ver todos los proveedores <AppIcon icon={ArrowRight} size="button" aria-hidden="true" />
-            </Button>
-          </div>
-        </div>
-      </section>
+      {/* La sección entera vive en el componente: si no hay destacados, no se
+          renderiza nada (ni título ni "muy pronto"). */}
+      <FeaturedProviders initialProviders={featured} />
 
       {/* ── HOW IT WORKS ───────────────────────────────────────────────── */}
       <section id="como-funciona" className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
@@ -191,7 +199,7 @@ export default async function HomePage() {
             <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1.5">Proceso</p>
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">¿Cómo funciona {BRAND}?</h2>
             <p className="text-gray-500 max-w-sm mx-auto text-sm">
-              Tres simples pasos para que tu evento sea perfecto.
+              Así funciona cada contratación, desde la solicitud hasta el día del evento.
             </p>
           </div>
 

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Check, ArrowRight } from 'lucide-react';
 import AppIcon from '@/components/AppIcon';
+import { catalogCategoryHref } from '@/lib/catalogLinks';
 
 export default function EventOrganizer({ categories = [] }) {
   const done = categories.filter((c) => c.done).length;
@@ -31,7 +32,7 @@ export default function EventOrganizer({ categories = [] }) {
         {categories.map((c) => (
           <Link
             key={c.id}
-            href={`/catalogo?categoria=${c.id}`}
+            href={catalogCategoryHref(c)}
             className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all ${
               c.done
                 ? 'border-emerald-200 bg-emerald-50'
